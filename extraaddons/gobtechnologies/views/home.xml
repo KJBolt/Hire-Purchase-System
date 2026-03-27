@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template name="home" id="Home">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+                <style>
+                    body, h1, h2, h3, h4, h5, h6, p, a, button, .btn {
+                        font-family: 'Droid Sans', sans-serif !important;
+                    }
+                </style>
+            </t>
+
+            <section class="py-5">
+                
+            </section>
+        </t>
+    </template>
+</odoo>

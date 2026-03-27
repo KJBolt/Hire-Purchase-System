@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_details_template" name="Product Details">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <t t-if="product">
+                    <form t-att-action="'/shop/product/%s/select_plan' % product.id" method="post" class="js_attributes">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="container py-5">
+                            <!-- Main product card -->
+                            <div class="card shadow-sm rounded-3 border-0 overflow-hidden mb-5">
+                                <div class="row g-0">
+                                    <!-- Product image column -->
+                                    <div class="col-md-6 d-flex align-items-center justify-content-center p-4">
+                                        <img t-att-src="'/web/image/product.template/%s/image_1920' % (product.id)" 
+                                            t-att-alt="product.name" 
+                                            class="img-fluid rounded-3" 
+                                            style="max-height: 500px; object-fit: contain;"
+                                        />
+                                    </div>
+                                    
+                                    <!-- Product details column -->
+                                    <div class="col-md-6">
+                                        <div class="card-body p-4 p-lg-5">
+                                            <h2 class="card-title mb-3"><t t-esc="product.name"/></h2>
+                                            
+                                            <!-- Product description -->
+                                            <p class="card-text text-muted mb-4">
+                                                <t t-esc="product.description_sale or ''"/>
+                                            </p>
+                                            
+                                            <hr class="my-4"/>
+                                            
+                                            <!-- Payment options section -->
+                                            <div class="payment-plan">
+                                                <h4 class="mb-3">Payment Options</h4>
+                                                
+                                                <div class="mb-4">
+                                                    <label for="payment_plan" class="form-label fw-bold">Payment Plan</label>
+                                                    <select id="payment_plan" name="plan_days" class="form-select form-select-lg mb-3" required="required" onchange="this.form.submit()">
+                                                        <option value="" disabled="disabled" t-att-selected="not plan_days">Select payment plan</option>
+                                                        <option value="60" t-att-selected="plan_days == '60'">60 days</option>
+                                                        <option value="90" t-att-selected="plan_days == '90'">90 days</option>
+                                                        <option value="120" t-att-selected="plan_days == '120'">120 days</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label for="repayment_frequency" class="form-label fw-bold">Repayment Frequency</label>
+                                                    <select id="repayment_frequency" name="repayment_frequency" class="form-select form-select-lg mb-3" required="required" onchange="this.form.submit()">
+                                                        <option value="" disabled="disabled" t-att-selected="not repayment_frequency">Select repayment frequency</option>
+                                                        <option value="daily" t-att-selected="repayment_frequency == 'daily'">Daily</option>
+                                                        <option value="weekly" t-att-selected="repayment_frequency == 'weekly'">Weekly</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <!-- Order Summary -->
+                                                <div class="card bg-light mb-4">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <h5 class="mb-0">Order Summary</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <ul class="list-group list-group-flush">
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                                                <span>Payment plan</span>
+                                                                <span t-if="plan_days"><t t-esc="plan_days"/> days</span>
+                                                                <span t-else="">-</span>
+                                                            </li>
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                                                <span>Deposit Amount</span>
+                                                                <span t-if="payment_details">
+                                                                    <t t-if="plan_days == '60'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_60_deposit')"/>  
+                                                                    </t>
+                                                                    <t t-if="plan_days == '90'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_90_deposit')"/>  
+                                                                    </t>
+                                                                    <t t-if="plan_days == '120'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_120_deposit')"/> 
+                                                                    </t>
+                                                                </span>
+                                                                <span t-else="">-</span>
+                                                            </li>
+                                                            <t t-if="repayment_frequency == 'daily'">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                                                    <span>Daily Amount</span>
+                                                                    <span t-if="payment_details">
+                                                                        <t t-if="plan_days == '60' and repayment_frequency == 'daily'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_60_daily')"/>
+                                                                        </t>
+                                                                        <t t-if="plan_days == '90' and repayment_frequency == 'daily'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_90_daily')"/>
+                                                                        </t>
+                                                                        <t t-if="plan_days == '120' and repayment_frequency == 'daily'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_120_daily')"/>
+                                                                        </t>
+                                                                    </span>
+                                                                    <span t-else="">-</span>
+                                                                </li>
+                                                            </t>
+                                                            <t t-if="repayment_frequency == 'weekly'">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                                                    <span>Weekly amount</span>
+                                                                    <span t-if="payment_details">
+                                                                        <t t-if="plan_days == '60' and repayment_frequency == 'weekly'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_60_weekly')"/>
+                                                                        </t>
+                                                                        <t t-if="plan_days == '90' and repayment_frequency == 'weekly'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_90_weekly')"/>
+                                                                        </t>
+                                                                        <t t-if="plan_days == '120' and repayment_frequency == 'weekly'">
+                                                                            <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_120_weekly')"/>
+                                                                        </t>
+                                                                    </span>
+                                                                    <span t-else="">-</span>
+                                                                </li> 
+                                                            </t>
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom-0">
+                                                                <span>Total amount</span>
+                                                                <span t-if="payment_details">
+                                                                    <t t-if="plan_days == '60'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_60_total')"/>
+                                                                    </t>
+                                                                    <t t-if="plan_days == '90'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_90_total')"/>
+                                                                    </t>
+                                                                    <t t-if="plan_days == '120'">
+                                                                        <t t-esc="payment_details.get('currency')"/> <t t-esc="payment_details.get('plan_120_total')"/>
+                                                                    </t>
+                                                                </span>
+                                                                <span t-else="">-</span>
+                                                            </li> 
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="submit" name="proceed_payment" value="1" class="btn btn-primary btn-lg w-100 py-3 fw-bold" t-att-disabled="not plan_days">
+                                                    <i class="fa fa-shopping-cart me-2"></i>Proceed to Payment
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

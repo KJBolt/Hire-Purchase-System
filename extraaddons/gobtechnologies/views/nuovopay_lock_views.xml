@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_nuovopay_lock_form" model="ir.ui.view">
+        <field name="name">nuovopay.lock.form</field>
+        <field name="model">nuovopay.lock</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="repayment_id" options="{'no_create': True, 'no_quick_create': True}"/>
+                            <field name="device_id" readonly="1"/>
+                            <field name="type"/>
+                            <field name="device_group_id"/>
+                            <field name="is_tv"/>
+                            <field name="manufacturer"/>
+                            <field name="user_address"/>
+                        </group>
+                        <group>
+                            <field name="imei_no"/>
+                            <field name="serial_no"/>
+                            <field name="first_lock_date" invisible="1"/>
+                            <field name="status"/>
+                            <field name="lock_date" invisible="1"/>
+                            <field name="unlock_date" invisible="1"/>
+                            <field name="user_first_name"/>
+                            <field name="user_last_name"/>
+                            <field name="user_phone"/>
+                            <field name="user_email"/>
+                            <field name="user_country"/>
+                        </group>
+
+                        <group>
+                            <field name="enrollment_code" readonly="1" invisible="1"/>
+                            <field name="qr_code_data" readonly="1" invisible="1"/>
+                            <field name="huawei_qrcode_data" readonly="1" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    
+    <!-- Action to open the views -->
+    <record id="action_nuovo_pay_lock" model="ir.actions.act_window">
+        <field name="name">SplitPay Devices</field>
+        <field name="res_model">nuovopay.lock</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first SplitPay device
+            </p>
+        </field>
+    </record>
+    
+    <!-- Specific action for the register button (opens form in create mode) -->
+    <record id="action_nuovo_pay_lock_form" model="ir.actions.act_window">
+        <field name="name">Register New Device</field>
+        <field name="res_model">nuovopay.lock</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_nuovopay_lock_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>

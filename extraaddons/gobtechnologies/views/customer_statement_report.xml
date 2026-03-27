@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="access_repayment" model="ir.model.access">
+        <field name="name">Repayment</field>
+        <field name="model_id" ref="model_repayment"/>
+        <field name="group_id" ref="base.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_repayment_payment_line" model="ir.model.access">
+        <field name="name">Repayment Payment Line</field>
+        <field name="model_id" ref="model_repayment_payment_line"/>
+        <field name="group_id" ref="base.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_repayment_item_line" model="ir.model.access">
+        <field name="name">Repayment Product Line</field>
+        <field name="model_id" ref="model_repayment_item_line"/>
+        <field name="group_id" ref="base.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+
+    <record id="seq_repayment" model="ir.sequence">
+        <field name="name">Repayment Reference</field>
+        <field name="code">repayment.sequence</field>
+        <field name="prefix">RPY</field>  <!-- Prefix for repayment -->
+        <field name="padding">5</field>   <!-- Ensures numbers like 00001, 00002 -->
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="view_repayment_form" model="ir.ui.view">
+        <field name="name">Repayment Form</field>
+        <field name="model">repayment</field>
+        <field name="arch" type="xml">
+            <form string="Repayment" >
+                <header>
+                    <!-- <button 
+                        name="action_confirm_payment" id="action_confirm_payment" groups="gobtechnologies.group_repayment_accounts"
+                        string="Confirm" class="btn-primary" type="object"
+                        invisible="state in ['paid']"
+                    /> -->
+                    <button name="action_create_invoice" id="action_create_invoice" groups="gobtechnologies.group_repayment_accounts, gobtechnologies.group_repayment_sales"
+                        string="Create Invoice" class="btn-primary" type="object"
+                        invisible="state in ['progress', 'paid']"
+                    />
+
+                    <button name="action_cancel" type="object" string="Cancel" 
+                        invisible="state in ['draft', 'progress']" groups="gobtechnologies.group_repayment_accounts"
+                    />
+                    <field name="state" widget="statusbar" statusbar_visible="draft,progress,paid"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title" style="position: absolute; top: 10; right: 0;">
+                        <div class="ribbon ribbon-top-right" invisible="state != 'paid'" style="z-index: 10;">
+                            <span class="o_ribbon" style="background-color: #28a745;">PAID</span>
+                        </div>
+
+                        <div class="ribbon ribbon-top-right" invisible="not overdue_status" style="z-index: 10;">
+                            <span class="o_ribbon" style="background-color: #ce3168;">OVERDUE</span>
+                        </div>
+
+                        <field name="overdue_status" invisible='1' />
+                    </div>
+                    <group name="repayment_header">
+                        <group name="customer_details">
+                            <field name="customer_name" placeholder="Type to find a customer..." readonly="state in ['cancel', 'paid']" options="{'no_open': True}"/>
+                            <field name="gps_location" readonly="state in ['cancel', 'paid']"/>
+                        </group>
+                        <group name="other_details">
+                            <div class="o_td_label">
+                                <label for="phone_no" string="Phone Number"/>
+                            </div>
+                            <field name="phone_no" placeholder="Phone Number" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+
+                            <div class="o_td_label">
+                                <label for="plan" string="Plan"/>
+                            </div>
+                            <field name="plan" readonly="state in ['cancel', 'paid']" nolabel="1"/>
+                        </group>
+                    </group>
+
+                    <group name="repayment_header">
+                        <group name="customer_details">
+                            <field name="selling_price" readonly="state in ['cancel', 'paid']"/>
+                            <field name="end_date" readonly="state in ['cancel', 'paid']"/>
+                        </group>
+                        <group name="other_details">
+                            <div class="o_td_label">
+                                <label for="start_date" string="Start Date"/>
+                            </div>
+                            <field name="start_date" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+
+                            <div class="o_td_label">
+                                <label for="expected_to_pay" string="Expected to Pay"/>
+                            </div>
+                            <field name="expected_to_pay" readonly="state in ['cancel', 'paid']" nolabel="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="deposit" no-open="1"/>
+                        </group>
+
+                        <group>
+                            <field name="total_paid" readonly="1" no-open="1" />
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="outstanding_loan" invisible="1"/>
+                            <field name="outstanding_loan_status" readonly="1" no-open="1" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0" />
+                            <!-- <field name="outstanding_loan" readonly="1" no-open="1" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0" /> -->
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- Invoice Details -->
+                        <page string="Invoice Details" name="invoice_details">
+                            <sheet>
+                                <group string="Business Details">
+                                    <field name="branch" />
+                                </group>
+
+                                <group>
+                                    <field name="invoice_no" />
+                                </group>
+
+                                <group string="How do you want this customer to pay for this invoice?">
+                                    <field name="invoice_payment_method" />
+                                </group>
+
+                                <group string="Add products">
+                                    <field name="product_lines" readonly="state in ['cancel', 'paid']">
+                                        <tree>
+                                            <field name="repayment_id" invisible="1" column_invisible="1"/>
+                                            <field name="product_id"/>
+                                            <field name="quantity"/>
+                                            <field name="price"/>
+                                        </tree>
+                                    </field>
+                                </group>
+
+                                <group string="Add a Note">
+                                    <field name="note" />
+                                </group>
+                            </sheet>
+                        </page>
+
+                        <!-- Repament Details Tab -->
+                        <page string="Repayment Details" name="Other Details">
+                            <sheet>
+                                <group name="others_header">
+                                    <group name="others_details">
+                                        <field name="repayment_date" 
+                                            decoration-danger="is_payment_missed"
+                                            force_save="1"
+                                        />
+                                        <field name="is_payment_missed" invisible="1"/>
+                                        <field name="repayment" readonly="state in ['progress', 'paid', 'draft']"/>
+                                    </group>
+                                    <group name="others_details">
+                                        <div class="o_td_label">
+                                            <label for="repayment_frequency" string="Repayment Frequency"/>
+                                        </div>
+                                        <field name="repayment_frequency" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+
+                                        <div class="o_td_label">
+                                            <label for="head_of_gob_contact" string="Management Phone Number"/>
+                                        </div>
+                                        <field name="head_of_gob_contact" readonly="state in ['cancel', 'paid']" nolabel="1"/>
+                                    </group>
+                                </group>
+
+                                <group name="others_header">
+                                    <group name="others_details">
+                                        <field name="guarantor_name" readonly="state in ['cancel', 'paid']" options="{'no_open': True}"/>
+                                        <field name="penalty" readonly="state in ['cancel', 'paid']"/>
+                                    </group>
+                                    <group name="others_details">
+                                        <div class="o_td_label">
+                                            <label for="guarantor_contact" string="Guarantor's Contact"/>
+                                        </div>
+                                        <field name="guarantor_contact" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+
+                                        <div class="o_td_label">
+                                            <label for="discount" string="Discount"/>
+                                        </div>
+                                        <field name="discount" readonly="state in ['cancel', 'paid']" nolabel="1"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </page>
+
+
+                        <!-- Relevant Documents Tab -->
+                        <page string="Relevant Documents" name="payment_compliance">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="customer_ghana_card_front" 
+                                            filename="customer_ghana_card_front_filename" 
+                                            widget="image"
+                                            options="{'size': [80, 80], 'preview_image': 'customer_ghana_card_front'}"
+                                        />
+                                        <field name="guarantor_ghana_card_front" 
+                                            filename="guarantor_ghana_card_front_filename" 
+                                            widget="image"
+                                            options="{'size': [80, 80], 'preview_image': 'guarantor_ghana_card_front'}"
+                                        />
+                                    </group>
+                                    <group>
+                                        <field name="customer_ghana_card_back" 
+                                            filename="customer_ghana_card_back_filename" 
+                                            widget="image"
+                                            options="{'size': [80, 80], 'preview_image': 'customer_ghana_card_back'}"
+                                        />
+                                        <field name="guarantor_ghana_card_back" 
+                                            filename="guarantor_ghana_card_back_filename" 
+                                            widget="image"
+                                            options="{'size': [80, 80], 'preview_image': 'guarantor_ghana_card_back'}"
+                                        />
+                                    </group>
+                                    <group>
+                                        <!-- Mobile Money Statement -->
+                                        <field name="mobile_money_statement" 
+                                            filename="mobile_money_statement_filename" 
+                                            widget="binary"
+                                            options="{'preview_image': true}"
+                                        />
+                                        <field name="mobile_money_statement_filename" readonly="1" invisible="1"/>
+
+                                        <!-- Utility Bill -->
+                                        <field name="utility_bill" 
+                                            filename="utility_bill_filename" 
+                                            widget="binary"
+                                            options="{'preview_image': true}"
+                                        />
+                                        <field name="utility_bill_filename" readonly="1" invisible="1"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </page>
+
+                        <!-- Payment Tab -->
+                        <page string="Payments" name="Repayment History" groups="gobtechnologies.group_repayment_accounts">
+                            <field name="payment_lines" readonly="state in ['paid']">
+                                <tree editable="bottom">
+                                    <field name="repayment_id" invisible="1" force_save="1" column_invisible="True"/>
+                                    <field name="payment_date"/>
+                                    <field name="payment_mode"/>
+                                    <field name="payment_amount" decoration-danger="is_payment_insufficient"/>
+                                    <field name="is_payment_insufficient" invisible="1" column_invisible="True"/>
+                                </tree>
+                            </field>
+                            <!-- Add totals section -->
+                            <group class="oe_subtotal_footer" name="payment_totals">
+                                <field name="currency_id" invisible="1"/>
+                                <!-- Repayment Total -->
+                                <label for="repayment" string="Repayment Total"/>
+                                <field name="repayment" nolabel="1" readonly="1"/>
+
+                                <!-- Deposit Total -->
+                                <label for="deposit"/>
+                                <field name="deposit" nolabel="1" readonly="1"/>
+
+                                <!-- Total Paid -->
+                                <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                    <label for="total_paid" class="fw-bolder"/>
+                                </div>
+                                <field name="total_paid" nolabel="1" class="oe_subtotal_footer_separator" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            </group>
+                        </page>
+
+                        <!-- Payment Compliance Overview Tab -->
+                        <page string="Payment Compliance Overview" name="payment_compliance" groups="gobtechnologies.group_repayment_accounts">
+                            <field name="payment_lines" readonly="1" domain="[('is_payment_insufficient', '=', True)]">
+                                <tree default_order="create_date desc">
+                                    <field name="payment_date"/>
+                                    <field name="expected_amount"/>
+                                    <field name="payment_amount" string="Amount Paid"/>
+                                    <field name="payment_status" 
+                                        decoration-danger="payment_status == 'Underpaid'"
+                                        decoration-success="payment_status == 'Fully Paid'"
+                                        decoration-info="payment_status == 'Overpaid'"
+                                    />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- Form view for repayment.payment.line -->
+    <record id="view_repayment_payment_line_form" model="ir.ui.view">
+        <field name="name">repayment.payment.line.form</field>
+        <field name="model">repayment.payment.line</field>
+        <field name="arch" type="xml">
+            <form string="Create Payments">
+                <group>
+                    <field name="payment_date"/>
+                    <field name="payment_mode"/>
+                    <field name="payment_amount"/>
+                    <field name="repayment_id" invisible="1" optional="hidden" readonly="1" no-open="1" column_invisible="True"/>
+                    <field name="is_payment_insufficient" invisible="1" optional="hidden" readonly="1" no-open="1" column_invisible="True"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_repayment_item_line_form" model="ir.ui.view">
+        <field name="name">repayment.item.line.form</field>
+        <field name="model">repayment.item.line</field>
+        <field name="arch" type="xml">
+            <form string="Create Products">
+                <group>
+                    <field name="repayment_id" invisible="1"/>
+                    <field name="product_id"/>
+                    <field name="quantity"/>
+                    <field name="price"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_repayment_tree" model="ir.ui.view">
+        <field name="name">Repayment Tree</field>
+        <field name="model">repayment</field>
+        <field name="arch" type="xml">
+            <tree string="Repayment" default_order="create_date desc">
+                <field name="unique_id"/>
+                <field name="customer_name"/>
+                <field name="gps_location"/>
+                <field name="plan" optional="Hidden"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="selling_price"/>
+                <field name="deposit"/>
+                <field name="repayment"/>
+                <field name="repayment_date"/>
+                <field name="repayment_frequency"/>
+                <field name="expected_to_pay"/>
+                <field name="duration_left" optional="Hidden"/>
+                <field name="due_date" optional="HitreeRepaymentdden"/>
+                <field name="reminder" widget="badge" decoration-danger="reminder == 'Due'" decoration-success="reminder == 'Not Due'" optional="Hidden"/>
+                <field name="total_paid"/>
+                <field name="outstanding_loan" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0"/>
+                <field name="state" widget='badge' decoration-warning="state == 'progress'" decoration-success="state == 'paid'"/>
+                <field name="phone_no" optional="Hidden"/>
+                <field name="penalty" optional="Hidden"/>
+                <field name="discount" optional="Hidden"/>
+                <field name="percentage_paid" optional="Hidden"/>
+                <field name="paid_to_momo" optional="Hidden"/>
+                <field name="guarantor_name" optional="Hidden"/>
+                <field name="guarantor_contact" optional="Hidden"/>
+                <field name="invoice_id" optional="Hidden"/>
+                <field name="payment_url" optional="Hidden"/>
+                <!-- <button name="action_button_method" string="Send SMS" type="object" class="oe_highlight" invisible="reminder != 'Due'"/> -->
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_repayment_search" model="ir.ui.view">
+        <field name="name">Repayment Search</field>
+        <field name="model">repayment</field>
+        <field name="arch" type="xml">
+            <search string="Repayment">
+                <field name="customer_name"/>
+                <field name="phone_no"/>
+                <field name="unique_id"/>
+
+                <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]"/>
+                <filter name="progress" string="In Progress" domain="[('state', '=', 'progress')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_repayment" model="ir.actions.act_window">
+        <field name="name">Hire Purchase</field>
+        <field name="res_model">repayment</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No data available.
+            </p>
+        </field>
+    </record>
+
+    <!-- <record id="action_weather_page" model="ir.actions.client">
+        <field name="name">Weather</field>
+        <field name="tag">gobtechnologies.weather</field>
+    </record>
+
+    <record id="action_chart_page" model="ir.actions.client">
+        <field name="name">Chart</field>
+        <field name="tag">gobtechnologies.chartDashboard</field>
+    </record> -->
+
+    <menuitem 
+        id="menu_repayment_root" 
+        name="Hire Purchase"
+        sequence="1"
+    />
+
+    <menuitem 
+        id="menu_repayment" 
+        name="Hire Purchase"
+        parent="menu_repayment_root"
+        action="action_repayment"
+    />
+
+    <!-- <menuitem 
+        id="menu_weather_page"
+        name="Weather"
+        parent="menu_repayment_root"
+        action="action_weather_page"
+    />
+
+    <menuitem 
+        id="menu_chart_page"
+        name="Chart"
+        parent="menu_repayment_root"
+        action="action_chart_page"
+    /> -->
+
+    
+</odoo>

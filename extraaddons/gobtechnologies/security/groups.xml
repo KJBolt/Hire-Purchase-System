@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="module_category_repayment" model="ir.module.category">
+            <field name="name">GOB Technologies</field>
+            <field name="sequence">5</field>
+        </record>
+
+        <record id="group_repayment_accounts" model="res.groups">
+            <field name="name">GOB Accounts Manager</field>
+            <field name="category_id" ref="module_category_repayment"/>
+        </record>
+
+        <record id="group_repayment_sales" model="res.groups">
+            <field name="name">GOB Sales Manager</field>
+            <field name="category_id" ref="module_category_repayment"/>
+            <!-- <field name="implied_ids" eval="[(4, ref('group_repayment_accounts'))]"/> -->
+        </record>
+
+        <record id="group_repayment_agent" model="res.groups">
+            <field name="name">GOB Agent</field>
+            <field name="category_id" ref="module_category_repayment"/>
+            <!-- <field name="implied_ids" eval="[(4, ref('group_repayment_accounts'))]"/> -->
+        </record>
+    </data>
+</odoo>

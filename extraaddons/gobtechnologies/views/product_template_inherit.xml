@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="product_template_form_extension" model="ir.ui.view">
+            <field name="name">product.tempate.form.extension</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view"/>
+            <field name="arch" type="xml">
+                <!-- Add a new notebook page for payment plans -->
+                <xpath expr="//notebook/page[1]" position="after">
+                    <page string="Payment Plans" name="payment_plans">
+                        <group>
+                            <group string="60 Days Plan">
+                                <field name="plan_60_deposit"/>
+                                <field name="plan_60_daily"/>
+                                <field name="plan_60_weekly"/>
+                                <field name="plan_60_total"/>
+                            </group>
+                            <group string="90 Days Plan">
+                                <field name="plan_90_deposit"/>
+                                <field name="plan_90_daily"/>
+                                <field name="plan_90_weekly"/>
+                                <field name="plan_90_total"/>
+                            </group>
+                            <group string="120 Days Plan">
+                                <field name="plan_120_deposit"/>
+                                <field name="plan_120_daily"/>
+                                <field name="plan_120_weekly"/>
+                                <field name="plan_120_total"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

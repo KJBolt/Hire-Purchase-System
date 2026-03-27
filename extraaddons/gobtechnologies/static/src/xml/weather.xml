@@ -1,0 +1,24 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.weather" owl="1">
+        <div class="o_demo my-10">
+            <h3 class="text-center my-5">Weather Data</h3>
+
+            <t t-if="state.isLoading">
+                <div class="text-center p-5 d-flex align-items-center justify-content-center">
+                    <i class="fa fa-spinner fa-spin fa-3x"></i>
+                    <p class="mt-3">Loading weather data...</p>
+                </div>
+            </t>
+
+            <div t-elif="state.weatherData">
+                <div class="row p-5 justify-content-center align-items-center">
+                    <t t-foreach="state.weatherData" t-as="data" t-key="data_index">
+                        <div class="shadow-sm rounded-2 p-3 border border-light col-md-3 mx-3 my-3">
+                            <p class="text-center">Cordinate <t t-esc="data"/></p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

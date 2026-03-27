@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.gobtechnologies</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='performance']" position="after">
+                <div class="app_settings_block" data-string="GOB Technologies" string="GOB Technologies" data-key="gobtechnologies">
+                    <h2>Hubtel SMS Configuration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Hubtel API Credentials</span>
+                                <div class="text-muted">
+                                    Configure your Hubtel SMS API credentials
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="hubtel_client_id">Client ID</label>
+                                        <div class="col-lg-8">
+                                            <field name="hubtel_client_id" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="hubtel_client_secret">Client Secret</label>
+                                        <div class="col-lg-8">
+                                            <field name="hubtel_client_secret" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="hubtel_merchant_account">Merchant Account</label>
+                                        <div class="col-lg-8">
+                                            <field name="hubtel_merchant_account" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="webhook_url">Invoice Payment Webhook</label>
+                                        <div class="col-lg-8">
+                                            <field name="webhook_url" password="true"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>NuovoPay Configuration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">NuovoPay API Credentials</span>
+                                <div class="text-muted">
+                                    Configure your NuovoPay API credentials
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="nuovopay_api_key">API Key</label>
+                                        <div class="col-lg-8">
+                                            <field name="nuovopay_api_key" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="nuovopay_api_url">API URL</label>
+                                        <div class="col-lg-8">
+                                            <field name="nuovopay_api_url" password="true"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="access_payment_notifications" model="ir.model.access">
+        <field name="name">Invoice Payments</field>
+        <field name="model_id" ref="model_payment_notifications"/>
+        <field name="group_id" ref="base.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+
+    <record id="view_payment_notifications_tree" model="ir.ui.view">
+        <field name="name">Invoice Payments</field>
+        <field name="model">payment.notifications</field>
+        <field name="arch" type="xml">
+            <tree string="Invoice Payments">
+                <field name="invoice_id"/>
+                <field name="amount_paid"/>
+                <field name="receipt_no"/>
+                <field name="description"/>
+                <field name="payment_method"/>
+                <field name="payment_channel"/>
+                <field name="payee_phone_no"/>
+                <field name="payment_detail_id"/>
+                <field name="payment_date"/>
+                <field name="response_code"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="server_action_payment_notifications" model="ir.actions.server">
+        <field name="name">Invoice Payments</field>
+        <field name="model_id" ref="model_payment_notifications"/>
+        <field name="state">code</field>
+        <field name="code">model.process_payment(); action = env.ref('gobtechnologies.action_payment_notifications').read()[0]</field>
+    </record>
+
+    <record id="action_payment_notifications" model="ir.actions.act_window">
+        <field name="name">Invoice Payments</field>
+        <field name="res_model">payment.notifications</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <menuitem 
+        id="menu_payment_notifications" 
+        name="Auto Debit Payments"
+        parent="menu_repayment_root"
+        action="server_action_payment_notifications"
+        groups="gobtechnologies.group_repayment_accounts"
+    />
+</odoo>

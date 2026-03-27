@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Hide Discuss Menu Item -->
+    <record id="mail.menu_root_discuss" model="ir.ui.menu">
+        <field name="active">False</field>
+    </record>
+
+    <!-- Hide Dashboard Menu Item -->
+    <record id="spreadsheet_dashboard.spreadsheet_dashboard_menu_root" model="ir.ui.menu">
+        <field name="active">False</field>
+    </record>
+
+    <!-- Hide Link Tracker Menu Item -->
+    <record id="utm.menu_link_tracker_root" model="ir.ui.menu">
+        <field name="active">False</field>
+    </record>
+    
+    <!-- Show Contacts Menu Item -->
+    <record id="contacts.menu_contacts" model="ir.ui.menu">
+        <field name="active">True</field>
+    </record>
+
+    <!-- Hide Apps for all users except Administrators (System) -->
+    <record id="base.menu_management" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+
+    <!-- Nuovo Pay Menu Item -->
+    <!-- Client Actions -->
+    <record id="action_nuovo_pay" model="ir.actions.client">
+        <field name="name">NuovoPay</field>
+        <field name="tag">gobtechnologies.nuovo_pay</field>
+    </record>
+
+    <record id="action_nuovo_pay_lock_form" model="ir.actions.act_window">
+        <field name="name">Register Device</field>
+        <field name="res_model">nuovopay.lock</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem 
+        id="menu_nuovo_pay" 
+        name="Lock Device"
+        parent="menu_repayment_root"
+        action="action_nuovo_pay"
+    />
+
+    
+
+</odoo>

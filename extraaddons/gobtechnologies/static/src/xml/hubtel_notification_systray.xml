@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.HubtelNotificationSystray" owl="1">
+        <!-- <div class="d-flex align-items-center justify-content-center">
+            <div class="o_notification_systray" style="margin-right: 10px;" t-on-click="clearNotifications">
+                <i class="fa fa-bell text-light" style="font-size: 15px;" role="img" aria-label="Notifications"/>
+                <t t-if="state.count > 0">
+                    <span class="o_notification_counter badge rounded-pill bg-danger text-light" t-esc="state.count"/>
+                </t>
+            </div>
+        </div> -->
+    </t>
+</templates>

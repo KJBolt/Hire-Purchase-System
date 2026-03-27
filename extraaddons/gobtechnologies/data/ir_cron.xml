@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="ir_cron_send_repayment_reminders" model="ir.cron">
+            <field name="name">Send Repayment Reminders</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="state">code</field>
+            <field name="code">model._send_repayment_reminders()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="ir_cron_check_payment_missed" model="ir.cron">
+            <field name="name">Check Payment Missed Status</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="state">code</field>
+            <field name="code">model.check_payment_missed()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- <record id="ir_cron_process_payment" model="ir.cron">
+            <field name="name">Process Payment</field>
+            <field name="model_id" ref="model_payment_notifications"/>
+            <field name="state">code</field>
+            <field name="code">model.process_payment()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record> -->
+    </data>
+</odoo>
+

@@ -1,0 +1,70 @@
+nav, 
+.o_navbar, 
+.o_main_navbar, 
+.o_menu_sections, 
+.dropdown-item .o_menu_brand {
+    background-color: #72767a !important; 
+}
+
+.o_main_navbar .navbar-nav > li > a,
+.o_main_navbar .navbar-nav > li.active > a {
+    color: #ffffff !important; 
+}
+
+.o_main_navbar .navbar-nav .dropdown-menu .o-dropdown .dropdown .o-dropdown--no-caret {
+    background-color: #72767a !important; 
+}
+.o_main_navbar .navbar-nav .dropdown-menu > li > a {
+    color: #ffffff !important; 
+}
+
+.o_main_navbar .navbar-nav > li > a:hover {
+    background-color: #72767a !important; 
+    color: #ffffff !important; 
+}
+
+.o_main_navbar .navbar-brand {
+    color: #ffffff!important; 
+}
+
+.o_main_navbar .navbar-header {
+    border-color: #72767a !important; 
+}
+
+// Change login button color
+.oe_login_buttons .btn-primary {
+    background-color: #72767a !important;
+    border-color: #72767a !important;
+
+    &:hover {
+        background-color: #72767a !important;
+        border-color: #72767a !important;
+    }
+}
+
+.btn-primary,.btn-outline-primary{
+    background-color: #72767a !important;
+    border-color: #72767a !important; 
+    color: #ffffff !important; 
+}
+
+.btn-primary:hover, .btn-outline-primary:hover {
+    background-color: #72767a !important; 
+    border-color: #72767a !important; 
+    color: #ffffff !important; 
+}
+
+.btn-primary:active,.btn-outline-primary:hover {
+    background-color: #72767a !important; 
+    border-color: #72767a !important;
+    color: #ffffff !important; 
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry, .o_main_navbar .o_menu_sections .dropdown-toggle {
+    background: var(--NavBar-entry-backgroundColor, #72767a );
+    border: 1px solid transparent;
+}
+
+.download-button {
+    white-space: nowrap; /* Prevents text from breaking into multiple lines */
+}
