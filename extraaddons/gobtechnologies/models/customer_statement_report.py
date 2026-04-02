@@ -297,7 +297,7 @@ class Repayment(models.Model):
     total_paid = fields.Float(string='Total Paid', compute='_compute_total_paid', store=True)
     outstanding_loan = fields.Float(string='Outstanding Debt', compute='_compute_outstanding_loan', store=True)
     outstanding_loan_status = fields.Text(string="Outstanding Debt", compute='_compute_outstanding_loan_status', store=True)
-    phone_no = fields.Char(string='Phone No', required=True)
+    phone_no = fields.Char(related='customer_name.phone', string='Phone Number')
     penalty = fields.Integer(string='Penalty')
     discount = fields.Integer(string='Discount')
     percentage_paid = fields.Float(string='Percentage Paid', compute='_compute_percentage_paid', store=True)
