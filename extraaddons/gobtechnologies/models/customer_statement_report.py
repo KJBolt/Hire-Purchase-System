@@ -297,14 +297,14 @@ class Repayment(models.Model):
     total_paid = fields.Float(string='Total Paid', compute='_compute_total_paid', store=True)
     outstanding_loan = fields.Float(string='Outstanding Debt', compute='_compute_outstanding_loan', store=True)
     outstanding_loan_status = fields.Text(string="Outstanding Debt", compute='_compute_outstanding_loan_status', store=True)
-    phone_no = fields.Char(related='customer_name.phone', string='Phone Number')
+    phone_no = fields.Char(string='Phone Number', required=True)
     penalty = fields.Integer(string='Penalty')
     discount = fields.Integer(string='Discount')
     percentage_paid = fields.Float(string='Percentage Paid', compute='_compute_percentage_paid', store=True)
     paid_to_momo = fields.Float(string='Paid to Momo')
     guarantor_name = fields.Many2one('res.partner', string='Guarantor Name', required=True)
     guarantor_contact = fields.Char(string='Guarantor Contact', required=True)
-    head_of_gob_contact = fields.Char(string='Head of SplitPay Contact', help="This phone number is used to send messages to SplitPay management", required=True)
+    head_of_gob_contact = fields.Char(string='Head of Sarfosco Contact', help="This phone number is used to send messages to Sarfosco management", required=True)
     state = fields.Selection(
         selection=PAYMENT_STATE,
         string="Status",
@@ -348,7 +348,7 @@ class Repayment(models.Model):
 
     # Invoice field
     branch = fields.Selection([
-        ('splitpay', 'SplitPay'),
+        ('sarfosco', 'Sarfosco'),
     ], string='Branch', required=True)
     invoice_id = fields.Char(string='Invoice ID', required=False)
     invoice_no = fields.Char(string='Invoice No', readonly=True, required=False, default=lambda self: self.env['ir.sequence'].next_by_code('invoice.ref'))
@@ -359,6 +359,7 @@ class Repayment(models.Model):
     ], string='Payment Method', required=True)
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
+    created_by = fields.Many2one('res.users', string='Created By', required=True)
 
 
     def name_get(self):
@@ -831,7 +832,7 @@ class Repayment(models.Model):
                 )
 
                 # Prepare SMS message
-                sms_message = f"Dear {customer_name}, your account has been successfully created with SplitPay."
+                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
 
                 # Send SMS
                 if res.phone_no and res.state == 'draft':
@@ -1104,8 +1105,13 @@ class Repayment(models.Model):
                 raise UserError("Missing Hubtel credentials")
                 return False
 
+            # Validate phone number format
+            if not phone or len(phone) < 10:
+                _logger.error(f"Invalid phone number: {phone}")
+                return False
+
             # Construct URL directly
-            url = f"https://sms.hubtel.com/v1/messages/send?clientid={client_id}&clientsecret={client_secret}&from={merchant_account}&to={phone}&content={sms_message}"
+            url = f"https://sms.hubtel.com/v1/messages/send?clientsecret={client_secret}&clientid={client_id}&from={merchant_account}&to={phone}&content={sms_message}"
             
             # Log the URL (with sensitive data masked)
             _logger.info(f"Making request to: {url}")
@@ -1226,11 +1232,11 @@ class Repayment(models.Model):
                     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
                         termination_warning_message = (
                             f"Dear {repayment.customer_name.name}, "
-                            f"your contract with SplitPay terminates, "
+                            f"your contract with Sarfosco Phones terminates, "
                             f"in 14 days if payment is not made today. "
                             f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
                             f"Kindly dial *713*7678# to make immediate payment. "
-                            f"Thank you for choosing SplitPay."
+                            f"Thank you for choosing Sarfosco Phones."
                         )
                         
                         if repayment.phone_no:
@@ -1260,10 +1266,10 @@ class Repayment(models.Model):
                     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
                         termination_warning_message_two = (
                             f"Dear {repayment.customer_name.name}, "
-                            f"your contract with SplitPay terminates, "
+                            f"your contract with Sarfosco Phones terminates, "
                             f"in 3 days if payment is not made today. "
                             f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
-                            f"Kindly dial *713*7678# to make immediate payment. Thank you for choosing SplitPay. "
+                            f"Kindly dial *713*7678# to make immediate payment. Thank you for choosing Sarfosco Phones. "
                         )
                         if repayment.phone_no:
                             self._send_hubtel_sms(repayment.phone_no, termination_warning_message_two, repayment.customer_name.name)
@@ -1289,7 +1295,7 @@ class Repayment(models.Model):
                         customer_message = (
                             f"Dear {repayment.customer_name.name}, "
                             f"Due to non-payment for the past 14 days, "
-                            f"your contract with SplitPay has been terminated. "
+                            f"your contract with Sarfosco Phones has been terminated. "
                             f"Please contact our office immediately to resolve this issue."
                         )
 
@@ -1302,7 +1308,7 @@ class Repayment(models.Model):
                             f"As a guarantor, you may be contacted regarding this matter."
                         )
 
-                        # Message for Head of SplitPay
+                        # Message for Head of Sarfosco Phones
                         head_message = (
                             f"TERMINATION NOTICE\n"
                             f"Customer: {repayment.customer_name.name}\n"
@@ -1321,7 +1327,7 @@ class Repayment(models.Model):
                             self._send_hubtel_sms(repayment.guarantor_contact, guarantor_message, repayment.guarantor_name.name)
 
                         if repayment.head_of_gob_contact:
-                            self._send_hubtel_sms(repayment.head_of_gob_contact, head_message, "Head of SplitPay")
+                            self._send_hubtel_sms(repayment.head_of_gob_contact, head_message, "Head of Sarfosco Phones")
                         
                         _logger.info(
                             f"Sent final termination notice to {repayment.customer_name.name} "
@@ -1342,7 +1348,7 @@ class Repayment(models.Model):
                         f"this is a reminder that your payment of GHS {repayment.expected_to_pay} "
                         f"is due tomorrow {tomorrow.strftime('%d-%m-%Y')}. "
                         f"Kindly dial *713*7678# to pay now to avoid any penalties. "
-                        f"Thank you for choosing SplitPay."
+                        f"Thank you for choosing Sarfosco Phones."
                     )
                     
                     if repayment.phone_no:
@@ -1371,7 +1377,7 @@ class Repayment(models.Model):
                             f"Dear {repayment.customer_name.name}, "
                             f"your payment of GHS {repayment.expected_to_pay} was due yesterday. "
                             f"Kindly dial *713*7678# to pay now to avoid any penalties. "
-                            f"Thank you for choosing SplitPay."
+                            f"Thank you for choosing Sarfosco Phones."
                         )
                         
                         if repayment.phone_no:
@@ -1404,7 +1410,7 @@ class Repayment(models.Model):
                             f"Please note that a penalty fee of GHS 10 will be charged tomorrow "
                             f"if payment is not made today. "
                             f"Kindly dial *713*7678# to pay now. "
-                            f"Thank you for choosing SplitPay."
+                            f"Thank you for choosing Sarfosco Phones."
                         )
                         
                         if repayment.phone_no:
@@ -1449,7 +1455,7 @@ class Repayment(models.Model):
                             f"due to delayed payment. Your new outstanding balance is "
                             f"GHS {repayment.outstanding_loan}. "
                             f"Kindly dial *713*7678# to pay now. "
-                            f"Thank you for choosing SplitPay."
+                            f"Thank you for choosing Sarfosco Phones."
                         )
                         
                         if repayment.phone_no:

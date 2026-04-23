@@ -11,13 +11,12 @@
         'web',
         'base', 
         'contacts',
-        'website',
         'account',
         'stock',
         'mail'
     ],
     'data': [
-        'security/groups.xml',
+        # 'security/groups.xml',
         'security/ir.model.access.csv',
         'views/customer_statement_report.xml',
         'views/modify_menuitems.xml',
@@ -33,6 +32,7 @@
         'views/product_details_template.xml',
         'views/product_template_inherit.xml',
         'views/home.xml',
+        'views/res_user_inherit.xml',
         # 'views/settings_inherit.xml'
     ],
     'installable': True,

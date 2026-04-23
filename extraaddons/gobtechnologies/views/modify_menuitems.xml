@@ -11,9 +11,9 @@
     </record>
 
     <!-- Hide Link Tracker Menu Item -->
-    <record id="utm.menu_link_tracker_root" model="ir.ui.menu">
+    <!-- <record id="utm.menu_link_tracker_root" model="ir.ui.menu">
         <field name="active">False</field>
-    </record>
+    </record> -->
     
     <!-- Show Contacts Menu Item -->
     <record id="contacts.menu_contacts" model="ir.ui.menu">
@@ -45,7 +45,5 @@
         parent="menu_repayment_root"
         action="action_nuovo_pay"
     />
-
-    
 
 </odoo>

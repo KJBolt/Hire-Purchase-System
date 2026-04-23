@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_inherit" model="ir.ui.view">
+        <field name="name">res.users.form.inherit</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@class='oe_title']/h2" position="after">
+                <group>
+                    <field name="role"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- User Tree View -->
+    <record id="view_users_tree_inherit" model="ir.ui.view">
+        <field name="name">res.users.tree.inherit</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='login']" position="after">
+                <field name="role"/>
+                <field name="general_manager"  placeholder="-"/>
+                <field name="supervisor"  placeholder="-"/>
+                <field name="sales_administrator"  placeholder="-"/>
+                <field name="sales_manager"  placeholder="-"/>
+                <field name="sales_agent"  placeholder="-"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

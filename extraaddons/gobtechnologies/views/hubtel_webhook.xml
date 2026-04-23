@@ -96,6 +96,5 @@
         name="Ussd Payments"
         parent="menu_repayment_root"
         action="server_action_hubtel_webhook"
-        groups="gobtechnologies.group_repayment_accounts"
     />
 </odoo>
