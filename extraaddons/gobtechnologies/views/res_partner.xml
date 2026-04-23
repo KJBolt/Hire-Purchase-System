@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_inherit" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[contains(@class, 'o_row')]" position="after">
+                <group>
+                    <field name="role" readonly="1"/>
+                    <field name="supervisor" invisible="not supervisor" readonly="1"/>
+                    <field name="general_manager" invisible="not general_manager" readonly="1"/>
+                    <field name="sales_administrator" invisible="not sales_administrator" readonly="1"/>
+                    <field name="sales_manager" invisible="not sales_manager" readonly="1"/>
+                    <field name="sales_agent" invisible="not sales_agent" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+
+    <record id="view_partner_tree_inherit" model="ir.ui.view">
+        <field name="name">res.partner.tree.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="role"/>
+                <field name="supervisor"/>
+                <field name="general_manager"/>
+                <field name="sales_administrator"/>
+                <field name="sales_manager"/>
+                <field name="sales_agent"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_kanban_inherit" model="ir.ui.view">
+        <field name="name">res.partner.kanban.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.res_partner_kanban_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//li[@t-if='record.email.raw_value']" position="after">
+                <li t-if="record.role.raw_value" style="color: blue; font-weight: semi-bold"><field name="role"/></li>
+            </xpath>
+        </field>
+    </record>
+</odoo>

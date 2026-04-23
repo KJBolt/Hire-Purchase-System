@@ -6,5 +6,6 @@ from . import invoice_webhook
 from . import product_template_inherit
 from . import nuovopay_lock
 from . import res_user_inherit
+from . import res_partner
 
 # from . import settings_inherit

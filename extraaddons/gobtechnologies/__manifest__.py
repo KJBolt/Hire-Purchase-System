@@ -33,6 +33,7 @@
         'views/product_template_inherit.xml',
         'views/home.xml',
         'views/res_user_inherit.xml',
+        'views/res_partner.xml',
         # 'views/settings_inherit.xml'
     ],
     'installable': True,

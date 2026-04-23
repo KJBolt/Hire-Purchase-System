@@ -22,9 +22,27 @@ class ResUserInherit(models.Model):
     sales_manager = fields.Char(string="Sales Manager")
     sales_agent = fields.Char(string="Sales Agent")
 
+    # @api.model
+    # def create(self, vals):
+    #     if self.env.user.role:
+    #         role_field_map = {
+    #             'general_manager': 'general_manager',
+    #             'supervisor': 'supervisor',
+    #             'sales_administrator': 'sales_administrator',
+    #             'sales_manager': 'sales_manager',
+    #             'sales_agent': 'sales_agent',
+    #         }
+    #         field_name = role_field_map.get(self.env.user.role)
+    #         if field_name:
+    #             vals[field_name] = self.env.user.name
+    #     return super().create(vals)
+    
+
+    # populate the roles fields in contacts when a user is created in settings
     @api.model
     def create(self, vals):
-        if self.env.user.role:
+        user = super().create(vals)
+        if user.role:
             role_field_map = {
                 'general_manager': 'general_manager',
                 'supervisor': 'supervisor',
@@ -32,8 +50,26 @@ class ResUserInherit(models.Model):
                 'sales_manager': 'sales_manager',
                 'sales_agent': 'sales_agent',
             }
-            field_name = role_field_map.get(self.env.user.role)
+            field_name = role_field_map.get(user.role)
             if field_name:
-                vals[field_name] = self.env.user.name
-        return super().create(vals)
-    
+                user.partner_id.write({
+                    field_name: user.env.user.name,
+                    'role': user.role,
+                })
+        return user
+
+
+    # update the roles fields in contacts when a user is updated in settings
+    def write(self, vals):
+        res = super().write(vals)
+        if 'role' in vals or any(f in vals for f in ['supervisor', 'general_manager', 'sales_administrator', 'sales_manager', 'sales_agent']):
+            for user in self:
+                partner_vals = {}
+                if 'role' in vals:
+                    partner_vals['role'] = vals['role']
+                for field in ['supervisor', 'general_manager', 'sales_administrator', 'sales_manager', 'sales_agent']:
+                    if field in vals:
+                        partner_vals[field] = vals[field]
+                if partner_vals:
+                    user.partner_id.write(partner_vals)
+        return res

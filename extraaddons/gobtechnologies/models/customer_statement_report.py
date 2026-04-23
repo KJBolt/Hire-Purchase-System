@@ -359,7 +359,7 @@ class Repayment(models.Model):
     ], string='Payment Method', required=True)
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
-    created_by = fields.Many2one('res.users', string='Created By', required=True)
+    created_by = fields.Many2one('res.partner', string='Created By', required=True)
 
 
     def name_get(self):
@@ -814,34 +814,34 @@ class Repayment(models.Model):
         is_import = self.env.context.get('import_file', False)
         
         # Only send SMS if this is not an import operation
-        if not is_import:
-            try:
-                # Get customer name from res.partner
-                customer = self.env['res.partner'].browse(vals.get('customer_name'))
-                customer_name = customer.name if customer else "Customer"
+        # if not is_import:
+        #     try:
+        #         # Get customer name from res.partner
+        #         customer = self.env['res.partner'].browse(vals.get('customer_name'))
+        #         customer_name = customer.name if customer else "Customer"
 
-                _logger.info(f"Customer Name, {customer_name}")
-                _logger.info(f"Customer, {customer}")
-                _logger.info(f"Phone No, {res.phone_no}")
+        #         _logger.info(f"Customer Name, {customer_name}")
+        #         _logger.info(f"Customer, {customer}")
+        #         _logger.info(f"Phone No, {res.phone_no}")
 
-                # Log message in chatter
-                res.message_post(
-                    body=f"Sms message sent to {customer_name}",
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_note'
-                )
+        #         # Log message in chatter
+        #         res.message_post(
+        #             body=f"Sms message sent to {customer_name}",
+        #             message_type='comment',
+        #             subtype_xmlid='mail.mt_note'
+        #         )
 
-                # Prepare SMS message
-                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
+        #         # Prepare SMS message
+        #         sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
 
-                # Send SMS
-                if res.phone_no and res.state == 'draft':
-                    self._send_hubtel_sms(res.phone_no, sms_message, customer_name)
+        #         # Send SMS
+        #         if res.phone_no and res.state == 'draft':
+        #             self._send_hubtel_sms(res.phone_no, sms_message, customer_name)
             
-            except Exception as e:
-                raise UserError(f"Error sending welcome SMS: {str(e)}")
-        else:
-            _logger.info("Successfully imported record")
+        #     except Exception as e:
+        #         raise UserError(f"Error sending welcome SMS: {str(e)}")
+        # else:
+        #     _logger.info("Successfully imported record")
 
         return res
 
