@@ -1,0 +1,216 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.stock_management">
+        <div class="o_stock_management_dashboard" style="background-color: #f1f5f9; padding: 24px; height: 100vh; overflow-y: auto;">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0;">Stock Management</h2>
+                    <p style="color: #64748b; margin: 4px 0 0 0; font-size: 14px;">Inventory, aging reports, transfers and adjustments</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-light" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; color: #64748b; background-color: white;">
+                        <i class="fa fa-exchange me-2"/>Transfer
+                    </button>
+                    <button class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;">
+                        <i class="fa fa-plus me-2"/>Add Stock
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #dbeafe; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-cube" style="color: #3b82f6; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">₵400k</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Total Stock Value</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #d1fae5; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-cubes" style="color: #10b981; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">181</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Total Items</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #fee2e2; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-bell" style="color: #ef4444; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">3</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Low Stock Alerts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #fef3c7; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-clock-o" style="color: #f59e0b; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">3</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Aging Items (60+d)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="d-flex gap-2 mb-4">
+                <button class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; font-weight: 500;">Stock List</button>
+                <button class="btn btn-light" style="border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;">Aging Report</button>
+                <button class="btn btn-light" style="border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;">Transfers</button>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="d-flex gap-3 mb-4">
+                <div class="flex-grow-1 position-relative">
+                    <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
+                    <input type="text" class="form-control" placeholder="Search products..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+                </div>
+                <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
+                    <option>All Locations</option>
+                    <option>Main Warehouse</option>
+                    <option>Branch A</option>
+                    <option>Branch B</option>
+                </select>
+            </div>
+
+            <!-- Products Table -->
+            <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 80px;">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background-color: #f8fafc;">
+                            <tr>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Product</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Model</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Qty</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Unit Price</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Total Value</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Age</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Location</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Last Transfer</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Adjusted By</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Samsung Galaxy S24 -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">Samsung Galaxy S24</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">SM-S921B</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 600;">12</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵4,200</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">₵50,400</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Main Warehouse</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">2026-04-05</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <button class="btn btn-outline-primary btn-sm" style="border-color: #3b82f6; color: #3b82f6; border-radius: 6px; padding: 4px 12px; font-size: 12px;">Adjust</button>
+                                </td>
+                            </tr>
+                            
+                            <!-- iPhone 15 Pro -->
+                            <tr style="background-color: #fafafa;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">iPhone 15 Pro</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">A3290</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 600;">8</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵6,800</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">₵54,400</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Main Warehouse</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">2026-03-29</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <button class="btn btn-outline-primary btn-sm" style="border-color: #3b82f6; color: #3b82f6; border-radius: 6px; padding: 4px 12px; font-size: 12px;">Adjust</button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Tecno Camon 20 -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">Tecno Camon 20</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">CK6n</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 600;">25</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,800</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">₵45,000</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">31-60 days</span>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Branch A</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">2026-03-06</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <button class="btn btn-outline-primary btn-sm" style="border-color: #3b82f6; color: #3b82f6; border-radius: 6px; padding: 4px 12px; font-size: 12px;">Adjust</button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Infinix Hot 40 -->
+                            <tr style="background-color: #fafafa;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">Infinix Hot 40</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">X6836</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 600;">18</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,400</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">₵25,200</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">61-90 days</span>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Branch B</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">2026-02-12</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <button class="btn btn-outline-primary btn-sm" style="border-color: #3b82f6; color: #3b82f6; border-radius: 6px; padding: 4px 12px; font-size: 12px;">Adjust</button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Xiaomi Redmi Note 13 -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">Xiaomi Redmi Note 13</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">23090RA98G</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 600;">30</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,900</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-size: 14px; font-weight: 500;">₵57,000</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Main Warehouse</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">2026-04-10</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <button class="btn btn-outline-primary btn-sm" style="border-color: #3b82f6; color: #3b82f6; border-radius: 6px; padding: 4px 12px; font-size: 12px;">Adjust</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </t>
+</templates>

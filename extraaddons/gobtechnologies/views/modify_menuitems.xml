@@ -46,4 +46,76 @@
         action="action_nuovo_pay"
     />
 
+
+
+    <!-- Dashboard Menus -->
+    <record id="action_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard</field>
+        <field name="tag">gobtechnologies.dashboard</field>
+    </record>
+
+    <record id="action_user_management" model="ir.actions.client">
+        <field name="name">User Management</field>
+        <field name="tag">gobtechnologies.user_management</field>
+    </record>
+
+    <record id="action_customer_management" model="ir.actions.client">
+        <field name="name">Customer Management</field>
+        <field name="tag">gobtechnologies.customer_management</field>
+    </record>
+    
+    <record id="action_stock_management" model="ir.actions.client">
+        <field name="name">Stock Management</field>
+        <field name="tag">gobtechnologies.stock_management</field>
+    </record>
+    
+    <record id="action_auditing" model="ir.actions.client">
+        <field name="name">Auditing</field>
+        <field name="tag">gobtechnologies.auditing</field>
+    </record>
+    
+
+    
+    <menuitem 
+        id="menu_dashboard" 
+        name="Dashboard"
+        action="action_dashboard"
+        sequence="10"
+    />
+
+    <menuitem 
+        id="menu_user_management" 
+        name="User Management"
+        parent="menu_dashboard"
+        action="action_user_management"
+    />
+
+    <menuitem 
+        id="menu_customer_management" 
+        name="Customer Management"
+        parent="menu_dashboard"
+        action="action_customer_management"
+    />
+
+    <menuitem 
+        id="menu_stock_management" 
+        name="Stock Management"
+        parent="menu_dashboard"
+        action="action_stock_management"
+    />
+
+    <menuitem 
+        id="menu_reports" 
+        name="Reports"
+        parent="menu_dashboard"
+        action="action_nuovo_pay"
+    />
+
+    <menuitem 
+        id="menu_auditing" 
+        name="Auditing"
+        parent="menu_dashboard"
+        action="action_auditing"
+    />
+
 </odoo>

@@ -1,0 +1,318 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.customer_management">
+        <div class="o_customer_management" style="background-color: #f1f5f9; padding: 24px; height: 100vh; overflow-y: auto;">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0;">Customer Management</h2>
+                    <p style="color: #64748b; margin: 4px 0 0 0; font-size: 14px;">Hire purchase customers and repayment tracking</p>
+                </div>
+                <button class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;">
+                    <i class="fa fa-user-plus me-2"/>Add Customer
+                </button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #dbeafe; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-users" style="color: #3b82f6; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">8</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Total Customers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #d1fae5; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-file-text" style="color: #10b981; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">6</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Active HP</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #dbeafe; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-check-circle" style="color: #3b82f6; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">1</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Completed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-2">
+                    <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div class="card-body d-flex align-items-center" style="padding: 20px;">
+                            <div style="background-color: #fee2e2; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="fa fa-flag" style="color: #ef4444; font-size: 20px;"/>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">1</h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Defaulted</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="d-flex gap-3 mb-4">
+                <div class="flex-grow-1 position-relative">
+                    <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
+                    <input type="text" class="form-control" placeholder="Search customers..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+                </div>
+                <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
+                    <option>All Status</option>
+                    <option>Active</option>
+                    <option>Completed</option>
+                    <option>Defaulted</option>
+                </select>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 80px;">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background-color: #f8fafc;">
+                            <tr>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Customer</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Contact</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Sales Agent</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Manager</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Admin</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Product (HP)</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Total Due</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Repaid</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Repayment %</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Emmanuel Tetteh -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">ET</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Emmanuel Tetteh</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">etetteh@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                    <div>0244123456</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">etetteh@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Akosua Frimpong</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Samsung Galaxy S24</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵4,800</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵3,600</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 75%; background-color: #22c55e; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">75.0%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Gifty Amoah -->
+                            <tr style="background-color: #fafafa;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">GA</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Gifty Amoah</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">g.amoah@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                    <div>0277654321</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">g.amoah@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Akosua Frimpong</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">iPhone 15 Pro</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵7,200</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵5,400</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 75%; background-color: #22c55e; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">75.0%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Bright Osei -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">BO</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Bright Osei</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">b.osei@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                    <div>0201987654</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">b.osei@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kweku Amponsah</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Tecno Camon 20</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵2,400</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,200</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 50%; background-color: #f97316; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">50.0%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Patricia Acheampong -->
+                            <tr style="background-color: #fafafa;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">PA</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Patricia Acheampong</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">p.acheampong@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                    <div>0554321098</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">p.acheampong@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kweku Amponsah</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Infinix Hot 40</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,800</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵600</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 33%; background-color: #ef4444; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">33.3%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">defaulted</span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Isaac Mensah -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">IM</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Isaac Mensah</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">i.mensah@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                    <div>0265432109</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">i.mensah@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Efua Asiedu</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Yaw Darko</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Xiaomi Redmi Note 13</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵2,100</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,890</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 90%; background-color: #22c55e; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">90.0%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Cecilia Boateng -->
+                            <tr style="background-color: #fafafa;">
+                                <td style="padding: 16px 20px; border: none;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">CB</div>
+                                        <div>
+                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Cecilia Boateng</div>
+                                            <div style="color: #94a3b8; font-size: 11px;">c.boateng@gmail.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">
+                                    <div>0233210987</div>
+                                    <div style="color: #94a3b8; font-size: 11px;">c.boateng@gmail.com</div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Efua Asiedu</td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Yaw Darko</td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Kofi Boateng</td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Samsung Galaxy A55</td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">₵3,600</td>
+                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">₵3,600</td>
+                                <td style="padding: 16px 20px; border: none;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                            <div style="height: 100%; width: 100%; background-color: #22c55e; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">100.0%</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 16px 20px; border: none;">
+                                    <span style="background-color: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">completed</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,349 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.auditing">
+        <div class="o_auditing" style="background-color: #f1f5f9; padding: 24px; height: 100vh; overflow-y: auto;">
+            
+            <!-- Header Section -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Auditing</h1>
+                    <p style="font-size: 14px; color: #64748b; margin: 0;">System audit logs, inventory and sales audit reports</p>
+                </div>
+                <button class="btn btn-outline-secondary" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 6px; color: #475569; font-size: 13px;">
+                    <i class="fa fa-download" style="font-size: 12px;"/>
+                    <span>Export Audit Log</span>
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;">
+                <!-- Create Actions -->
+                <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">5</div>
+                    <div style="font-size: 12px; color: #64748b;">Create Actions</div>
+                </div>
+                <!-- Update Actions -->
+                <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">2</div>
+                    <div style="font-size: 12px; color: #64748b;">Update Actions</div>
+                </div>
+                <!-- Login Actions -->
+                <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">1</div>
+                    <div style="font-size: 12px; color: #64748b;">Login Actions</div>
+                </div>
+                <!-- Delete Actions -->
+                <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">1</div>
+                    <div style="font-size: 12px; color: #64748b;">Delete Actions</div>
+                </div>
+                <!-- View Actions -->
+                <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">3</div>
+                    <div style="font-size: 12px; color: #64748b;">View Actions</div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <button t-on-click="() => state.setActiveTab('activity')" t-att-class="state.activeTab === 'activity' ? 'btn btn-primary' : 'btn btn-outline-secondary'" t-att-style="state.activeTab === 'activity' ? 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background-color: #3b82f6; border: none;' : 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background: white; border: 1px solid #e2e8f0; color: #475569;'">Activity Log</button>
+                <button t-on-click="() => state.setActiveTab('inventory')" t-att-class="state.activeTab === 'inventory' ? 'btn btn-primary' : 'btn btn-outline-secondary'" t-att-style="state.activeTab === 'inventory' ? 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background-color: #3b82f6; border: none;' : 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background: white; border: 1px solid #e2e8f0; color: #475569;'">Inventory Audit</button>
+                <button t-on-click="() => state.setActiveTab('sales')" t-att-class="state.activeTab === 'sales' ? 'btn btn-primary' : 'btn btn-outline-secondary'" t-att-style="state.activeTab === 'sales' ? 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background-color: #3b82f6; border: none;' : 'padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; background: white; border: 1px solid #e2e8f0; color: #475569;'">Sales Audit</button>
+            </div>
+
+            <!-- Activity Log Section -->
+            <div t-if="state.activeTab === 'activity'">
+                <!-- Search and Filters -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div style="flex: 3; position: relative;">
+                        <i class="fa fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
+                        <input type="text" placeholder="Search logs..." style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;"/>
+                    </div>
+                    <select style="flex: 1; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; color: #475569; min-width: 120px;">
+                        <option>All Types</option>
+                        <option>Create</option>
+                        <option>Update</option>
+                        <option>Login</option>
+                        <option>Delete</option>
+                        <option>View</option>
+                    </select>
+                    <select style="flex: 1; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; color: #475569; min-width: 120px;">
+                        <option>All Users</option>
+                    </select>
+                </div>
+
+                <!-- Data Table -->
+                <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8fafc;">
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Type</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">User</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Role</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Action</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Entity</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">IP Address</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Row 1 - Create -->
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">Create</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">akosua.frimpong</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">Sales Agent</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Created customer record for Emmanuel Tetteh</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Customer</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.45</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 08:14</td>
+                        </tr>
+                        <!-- Row 2 - Update -->
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dbeafe; color: #2563eb; font-size: 11px; font-weight: 500; border-radius: 12px;">Update</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">ama.owusu</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">Sales Manager</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Approved hire purchase for Gifty Amoah</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Hire Purchase</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.22</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 08:32</td>
+                        </tr>
+                        <!-- Row 3 - Create -->
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">Create</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">kofi.boateng</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">Sales Administrator</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Added stock: 30 units Xiaomi Redmi Note 13</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Stock</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.10</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 09:01</td>
+                        </tr>
+                        <!-- Row 4 - Login -->
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #fef3c7; color: #d97706; font-size: 11px; font-weight: 500; border-radius: 12px;">Login</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">abena.mensah</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">General Manager</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Logged in to system</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Auth</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.5</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 09:15</td>
+                        </tr>
+                        <!-- Row 5 - Update -->
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dbeafe; color: #2563eb; font-size: 11px; font-weight: 500; border-radius: 12px;">Update</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">kweku.amponsah</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">Sales Agent</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Updated repayment for Bright Osei — GHS 400</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Repayment</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.67</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 09:45</td>
+                        </tr>
+                        <!-- Row 6 - Create -->
+                        <tr>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">Create</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">kofi.boateng</td>
+                            <td style="padding: 14px 16px;">
+                                <span style="display: inline-block; padding: 3px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; border-radius: 4px;">Sales Administrator</span>
+                            </td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Created user account: afua.asiedu (Sales Agent)</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">User</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">192.168.1.10</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">20 Apr 2026, 10:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Inventory Audit Section -->
+            <div t-if="state.activeTab === 'inventory'" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Inventory Audit Reports</h2>
+                    <p style="font-size: 13px; color: #64748b; margin: 0;">Quarterly and ad-hoc inventory audits</p>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8fafc;">
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Report Title</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Auditor</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Date</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Items Checked</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Discrepancies</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Q1 2026 Inventory Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Apr 10, 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: center; font-weight: 500;">10</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #ef4444; text-align: center; font-weight: 500;">2</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Stock Taking — Branch A</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Mar 28, 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: center; font-weight: 500;">4</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: center; font-weight: 500;">0</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Stock Transfer Verification</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Mar 15, 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: center; font-weight: 500;">5</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #ef4444; text-align: center; font-weight: 500;">3</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #fef3c7; color: #d97706; font-size: 11px; font-weight: 500; border-radius: 12px;">under review</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Q4 2025 Annual Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Jan 15, 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: center; font-weight: 500;">10</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: center; font-weight: 500;">0</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Branch B Stock Count</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Dec 20, 2025</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: center; font-weight: 500;">3</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #ef4444; text-align: center; font-weight: 500;">1</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sales Audit Section -->
+            <div t-if="state.activeTab === 'sales'" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 80px;">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Sales Audit Reports</h2>
+                    <p style="font-size: 13px; color: #64748b; margin: 0;">Monthly and quarterly sales audits</p>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8fafc;">
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Report Title</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Auditor</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Period</th>
+                            <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total Sales</th>
+                            <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Verified</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Variance</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+                            <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">March 2026 Sales Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Mar 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: right; font-weight: 500;">₵36,800</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: right; font-weight: 500;">₵36,800</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: center; font-weight: 500;">None</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">February 2026 Sales Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Feb 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: right; font-weight: 500;">₵22,100</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: right; font-weight: 500;">₵21,900</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #ef4444; text-align: center; font-weight: 500;">₵200</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Q1 2026 Sales Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Q1 2026</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: right; font-weight: 500;">₵72,500</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: right; font-weight: 500;">₵71,800</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #ef4444; text-align: center; font-weight: 500;">₵700</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #fef3c7; color: #d97706; font-size: 11px; font-weight: 500; border-radius: 12px;">under review</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; font-weight: 500;">Q4 2025 Sales Audit</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b;">Adwoa Kusi</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #64748b;">Q4 2025</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #1e293b; text-align: right; font-weight: 500;">₵131,600</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: right; font-weight: 500;">₵131,600</td>
+                            <td style="padding: 14px 16px; font-size: 13px; color: #10b981; text-align: center; font-weight: 500;">None</td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <span style="display: inline-block; padding: 4px 10px; background-color: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 500; border-radius: 12px;">completed</span>
+                            </td>
+                            <td style="padding: 14px 16px; text-align: center;">
+                                <a href="#" style="color: #3b82f6; font-size: 13px; text-decoration: none;">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>
