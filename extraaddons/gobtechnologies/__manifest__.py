@@ -54,6 +54,8 @@
             'gobtechnologies/static/src/xml/dashboard/stock_management.xml',
             'gobtechnologies/static/src/js/static/src/js/dashboard/auditing.js',
             'gobtechnologies/static/src/xml/dashboard/auditing.xml',
+            'gobtechnologies/static/src/js/static/src/js/dashboard/reports.js',
+            'gobtechnologies/static/src/xml/dashboard/reports.xml',
         ],
         'web.assets_backend': [
             'gobtechnologies/static/src/scss/custom_styles.scss',
@@ -72,6 +74,8 @@
             'gobtechnologies/static/src/xml/dashboard/stock_management.xml',
             'gobtechnologies/static/src/js/static/src/js/dashboard/auditing.js',
             'gobtechnologies/static/src/xml/dashboard/auditing.xml',
+            'gobtechnologies/static/src/js/static/src/js/dashboard/reports.js',
+            'gobtechnologies/static/src/xml/dashboard/reports.xml',
         ],
     },
     'license': 'LGPL-3',

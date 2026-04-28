@@ -1,0 +1,320 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.reports">
+        <div class="o_reports_dashboard" style="background-color: #f1f5f9; padding: 24px; height: 100vh; overflow-y: auto;">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0;">Reports</h2>
+                    <p style="color: #64748b; margin: 4px 0 0 0; font-size: 14px;">Role-based analytics and performance reports</p>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Period Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; color: #64748b; background-color: white;">
+                            <span>Monthly</span>
+                            <i class="fa fa-chevron-down" style="font-size: 12px;"/>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <li><a class="dropdown-item" href="#" style="font-size: 14px; color: #64748b; padding: 8px 16px;">Daily</a></li>
+                            <li><a class="dropdown-item" href="#" style="font-size: 14px; color: #64748b; padding: 8px 16px;">Weekly</a></li>
+                            <li><a class="dropdown-item active" href="#" style="font-size: 14px; color: white; background-color: #3b82f6; padding: 8px 16px;">Monthly</a></li>
+                            <li><a class="dropdown-item" href="#" style="font-size: 14px; color: #64748b; padding: 8px 16px;">Annually</a></li>
+                        </ul>
+                    </div>
+                    <!-- Export Button -->
+                    <button class="btn btn-light d-flex align-items-center gap-2" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; color: #64748b; background-color: white;">
+                        <i class="fa fa-download" style="font-size: 14px;"/>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Tabs -->
+            <div class="d-flex gap-2 mb-4 flex-wrap">
+                <button t-on-click="() => state.setActiveTab('repayment')" t-att-class="state.activeTab === 'repayment' ? 'btn btn-primary d-flex align-items-center gap-2' : 'btn btn-light d-flex align-items-center gap-2'" t-att-style="state.activeTab === 'repayment' ? 'background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: white; color: #64748b; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'">
+                    <i class="fa fa-percent" style="font-size: 12px;"/>
+                    <span>Repayment Report</span>
+                </button>
+                <button t-on-click="() => state.setActiveTab('sales')" t-att-class="state.activeTab === 'sales' ? 'btn btn-primary d-flex align-items-center gap-2' : 'btn btn-light d-flex align-items-center gap-2'" t-att-style="state.activeTab === 'sales' ? 'background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: white; color: #64748b; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'">
+                    <i class="fa fa-chart-bar" style="font-size: 12px;"/>
+                    <span>Sales Report</span>
+                </button>
+                <button t-on-click="() => state.setActiveTab('commission')" t-att-class="state.activeTab === 'commission' ? 'btn btn-primary d-flex align-items-center gap-2' : 'btn btn-light d-flex align-items-center gap-2'" t-att-style="state.activeTab === 'commission' ? 'background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: white; color: #64748b; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'">
+                    <i class="fa fa-tachometer-alt" style="font-size: 12px;"/>
+                    <span>Commission &amp; KPI</span>
+                </button>
+                <button t-on-click="() => state.setActiveTab('agentCustomer')" t-att-class="state.activeTab === 'agentCustomer' ? 'btn btn-primary d-flex align-items-center gap-2' : 'btn btn-light d-flex align-items-center gap-2'" t-att-style="state.activeTab === 'agentCustomer' ? 'background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: white; color: #64748b; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'">
+                    <i class="fa fa-handshake" style="font-size: 12px;"/>
+                    <span>Agent-Customer</span>
+                </button>
+                <button t-on-click="() => state.setActiveTab('inventory')" t-att-class="state.activeTab === 'inventory' ? 'btn btn-primary d-flex align-items-center gap-2' : 'btn btn-light d-flex align-items-center gap-2'" t-att-style="state.activeTab === 'inventory' ? 'background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: white; color: #64748b; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'">
+                    <i class="fa fa-box" style="font-size: 12px;"/>
+                    <span>Inventory Report</span>
+                </button>
+            </div>
+
+            <!-- Repayment Report Content -->
+            <div t-if="state.activeTab === 'repayment'">
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 20px;">
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px 0; font-weight: 500;">Overall Repayment %</p>
+                                <h3 style="font-size: 28px; font-weight: 700; color: #60a5fa; margin: 0;">68.3%</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 20px;">
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px 0; font-weight: 500;">Total Due</p>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">₵31,100</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 20px;">
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px 0; font-weight: 500;">Total Repaid</p>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #22c55e; margin: 0;">₵21,250</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 20px;">
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 8px 0; font-weight: 500;">Outstanding</p>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #ef4444; margin: 0;">₵9,850</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row" style="margin-bottom: 80px;">
+                    <!-- Pie Chart - Repayment by Account Status -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 24px;">
+                                <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Repayment by Account Status</h5>
+
+                                <!-- Pie Chart Canvas -->
+                                <div style="height: 250px; position: relative;">
+                                    <canvas t-ref="accountStatusChartCanvas" style="width: 100%; height: 100%;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart - Individual Repayment % -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="card-body" style="padding: 24px;">
+                                <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Individual Repayment %</h5>
+
+                                <!-- Horizontal Bar Chart Canvas -->
+                                <div style="height: 250px; position: relative;">
+                                    <canvas t-ref="individualRepaymentChartCanvas" style="width: 100%; height: 100%;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Report Content -->
+            <div t-if="state.activeTab === 'sales'" style="margin-bottom: 80px;">
+                <!-- Monthly Sales HP vs Repayments Chart -->
+                <div class="card mb-4" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Monthly Sales — HP vs Repayments</h5>
+
+                        <!-- Bar Chart Canvas -->
+                        <div style="height: 300px; position: relative;">
+                            <canvas t-ref="monthlySalesChartCanvas" style="width: 100%; height: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Trend Chart -->
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Sales Trend</h5>
+
+                        <!-- Line Chart Canvas -->
+                        <div style="height: 200px; position: relative;">
+                            <canvas t-ref="salesTrendChartCanvas" style="width: 100%; height: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commission & KPI Content -->
+            <div t-if="state.activeTab === 'commission'" style="margin-bottom: 80px;">
+                <!-- Agent Commission Bar Chart -->
+                <div class="card mb-4" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Agent Commission (5% of Sales)</h5>
+
+                        <!-- Bar Chart Canvas -->
+                        <div style="height: 280px; position: relative;">
+                            <canvas t-ref="agentCommissionChartCanvas" style="width: 100%; height: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Performance Table -->
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 20px 0;">KPI Performance vs Target</h5>
+
+                        <div class="table-responsive">
+                            <table class="table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Agent</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Manager</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Sales</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Target</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Achievement %</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Commission</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Repayment %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Row 1 - Akosua Frimpong -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Akosua Frimpong</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Ama Owusu</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 500;">€18,000</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #94a3b8; text-align: right;">€20,000</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #22c55e;">90.0%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #f97316;">€900</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #64748b;">63.3%</td>
+                                    </tr>
+                                    <!-- Row 2 - Kweku Amponsah -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Kweku Amponsah</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Ama Owusu</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 500;">€8,400</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #94a3b8; text-align: right;">€20,000</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #ef4444;">42.0%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #f97316;">€420</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #64748b;">41.7%</td>
+                                    </tr>
+                                    <!-- Row 3 - Efua Asiedu -->
+                                    <tr>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Efua Asiedu</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Yaw Darko</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 500;">€14,900</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #94a3b8; text-align: right;">€20,000</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #f97316;">74.5%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #f97316;">€745</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 500; color: #64748b;">85%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent-Customer Content -->
+            <div t-if="state.activeTab === 'agentCustomer'" style="margin-bottom: 80px;">
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Agent–Customer Relationship Mining</h5>
+                        <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0;">Detailed breakdown of agent-customer assignments and performance</p>
+
+                        <div class="table-responsive">
+                            <table class="table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Agent</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Sales Manager</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Sales Admin</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Customers</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Sales</th>
+                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Repayment %</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Defaulted</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Completed</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Row 1 - Akosua Frimpong -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div style="width: 28px; height: 28px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">AF</div>
+                                                <span style="font-size: 14px; color: #1e293b; font-weight: 500;">Akosua Frimpong</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Ama Owusu</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">3</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 500;">€18,000</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #f97316;">63.3%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #64748b;">0</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #64748b;">0</td>
+                                    </tr>
+                                    <!-- Row 2 - Kweku Amponsah -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div style="width: 28px; height: 28px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">KA</div>
+                                                <span style="font-size: 14px; color: #1e293b; font-weight: 500;">Kweku Amponsah</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Ama Owusu</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">2</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #ef4444; text-align: right; font-weight: 500;">€4,200</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #ef4444;">42.9%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #ef4444;">1</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #64748b;">0</td>
+                                    </tr>
+                                    <!-- Row 3 - Efua Asiedu -->
+                                    <tr>
+                                        <td style="padding: 16px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div style="width: 28px; height: 28px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;">EA</div>
+                                                <span style="font-size: 14px; color: #1e293b; font-weight: 500;">Efua Asiedu</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Yaw Darko</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">3</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: right; font-weight: 500;">€8,900</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 600; color: #22c55e;">90.4%</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #64748b;">0</td>
+                                        <td style="padding: 16px; font-size: 14px; text-align: center; font-weight: 500; color: #22c55e;">1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Report Content -->
+            <div t-if="state.activeTab === 'inventory'" style="margin-bottom: 80px;">
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 24px 0;">Stock Value by Location</h5>
+
+                        <!-- Bar Chart Canvas -->
+                        <div style="height: 300px; position: relative;">
+                            <canvas t-ref="stockValueChartCanvas" style="width: 100%; height: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </t>
+</templates>

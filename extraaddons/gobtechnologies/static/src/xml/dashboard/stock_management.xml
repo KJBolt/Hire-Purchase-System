@@ -79,24 +79,26 @@
 
             <!-- Tabs -->
             <div class="d-flex gap-2 mb-4">
-                <button class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; font-weight: 500;">Stock List</button>
-                <button class="btn btn-light" style="border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;">Aging Report</button>
-                <button class="btn btn-light" style="border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;">Transfers</button>
+                <button t-on-click="() => state.setActiveTab('stockList')" t-att-class="state.activeTab === 'stockList' ? 'btn btn-primary' : 'btn btn-light'" t-att-style="state.activeTab === 'stockList' ? 'background-color: #3b82f6; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;'">Stock List</button>
+                <button t-on-click="() => state.setActiveTab('agingReport')" t-att-class="state.activeTab === 'agingReport' ? 'btn btn-primary' : 'btn btn-light'" t-att-style="state.activeTab === 'agingReport' ? 'background-color: #3b82f6; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;'">Aging Report</button>
+                <button t-on-click="() => state.setActiveTab('transfers')" t-att-class="state.activeTab === 'transfers' ? 'btn btn-primary' : 'btn btn-light'" t-att-style="state.activeTab === 'transfers' ? 'background-color: #3b82f6; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; font-weight: 500;' : 'border: none; background-color: transparent; color: #64748b; padding: 8px 20px; font-size: 14px; font-weight: 500;'">Transfers</button>
             </div>
 
-            <!-- Search and Filter -->
-            <div class="d-flex gap-3 mb-4">
-                <div class="flex-grow-1 position-relative">
-                    <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
-                    <input type="text" class="form-control" placeholder="Search products..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+            <!-- Stock List Tab Content -->
+            <div t-if="state.activeTab === 'stockList'">
+                <!-- Search and Filter -->
+                <div class="d-flex gap-3 mb-4">
+                    <div class="flex-grow-1 position-relative">
+                        <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
+                        <input type="text" class="form-control" placeholder="Search products..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+                    </div>
+                    <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
+                        <option>All Locations</option>
+                        <option>Main Warehouse</option>
+                        <option>Branch A</option>
+                        <option>Branch B</option>
+                    </select>
                 </div>
-                <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
-                    <option>All Locations</option>
-                    <option>Main Warehouse</option>
-                    <option>Branch A</option>
-                    <option>Branch B</option>
-                </select>
-            </div>
 
             <!-- Products Table -->
             <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 80px;">
@@ -208,6 +210,249 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+            </div>
+
+            <!-- Aging Report Tab Content -->
+            <div t-if="state.activeTab === 'agingReport'" style="margin-bottom: 80px;">
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Stock Aging Report</h5>
+                        <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0;">Items grouped by age in stock</p>
+
+                        <div class="table-responsive">
+                            <table class="table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Product</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Age Bracket</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Days in Stock</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Quantity</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Location</th>
+                                        <th style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Last Transfer</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Adjusted By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Row 1 - iPhone 14 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">iPhone 14</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">90+ days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">110d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">5</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch B</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-01-01</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 2 - Oppo Reno 11 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Oppo Reno 11</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">90+ days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">92d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">9</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch C</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-01-19</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 3 - Infinix Hot 40 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Infinix Hot 40</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #fed7aa; color: #c2410c; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">61-90 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">67d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">18</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch B</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-02-12</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Ama Owusu</td>
+                                    </tr>
+                                    <!-- Row 4 - Tecno Camon 20 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Tecno Camon 20</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">31-60 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">45d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">25</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch A</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-03-06</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 5 - Samsung Galaxy A55 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Samsung Galaxy A55</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">31-60 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">34d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">14</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch A</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-03-13</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Yaw Darko</td>
+                                    </tr>
+                                    <!-- Row 6 - Huawei Nova 12 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Huawei Nova 12</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">28d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">20</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Main Warehouse</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-03-23</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 7 - iPhone 15 Pro -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">iPhone 15 Pro</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">22d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">8</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Main Warehouse</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-03-29</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 8 - Samsung Galaxy S24 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Samsung Galaxy S24</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">15d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">12</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Main Warehouse</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-04-05</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 9 - Xiaomi Redmi Note 13 -->
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Xiaomi Redmi Note 13</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">10d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">30</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Main Warehouse</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-04-10</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Kofi Boateng</td>
+                                    </tr>
+                                    <!-- Row 10 - Itel A70 -->
+                                    <tr>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; font-weight: 500;">Itel A70</td>
+                                        <td style="padding: 16px; text-align: center;">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">0-30 days</span>
+                                        </td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 600;">5d</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #1e293b; text-align: center; font-weight: 500;">40</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Branch A</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b; text-align: center;">2026-04-15</td>
+                                        <td style="padding: 16px; font-size: 14px; color: #64748b;">Efua Asiedu</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfers Tab Content -->
+            <div t-if="state.activeTab === 'transfers'" style="margin-bottom: 80px;">
+                <div class="card" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="card-body" style="padding: 24px;">
+                        <h5 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 20px 0;">Recent Stock Transfers</h5>
+
+                        <!-- Transfer Item 1 - Xiaomi Redmi Note 13 -->
+                        <div class="d-flex align-items-center justify-content-between" style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 40px; height: 40px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa fa-exchange" style="color: #3b82f6; font-size: 16px;"/>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500; color: #1e293b; margin: 0;">Xiaomi Redmi Note 13</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Main Warehouse → Branch A · 10 units</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0;">Kofi Boateng</p>
+                                <p style="font-size: 11px; color: #3b82f6; margin: 2px 0 0 0;">2026-04-15</p>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Item 2 - Itel A70 -->
+                        <div class="d-flex align-items-center justify-content-between" style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 40px; height: 40px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa fa-exchange" style="color: #3b82f6; font-size: 16px;"/>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500; color: #1e293b; margin: 0;">Itel A70</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Main Warehouse → Branch A · 20 units</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0;">Efua Asiedu</p>
+                                <p style="font-size: 11px; color: #3b82f6; margin: 2px 0 0 0;">2026-04-15</p>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Item 3 - Samsung Galaxy A55 -->
+                        <div class="d-flex align-items-center justify-content-between" style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 40px; height: 40px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa fa-exchange" style="color: #3b82f6; font-size: 16px;"/>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500; color: #1e293b; margin: 0;">Samsung Galaxy A55</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Branch B → Branch A · 5 units</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0;">Yaw Darko</p>
+                                <p style="font-size: 11px; color: #3b82f6; margin: 2px 0 0 0;">2026-03-13</p>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Item 4 - Tecno Camon 20 -->
+                        <div class="d-flex align-items-center justify-content-between" style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 40px; height: 40px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa fa-exchange" style="color: #3b82f6; font-size: 16px;"/>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500; color: #1e293b; margin: 0;">Tecno Camon 20</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Main Warehouse → Branch A · 15 units</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0;">Kofi Boateng</p>
+                                <p style="font-size: 11px; color: #3b82f6; margin: 2px 0 0 0;">2026-03-06</p>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Item 5 - Huawei Nova 12 -->
+                        <div class="d-flex align-items-center justify-content-between" style="padding: 16px 0;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 40px; height: 40px; background-color: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa fa-exchange" style="color: #3b82f6; font-size: 16px;"/>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500; color: #1e293b; margin: 0;">Huawei Nova 12</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Main Warehouse → Branch B · 8 units</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 12px; color: #64748b; margin: 0;">Kofi Boateng</p>
+                                <p style="font-size: 11px; color: #3b82f6; margin: 2px 0 0 0;">2026-03-23</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

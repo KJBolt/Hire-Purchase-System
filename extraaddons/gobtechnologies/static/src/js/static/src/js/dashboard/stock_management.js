@@ -5,10 +5,13 @@ import {Component, useState} from '@odoo/owl';
 export class StockManagement extends Component {
     setup() {
         this.state = useState({
-            // Add your state properties here
+            activeTab: 'stockList',
         });
+        this.state.setActiveTab = (tab) => {
+            this.state.activeTab = tab;
+        };
     }
-    
+
 }
 
 StockManagement.template = "gobtechnologies.stock_management";

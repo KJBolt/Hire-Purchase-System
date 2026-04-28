@@ -47,7 +47,7 @@
                     <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div class="card-body d-flex align-items-center" style="padding: 20px;">
                             <div style="background-color: #fef3c7; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                <i class="fa fa-user-tie" style="color: #f59e0b; font-size: 20px;"/>
+                                <i class="fa fa-users" style="color: #f59e0b; font-size: 20px;"/>
                             </div>
                             <div>
                                 <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">3</h3>
@@ -61,7 +61,7 @@
                     <div class="card h-100" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div class="card-body d-flex align-items-center" style="padding: 20px;">
                             <div style="background-color: #e0e7ff; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                <i class="fa fa-user-shield" style="color: #6366f1; font-size: 20px;"/>
+                                <i class="fa fa-user" style="color: #6366f1; font-size: 20px;"/>
                             </div>
                             <div>
                                 <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">2</h3>

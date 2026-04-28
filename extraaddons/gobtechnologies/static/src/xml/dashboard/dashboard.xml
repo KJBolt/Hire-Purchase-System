@@ -27,7 +27,7 @@
                                     </p>
                                 </div>
                                 <div style="background-color: #e0e7ff; padding: 12px; border-radius: 10px;">
-                                    <i class="fa fa-chart-line" style="color: #6366f1; font-size: 20px;"/>
+                                    <i class="fa fa-percent" style="color: #6366f1; font-size: 20px;"/>
                                 </div>
                             </div>
                         </div>
@@ -46,7 +46,7 @@
                                     </p>
                                 </div>
                                 <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
-                                    <i class="fa fa-euro-sign" style="color: #10b981; font-size: 20px;"/>
+                                    <i class="fa fa-user" style="color: #10b981; font-size: 20px;"/>
                                 </div>
                             </div>
                         </div>

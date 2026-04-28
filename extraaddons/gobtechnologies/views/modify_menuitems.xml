@@ -48,7 +48,7 @@
 
 
 
-    <!-- Dashboard Menus -->
+    <!-- Dashboard Actions -->
     <record id="action_dashboard" model="ir.actions.client">
         <field name="name">Dashboard</field>
         <field name="tag">gobtechnologies.dashboard</field>
@@ -73,9 +73,14 @@
         <field name="name">Auditing</field>
         <field name="tag">gobtechnologies.auditing</field>
     </record>
+
+    <record id="action_reports" model="ir.actions.client">
+        <field name="name">Reports</field>
+        <field name="tag">gobtechnologies.reports</field>
+    </record>
     
 
-    
+    <!-- Dashboard Menu Items -->
     <menuitem 
         id="menu_dashboard" 
         name="Dashboard"
@@ -108,7 +113,7 @@
         id="menu_reports" 
         name="Reports"
         parent="menu_dashboard"
-        action="action_nuovo_pay"
+        action="action_reports"
     />
 
     <menuitem 
