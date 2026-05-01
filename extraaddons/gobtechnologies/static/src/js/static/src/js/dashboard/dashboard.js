@@ -1,18 +1,58 @@
 /** @odoo-module **/
 import {registry} from '@web/core/registry';
 import {loadJS} from '@web/core/assets';
-import {Component, onWillStart, onMounted, useRef} from '@odoo/owl';
+import {Component, onWillStart, onMounted, useRef, useState} from '@odoo/owl';
+import {useService} from '@web/core/utils/hooks';
 
 export class Dashboard extends Component {
     setup() {
+        this.orm = useService('orm');
         this.salesChartRef = useRef('salesChartCanvas');
         this.donutChartRef = useRef('donutChartCanvas');
         this.agentsChartRef = useRef('agentsChartCanvas');
         this.stockChartRef = useRef('stockChartCanvas');
+
+        // Helper function to format numbers with commas
+        this.formatNumberWithCommas = (num) => {
+            return num.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+
+        // States for dashboard data
+        this.state = useState({
+            totalRepayment: 0,
+            salesManagersCount: 0,
+            salesAgentsCount: 0,
+            dailyCommission: 0,
+            monthlyCommission: 0,
+            totalStockValue: 0,
+            monthlySales: 0,
+            overdueAccounts: 0,
+            chartData: {
+                currentYear: [0, 0, 0, 0, 0, 0],
+                previousYear: [0, 0, 0, 0, 0, 0],
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+            },
+            loading: true
+        });
         
         onWillStart(async () => {
             try {
                 await loadJS("https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js");
+                // Fetch data on component start
+                await Promise.all([
+                    this.fetchTotalRepayment(),
+                    this.fetchSalesManagersCount(),
+                    this.fetchSalesAgentsCount(),
+                    this.fetchDailyCommission(),
+                    this.fetchMonthlyCommission(),
+                    this.fetchTotalStockValue(),
+                    this.fetchMonthlySales(),
+                    this.fetchOverdueAccounts(),
+                    this.fetchChartData()
+                ]);
             } catch (error) {
                 console.error("Error loading Chart.js:", error);
             }
@@ -21,6 +61,212 @@ export class Dashboard extends Component {
         onMounted(() => {
             this.renderCharts();
         });
+    }
+
+    // Fetch Sales Managers Count  
+    async fetchSalesManagersCount() {
+    try {
+            // Fetch sales managers count from res.partner model
+            const result = await this.orm.searchCount('res.partner', [
+                ['role', '=', 'sales_manager']
+            ]);
+            
+            // Update state with sales managers count
+            this.state.salesManagersCount = result;
+        } catch (error) {
+            console.error('Error fetching sales managers count:', error);
+        }
+    }
+
+    // Fetch Sales Agents Count
+    async fetchSalesAgentsCount() {
+        try {
+            // Fetch sales agents count from res.partner model
+            const result = await this.orm.searchCount('res.partner', [
+                ['role', '=', 'sales_agent']
+            ]);
+            
+            // Update state with sales agents count
+            this.state.salesAgentsCount = result;
+        } catch (error) {
+            console.error('Error fetching sales agents count:', error);
+        }
+    }
+
+    // Fetch Daily Commission
+    async fetchDailyCommission() {
+        try {
+            // Get today's date
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Fetch sales commissions from repayment contracts created today
+            const result = await this.orm.searchRead('repayment', [
+                ['create_date', '>=', today + ' 00:00:00'],
+                ['create_date', '<=', today + ' 23:59:59']
+            ], ['sales_commission']);
+            
+            // Calculate total daily commission
+            const total = result.reduce((sum, record) => sum + (record.sales_commission || 0), 0);
+            
+            // Update state with daily commission
+            this.state.dailyCommission = total;
+        } catch (error) {
+            console.error('Error fetching daily commission:', error);
+        }
+    }
+
+    // Fetch Monthly Commission
+    async fetchMonthlyCommission() {
+        try {
+            // Get current month's first and last day
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            
+            // Fetch sales commissions from repayment contracts created this month
+            const result = await this.orm.searchRead('repayment', [
+                ['create_date', '>=', firstDay + ' 00:00:00'],
+                ['create_date', '<', lastDay + ' 00:00:00']
+            ], ['sales_commission']);
+            
+            // Calculate total monthly commission
+            const total = result.reduce((sum, record) => sum + (record.sales_commission || 0), 0);
+            
+            // Update state with monthly commission
+            this.state.monthlyCommission = total;
+        } catch (error) {
+            console.error('Error fetching monthly commission:', error);
+        }
+    }
+
+    // Fetch Total Stock Value
+    async fetchTotalStockValue() {
+        try {
+            // Fetch total value from product.product model
+            const result = await this.orm.searchRead('product.product', [], ['total_value']);
+            
+            // Calculate total stock value
+            const total = result.reduce((sum, record) => sum + (record.total_value || 0), 0);
+            
+            // Update state with total stock value
+            this.state.totalStockValue = total;
+        } catch (error) {
+            console.error('Error fetching total stock value:', error);
+        }
+    }
+
+    // Fetch Monthly Sales
+    async fetchMonthlySales() {
+        try {
+            // Get current month's first and last day
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            
+            // Fetch selling prices from fully paid repayment contracts created this month
+            const result = await this.orm.searchRead('repayment', [
+                ['create_date', '>=', firstDay + ' 00:00:00'],
+                ['create_date', '<', lastDay + ' 00:00:00'],
+                ['state', '=', 'paid']
+            ], ['selling_price']);
+            
+            // Calculate total monthly sales from fully paid contracts only
+            const total = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
+            
+            // Update state with monthly sales
+            this.state.monthlySales = total;
+        } catch (error) {
+            console.error('Error fetching monthly sales:', error);
+        }
+    }
+
+    // Fetch Overdue Accounts
+    async fetchOverdueAccounts() {
+        try {
+            // Fetch count of overdue accounts using overdue_status field
+            const result = await this.orm.searchCount('repayment', [
+                ['overdue_status', '=', true]
+            ]);
+            
+            // Update state with overdue accounts count
+            this.state.overdueAccounts = result;
+            
+            console.log('Overdue accounts:', result);
+        } catch (error) {
+            console.error('Error fetching overdue accounts:', error);
+        }
+    }
+
+    // Fetch Total Repayment
+    async fetchTotalRepayment() {
+        try {
+            // Fetch total repayment amount from Repayment model
+            const result = await this.orm.searchRead('repayment', [], ['repayment']);
+            
+            // Calculate total repayment amount
+            const total = result.reduce((sum, record) => sum + (record.repayment || 0), 0);
+            
+            // Update state with formatted total
+            this.state.totalRepayment = total;
+            this.state.loading = false;
+            
+            console.log('Total repayment amount:', total);
+        } catch (error) {
+            console.error('Error fetching total repayment:', error);
+            this.state.loading = false;
+        }
+    }
+
+    // Fetch Chart Data for Monthly Sales Performance
+    async fetchChartData() {
+        try {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const previousYear = currentYear - 1;
+            
+            // Initialize arrays for 6 months (Jan-Jun)
+            const currentYearData = [0, 0, 0, 0, 0, 0];
+            const previousYearData = [0, 0, 0, 0, 0, 0];
+            
+            // Fetch current year data (Jan-Jun)
+            for (let month = 0; month < 6; month++) {
+                const firstDay = new Date(currentYear, month, 1).toISOString().split('T')[0];
+                const lastDay = new Date(currentYear, month + 1, 0).toISOString().split('T')[0];
+                
+                const result = await this.orm.searchRead('repayment', [
+                    ['create_date', '>=', firstDay + ' 00:00:00'],
+                    ['create_date', '<', lastDay + ' 00:00:00'],
+                    ['state', '=', 'paid']
+                ], ['selling_price']);
+                
+                currentYearData[month] = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
+            }
+            
+            // Fetch previous year data (Jan-Jun)
+            for (let month = 0; month < 6; month++) {
+                const firstDay = new Date(previousYear, month, 1).toISOString().split('T')[0];
+                const lastDay = new Date(previousYear, month + 1, 0).toISOString().split('T')[0];
+                
+                const result = await this.orm.searchRead('repayment', [
+                    ['create_date', '>=', firstDay + ' 00:00:00'],
+                    ['create_date', '<', lastDay + ' 00:00:00'],
+                    ['state', '=', 'paid']
+                ], ['selling_price']);
+                
+                previousYearData[month] = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
+            }
+            
+            // Update state with chart data
+            this.state.chartData = {
+                currentYear: currentYearData,
+                previousYear: previousYearData,
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+            };
+            
+            console.log('Chart data fetched:', { currentYear: currentYearData, previousYear: previousYearData });
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+        }
     }
     
     renderCharts() {
@@ -34,15 +280,15 @@ export class Dashboard extends Component {
             new Chart(this.salesChartRef.el.getContext("2d"), {
                 type: "bar",
                 data: {
-                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                    labels: this.state.chartData.labels,
                     datasets: [{
                         label: "Current Year",
-                        data: [120, 190, 150, 250, 220, 300],
+                        data: this.state.chartData.currentYear,
                         backgroundColor: "#3b82f6",
                         borderRadius: 6,
                     }, {
                         label: "Previous Year",
-                        data: [100, 150, 140, 200, 180, 250],
+                        data: this.state.chartData.previousYear,
                         backgroundColor: "#10b981",
                         borderRadius: 6,
                     }]

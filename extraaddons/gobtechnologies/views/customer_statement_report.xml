@@ -127,6 +127,9 @@
                             <field name="created_by" />
                         </group>
                     </group>
+                    <group>
+                        <field name="sales_commission" readonly="1" />
+                    </group>
 
                     <notebook>
                         <!-- Invoice Details -->
@@ -352,15 +355,18 @@
                 <field name="unique_id"/>
                 <field name="customer_name"/>
                 <field name="created_by"/>
-                <field name="gps_location"/>
+                <field name="create_date"/>
+                <field name="sales_commission"/>
+                <field name="gps_location" optional="Hidden"/>
                 <field name="plan" optional="Hidden"/>
-                <field name="start_date"/>
-                <field name="end_date"/>
+                <field name="start_date" optional="Hidden"/>
+                <field name="end_date" optional="Hidden"/>
                 <field name="selling_price"/>
                 <field name="deposit"/>
-                <field name="repayment"/>
-                <field name="repayment_date"/>
-                <field name="repayment_frequency"/>
+                <field name="repayment" sum="Total"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="repayment_date" optional="Hidden"/>
+                <field name="repayment_frequency" optional="Hidden"/>
                 <field name="expected_to_pay"/>
                 <field name="duration_left" optional="Hidden"/>
                 <field name="due_date" optional="HitreeRepaymentdden"/>

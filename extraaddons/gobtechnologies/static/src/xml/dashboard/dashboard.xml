@@ -15,16 +15,16 @@
 
             <!-- KPI Cards Row 1 -->
             <div class="row mb-2">
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">OVERALL REPAYMENT %</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">68.3%</h3>
-                                    <p style="color: #10b981; font-size: 12px; margin-top: 8px;">
-                                        <i class="fa fa-arrow-up"/> +2.4% from last month
-                                    </p>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">OVERALL REPAYMENT</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.totalRepayment)"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #e0e7ff; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-percent" style="color: #6366f1; font-size: 20px;"/>
@@ -34,16 +34,16 @@
                     </div>
                 </div>
                 
-                <div class="col-md-4 mb-2">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-2">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES MANAGERS</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">2</h3>
-                                    <p style="color: #10b981; font-size: 12px; margin-top: 8px;">
-                                        Active managers
-                                    </p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else=""><t t-esc="state.salesManagersCount"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-user" style="color: #10b981; font-size: 20px;"/>
@@ -53,19 +53,38 @@
                     </div>
                 </div>
                 
-                <div class="col-md-4 mb-2">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-2">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES AGENTS</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">3</h3>
-                                    <p style="color: #10b981; font-size: 12px; margin-top: 8px;">
-                                        <i class="fa fa-arrow-up"/> +1 this month
-                                    </p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else=""><t t-esc="state.salesAgentsCount"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-users" style="color: #10b981; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">DAILY COMMISSION</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.dailyCommission)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-money" style="color: #10b981; font-size: 20px;"/>
                                 </div>
                             </div>
                         </div>
@@ -75,16 +94,16 @@
 
             <!-- KPI Cards Row 2 -->
             <div class="row mb-4">
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL STOCK VALUE</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">₵400K</h3>
-                                    <p style="color: #10b981; font-size: 12px; margin-top: 8px;">
-                                        Across all branches
-                                    </p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.totalStockValue)"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #dbeafe; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-user-plus" style="color: #3b82f6; font-size: 20px;"/>
@@ -94,16 +113,16 @@
                     </div>
                 </div>
                 
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">MONTHLY SALES</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">₵52K</h3>
-                                    <!-- <p style="color: #f59e0b; font-size: 12px; margin-top: 8px;">
-                                        <i class="fa fa-clock"/> Requires attention
-                                    </p> -->
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.monthlySales)"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #fef3c7; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-tasks" style="color: #f59e0b; font-size: 20px;"/>
@@ -113,19 +132,38 @@
                     </div>
                 </div>
                 
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">OVERDUE ACCOUNTS</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">1</h3>
-                                    <p style="color: #10b981; font-size: 12px; margin-top: 8px;">
-                                        <i class="fa fa-check"/> On track
-                                    </p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else=""><t t-esc="state.overdueAccounts"/></t>
+                                    </h3>
                                 </div>
                                 <div style="background-color: #e0e7ff; padding: 12px; border-radius: 10px;">
                                     <i class="fa fa-folder-open" style="color: #6366f1; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">MONTHLY COMMISSION</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.monthlyCommission)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-money" style="color: #10b981; font-size: 20px;"/>
                                 </div>
                             </div>
                         </div>

@@ -266,6 +266,14 @@ class Repayment(models.Model):
         required=True
     )
 
+    sales_commission = fields.Float(
+        string="Sales Commission", 
+        compute='_compute_sales_commission', 
+        store=True
+    )
+    
+
+
     plan = fields.Selection([
         ('30 days', '30 days'),
         ('60 days', '60 days'),
@@ -378,6 +386,17 @@ class Repayment(models.Model):
                 ('res_field', '=', 'mobile_money_statement')
             ], limit=1)
             record.mobile_money_statement_filename = attachment.name if attachment else False
+
+    @api.depends('product_lines.product_id')
+    def _compute_sales_commission(self):
+        for record in self:
+            total_commission = 0.0
+            if record.product_lines:
+                for product_line in record.product_lines:
+                    if product_line.product_id and product_line.product_id.product_tmpl_id:
+                        commission = product_line.product_id.product_tmpl_id.sales_commission_value or 0.0
+                        total_commission += commission
+            record.sales_commission = total_commission
 
     # Compute utility bill filename
     @api.depends('utility_bill')
