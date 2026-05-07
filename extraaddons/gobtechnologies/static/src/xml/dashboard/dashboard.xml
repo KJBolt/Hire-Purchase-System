@@ -203,7 +203,7 @@
                             <div style="height: 250px; position: relative;">
                                 <canvas t-ref="donutChartCanvas"/>
                                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-                                    <h3 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0;">68.3%</h3>
+                                    <h3 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0;" t-esc="state.paymentDistribution.paid + '%'"/>
                                     <p style="color: #6c757d; font-size: 12px; margin: 0;">Paid</p>
                                 </div>
                             </div>
@@ -249,72 +249,43 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 32px; height: 32px; background-color: #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">JD</div>
-                                                <span style="font-weight: 500;">John Doe</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">iPhone 15 Pro</td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">8/12</td>
-                                        <td style="padding: 15px 20px; border: none; font-weight: 600;">€1,299</td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 80px; height: 6px; background-color: #e5e7eb; border-radius: 3px; margin-right: 10px; overflow: hidden;">
-                                                    <div style="width: 67%; height: 100%; background-color: #3b82f6; border-radius: 3px;"/>
+                                    <t t-foreach="state.customerInstallments" t-as="installment" t-key="installment.unique_id">
+                                        <tr>
+                                            <td style="padding: 15px 20px; border: none;">
+                                                <div class="d-flex align-items-center">
+                                                    <div t-attf-style="width: 32px; height: 32px; background-color: #{installment.status_color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">
+                                                        <t t-esc="installment.customer_initials"/>
+                                                    </div>
+                                                    <span style="font-weight: 500;" t-esc="installment.customer_name"/>
                                                 </div>
-                                                <span style="font-size: 12px; color: #6c757d;">67%</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <span style="background-color: #d1fae5; color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Active</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 32px; height: 32px; background-color: #ec4899; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">JS</div>
-                                                <span style="font-weight: 500;">Jane Smith</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">MacBook Air</td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">10/12</td>
-                                        <td style="padding: 15px 20px; border: none; font-weight: 600;">€1,499</td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 80px; height: 6px; background-color: #e5e7eb; border-radius: 3px; margin-right: 10px; overflow: hidden;">
-                                                    <div style="width: 83%; height: 100%; background-color: #10b981; border-radius: 3px;"/>
+                                            </td>
+                                            <td style="padding: 15px 20px; border: none; color: #6c757d;" t-esc="installment.product"/>
+                                            <td style="padding: 15px 20px; border: none; color: #6c757d;" t-esc="installment.installments"/>
+                                            <td style="padding: 15px 20px; border: none; font-weight: 600;">₵<t t-esc="formatNumberWithCommas(installment.total_price)"/></td>
+                                            <td style="padding: 15px 20px; border: none;">
+                                                <div class="d-flex align-items-center">
+                                                    <div style="width: 80px; height: 6px; background-color: #e5e7eb; border-radius: 3px; margin-right: 10px; overflow: hidden;">
+                                                        <div t-attf-style="width: #{installment.paid_percentage}%; height: 100%; background-color: #{installment.status_color}; border-radius: 3px;"/>
+                                                    </div>
+                                                    <span style="font-size: 12px; color: #6c757d;"><t t-esc="installment.paid_percentage"/>%</span>
                                                 </div>
-                                                <span style="font-size: 12px; color: #6c757d;">83%</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <span style="background-color: #d1fae5; color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Active</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 32px; height: 32px; background-color: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">MR</div>
-                                                <span style="font-weight: 500;">Mike Ross</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">iPad Pro</td>
-                                        <td style="padding: 15px 20px; border: none; color: #6c757d;">3/12</td>
-                                        <td style="padding: 15px 20px; border: none; font-weight: 600;">€899</td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 80px; height: 6px; background-color: #e5e7eb; border-radius: 3px; margin-right: 10px; overflow: hidden;">
-                                                    <div style="width: 25%; height: 100%; background-color: #ef4444; border-radius: 3px;"/>
+                                            </td>
+                                            <td style="padding: 15px 20px; border: none;">
+                                                <span t-attf-style="background-color: #{installment.status_color}20; color: #{installment.status_color}; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;" t-esc="installment.status"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-if="state.customerInstallments.length === 0">
+                                        <tr>
+                                            <td colspan="6" style="padding: 40px 20px; border: none; text-align: center; color: #6c757d;">
+                                                <div style="padding: 20px;">
+                                                    <i class="fa fa-users" style="font-size: 48px; color: #e5e7eb; margin-bottom: 15px; display: block;"/>
+                                                    <p style="margin: 0; font-size: 16px;">No active customer installments found</p>
+                                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #9ca3af;">Active installments will appear here once customers are added</p>
                                                 </div>
-                                                <span style="font-size: 12px; color: #6c757d;">25%</span>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 15px 20px; border: none;">
-                                            <span style="background-color: #fee2e2; color: #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">At Risk</span>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                        </tr>
+                                    </t>
                                 </tbody>
                             </table>
                         </div>

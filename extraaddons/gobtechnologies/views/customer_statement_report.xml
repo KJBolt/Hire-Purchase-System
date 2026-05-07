@@ -154,6 +154,7 @@
                                             <field name="product_id"/>
                                             <field name="quantity"/>
                                             <field name="price"/>
+                                            <field name="lot_id"/>
                                         </tree>
                                     </field>
                                 </group>
@@ -342,6 +343,7 @@
                     <field name="product_id"/>
                     <field name="quantity"/>
                     <field name="price"/>
+                    <field name="lot_id"/>
                 </group>
             </form>
         </field>

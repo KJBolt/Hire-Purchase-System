@@ -30,6 +30,13 @@ export class Dashboard extends Component {
             totalStockValue: 0,
             monthlySales: 0,
             overdueAccounts: 0,
+            paymentDistribution: {
+                paid: 0,
+                pending: 0,
+                overdue: 0
+            },
+            customerInstallments: [],
+            topAgents: [],
             chartData: {
                 currentYear: [0, 0, 0, 0, 0, 0],
                 previousYear: [0, 0, 0, 0, 0, 0],
@@ -51,6 +58,9 @@ export class Dashboard extends Component {
                     this.fetchTotalStockValue(),
                     this.fetchMonthlySales(),
                     this.fetchOverdueAccounts(),
+                    this.fetchPaymentDistribution(),
+                    this.fetchCustomerInstallments(),
+                    this.fetchTopAgents(),
                     this.fetchChartData()
                 ]);
             } catch (error) {
@@ -217,6 +227,45 @@ export class Dashboard extends Component {
         }
     }
 
+    // Fetch Payment Distribution
+    async fetchPaymentDistribution() {
+        try {
+            // Call the get_payment_distribution method from the repayment model
+            const result = await this.orm.call('repayment', 'get_payment_distribution', []);
+            
+            // Update state with payment distribution data
+            this.state.paymentDistribution = result;
+        } catch (error) {
+            console.error('Error fetching payment distribution:', error);
+        }
+    }
+
+    // Fetch Customer Installments
+    async fetchCustomerInstallments() {
+        try {
+            // Call the get_active_customer_installments method from the repayment model
+            const result = await this.orm.call('repayment', 'get_active_customer_installments', [10]);
+            
+            // Update state with customer installments data
+            this.state.customerInstallments = result;
+        } catch (error) {
+            console.error('Error fetching customer installments:', error);
+        }
+    }
+
+    // Fetch Top Agents
+    async fetchTopAgents() {
+        try {
+            // Call the get_top_agents_by_performance method from the repayment model
+            const result = await this.orm.call('repayment', 'get_top_agents_by_performance', [5]);
+            
+            // Update state with top agents data
+            this.state.topAgents = result;
+        } catch (error) {
+            console.error('Error fetching top agents:', error);
+        }
+    }
+
     // Fetch Chart Data for Monthly Sales Performance
     async fetchChartData() {
         try {
@@ -317,7 +366,11 @@ export class Dashboard extends Component {
                 data: {
                     labels: ["Paid", "Pending", "Overdue"],
                     datasets: [{
-                        data: [68.3, 20.5, 11.2],
+                        data: [
+                            this.state.paymentDistribution.paid,
+                            this.state.paymentDistribution.pending,
+                            this.state.paymentDistribution.overdue
+                        ],
                         backgroundColor: ["#3b82f6", "#ef4444", "#10b981"],
                         borderWidth: 0,
                         cutout: "75%"
@@ -335,14 +388,22 @@ export class Dashboard extends Component {
         
         // Agents Horizontal Bar
         if (this.agentsChartRef.el) {
+            // Extract agent names and percentages from state
+            const agentNames = this.state.topAgents.map(agent => agent.agent_name);
+            const agentPercentages = this.state.topAgents.map(agent => agent.repayment_percentage);
+            
+            // Generate colors for bars
+            const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+            const backgroundColors = agentNames.map((_, index) => colors[index % colors.length]);
+            
             new Chart(this.agentsChartRef.el.getContext("2d"), {
                 type: "bar",
                 data: {
-                    labels: ["Agent A", "Agent B", "Agent C", "Agent D"],
+                    labels: agentNames.length > 0 ? agentNames : ["No Data"],
                     datasets: [{
                         label: "Repayment %",
-                        data: [85, 72, 65, 58],
-                        backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"],
+                        data: agentPercentages.length > 0 ? agentPercentages : [0],
+                        backgroundColor: backgroundColors,
                         borderRadius: 4,
                         barThickness: 20
                     }]
@@ -351,7 +412,26 @@ export class Dashboard extends Component {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const agentIndex = context.dataIndex;
+                                    const agent = this.state.topAgents[agentIndex];
+                                    if (agent) {
+                                        return [
+                                            `Repayment: ${agent.repayment_percentage}%`,
+                                            `Total Sales: ₵${agent.total_value.toLocaleString()}`,
+                                            `Paid Sales: ₵${agent.paid_value.toLocaleString()}`,
+                                            `Contracts: ${agent.paid_repayments}/${agent.total_repayments}`
+                                        ];
+                                    }
+                                    return `Repayment: ${context.parsed.x}%`;
+                                }.bind(this)
+                            }
+                        }
+                    },
                     scales: {
                         x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' } },
                         y: { grid: { display: false } }

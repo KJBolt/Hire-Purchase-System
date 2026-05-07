@@ -29,13 +29,31 @@ class RepaymentItemLine(models.Model):
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
     price = fields.Float(string='Price', required=True)
+    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI', domain="[('product_id', '=', product_id)]")
 
 
     @api.onchange('product_id')
-    def _onchange_product_id(self):
+    def _onchange_product_id(self):          
         """Fetch the price of the selected product."""
         if self.product_id:
             self.price = self.product_id.lst_price * self.quantity
+
+            # Reset serial number when product changes
+            self.lot_id = False
+        else:
+            self.lot_id = False
+            self.price = 0.0
+
+    # Add this method to check availability
+    @api.constrains('lot_id', 'product_id')
+    def _check_serial_availability(self):
+        """Ensure selected serial number belongs to the product and is available."""
+        for record in self:
+            if record.lot_id and record.product_id:
+                if record.lot_id.product_id != record.product_id:
+                    raise ValidationError("Selected serial number doesn't belong to this product")
+                if record.lot_id.product_qty <= 0:
+                    raise ValidationError("This serial number is not available")
 
     @api.onchange('quantity')
     def _onchange_quantity(self):
@@ -1540,6 +1558,189 @@ class Repayment(models.Model):
                 record.overdue_amount = record.expected_to_pay - total_paid
             else:
                 record.overdue_amount = 0.0
+
+    @api.model
+    def get_payment_distribution(self):
+        """
+        Calculate payment distribution percentages for all repayments
+        Returns: dict with paid, pending, and overdue percentages
+        """
+        today = fields.Date.today()
+        
+        # Get all repayment records
+        all_repayments = self.search([])
+        total_count = len(all_repayments)
+        
+        if total_count == 0:
+            return {'paid': 0.0, 'pending': 0.0, 'overdue': 0.0}
+        
+        paid_count = 0
+        pending_count = 0
+        overdue_count = 0
+        
+        for repayment in all_repayments:
+            # Paid: state is 'paid' or total_paid >= selling_price
+            if repayment.state == 'paid' or repayment.total_paid >= repayment.selling_price:
+                paid_count += 1
+            # Overdue: overdue_status is True and not fully paid
+            elif repayment.overdue_status and repayment.total_paid < repayment.selling_price:
+                overdue_count += 1
+            # Pending: everything else (progress, draft, etc.)
+            else:
+                pending_count += 1
+        
+        # Calculate percentages
+        paid_percentage = (paid_count / total_count) * 100 if total_count > 0 else 0
+        pending_percentage = (pending_count / total_count) * 100 if total_count > 0 else 0
+        overdue_percentage = (overdue_count / total_count) * 100 if total_count > 0 else 0
+        
+        return {
+            'paid': round(paid_percentage, 1),
+            'pending': round(pending_percentage, 1),
+            'overdue': round(overdue_percentage, 1)
+        }
+
+    @api.model
+    def get_active_customer_installments(self, limit=10):
+        """
+        Fetch active customer installments for dashboard table
+        Returns: list of dicts with customer installment data
+        """
+        # Get active repayments (not paid, not terminated)
+        active_repayments = self.search([
+            ('state', 'in', ['draft', 'progress', 'termination_warning'])
+        ], order='create_date desc', limit=limit)
+        
+        installments = []
+        for repayment in active_repayments:
+            # Get product information (first product if multiple)
+            product_name = "No Product"
+            if repayment.product_lines:
+                product_name = repayment.product_lines[0].product_id.name
+            
+            # Calculate installments progress
+            total_installments = 0
+            paid_installments = 0
+            
+            # Estimate installments based on payment frequency and dates
+            if repayment.start_date and repayment.end_date and repayment.repayment_frequency:
+                if repayment.repayment_frequency == '0':  # Cash
+                    total_installments = 1
+                    paid_installments = 1 if repayment.total_paid >= repayment.selling_price else 0
+                else:
+                    freq_days = int(repayment.repayment_frequency)
+                    total_days = (repayment.end_date - repayment.start_date).days
+                    total_installments = max(1, total_days // freq_days)
+                    
+                    # Count actual payments made
+                    paid_installments = len(repayment.payment_lines)
+            
+            # Determine status
+            status = 'Active'
+            status_color = '#10b981'  # Green
+            if repayment.overdue_status:
+                status = 'At Risk'
+                status_color = '#ef4444'  # Red
+            elif repayment.state == 'termination_warning':
+                status = 'Warning'
+                status_color = '#f59e0b'  # Orange
+            elif repayment.state == 'draft':
+                status = 'Draft'
+                status_color = '#6b7280'  # Gray
+            
+            installments.append({
+                'customer_name': repayment.customer_name.name if repayment.customer_name else 'Unknown',
+                'customer_initials': self._get_customer_initials(repayment.customer_name.name if repayment.customer_name else 'Unknown'),
+                'product': product_name,
+                'installments': f"{paid_installments}/{total_installments}",
+                'total_price': repayment.selling_price,
+                'paid_percentage': round(repayment.percentage_paid, 0),
+                'status': status,
+                'status_color': status_color,
+                'unique_id': repayment.unique_id
+            })
+        
+        return installments
+    
+    def _get_customer_initials(self, name):
+        """Get initials from customer name"""
+        if not name:
+            return 'NA'
+        
+        parts = name.split()
+        if len(parts) >= 2:
+            return (parts[0][0] + parts[1][0]).upper()
+        elif len(parts) == 1:
+            return parts[0][:2].upper()
+        return 'NA'
+
+    @api.model
+    def get_top_agents_by_performance(self, limit=10):
+        """
+        Fetch top sales agents by repayment performance
+        Returns: list of dicts with agent names and repayment percentages
+        """
+        # Get all repayments with sales agents (created_by field)
+        all_repayments = self.search([
+            ('created_by', '!=', False)
+        ])
+        
+        if not all_repayments:
+            return []
+        
+        # Group repayments by agent
+        agent_stats = {}
+        for repayment in all_repayments:
+            agent_id = repayment.created_by
+            agent_name = agent_id.name if agent_id else 'Unknown Agent'
+            
+            if agent_id.id not in agent_stats:
+                agent_stats[agent_id.id] = {
+                    'agent_name': agent_name,
+                    'total_repayments': 0,
+                    'paid_repayments': 0,
+                    'total_value': 0,
+                    'paid_value': 0
+                }
+            
+            # Update agent statistics
+            agent_stats[agent_id.id]['total_repayments'] += 1
+            agent_stats[agent_id.id]['total_value'] += repayment.selling_price
+            
+            # Count as paid if fully paid
+            if repayment.state == 'paid' or repayment.total_paid >= repayment.selling_price:
+                agent_stats[agent_id.id]['paid_repayments'] += 1
+                agent_stats[agent_id.id]['paid_value'] += repayment.selling_price
+        
+        # Calculate repayment percentages for each agent
+        agents_data = []
+        for agent_id, stats in agent_stats.items():
+            # Calculate repayment percentage (by count and by value)
+            repayment_percentage_by_count = 0
+            repayment_percentage_by_value = 0
+            
+            if stats['total_repayments'] > 0:
+                repayment_percentage_by_count = (stats['paid_repayments'] / stats['total_repayments']) * 100
+            
+            if stats['total_value'] > 0:
+                repayment_percentage_by_value = (stats['paid_value'] / stats['total_value']) * 100
+            
+            # Use value-based percentage as primary metric (more meaningful for sales performance)
+            final_percentage = repayment_percentage_by_value
+            
+            agents_data.append({
+                'agent_name': stats['agent_name'],
+                'repayment_percentage': round(final_percentage, 1),
+                'total_repayments': stats['total_repayments'],
+                'paid_repayments': stats['paid_repayments'],
+                'total_value': round(stats['total_value'], 2),
+                'paid_value': round(stats['paid_value'], 2)
+            })
+        
+        # Sort by repayment percentage (descending) and limit results
+        agents_data.sort(key=lambda x: x['repayment_percentage'], reverse=True)
+        
+        return agents_data[:limit]
 
 
 
