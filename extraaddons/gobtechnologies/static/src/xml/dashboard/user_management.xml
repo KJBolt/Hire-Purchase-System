@@ -8,7 +8,7 @@
                     <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0;">User Management</h2>
                     <p style="color: #64748b; margin: 4px 0 0 0; font-size: 14px;">Manage system users and role assignments</p>
                 </div>
-                <button class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;">
+                <button t-on-click="onCreateUser" class="btn btn-primary" style="background-color: #3b82f6; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500;">
                     <i class="fa fa-user-plus me-2"/>Create User
                 </button>
             </div>
@@ -22,7 +22,7 @@
                                 <i class="fa fa-users" style="color: #3b82f6; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">10</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.totalUsers"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Total Users</p>
                             </div>
                         </div>
@@ -36,7 +36,7 @@
                                 <i class="fa fa-check-circle" style="color: #10b981; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">10</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.activeUsers"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Active</p>
                             </div>
                         </div>
@@ -50,7 +50,7 @@
                                 <i class="fa fa-users" style="color: #f59e0b; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">3</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.salesAgentsCount"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Sales Agents</p>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                                 <i class="fa fa-user" style="color: #6366f1; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">2</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.managersCount"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Managers</p>
                             </div>
                         </div>
@@ -76,15 +76,21 @@
             <div class="d-flex gap-3 mb-4">
                 <div class="flex-grow-1 position-relative">
                     <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
-                    <input type="text" class="form-control" placeholder="Search users..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        t-on-input="onSearchInput"
+                        placeholder="Search users..." 
+                        style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"
+                    />
                 </div>
-                <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
-                    <option>All Roles</option>
-                    <option>Supervisor</option>
-                    <option>General Manager</option>
-                    <option>Sales Administrator</option>
-                    <option>Sales Manager</option>
-                    <option>Sales Agent</option>
+                <select class="form-select" t-on-change="onFilterChange" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
+                    <option value="all">All Roles</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="general_manager">General Manager</option>
+                    <option value="sales_administrator">Sales Administrator</option>
+                    <option value="sales_manager">Sales Manager</option>
+                    <option value="sales_agent">Sales Agent</option>
                 </select>
             </div>
 
@@ -95,135 +101,45 @@
                         <thead style="background-color: #f8fafc;">
                             <tr>
                                 <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">User</th>
-                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Username</th>
                                 <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Email</th>
                                 <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Role</th>
-                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Created By</th>
-                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Manager</th>
-                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Admin</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">General Manager</th>
+                                <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Supervisor</th>
                                 <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Created At</th>
                                 <th style="padding: 16px 20px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody t-foreach="filteredUsers" t-as="user" t-key="user.id">
                             <tr style="background-color: white;">
                                 <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
                                     <div class="d-flex align-items-center">
                                         <div style="width: 36px; height: 36px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">KA</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Kwame Asante</span>
+                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;"><t t-esc="user.name"/></span>
                                     </div>
                                 </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">kwame.asante</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">kwame.asante@sarfosco.com</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="user.email"/></td>
                                 <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #f3e8ff; color: #7c3aed; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">Supervisor</span>
+                                    <span style="background-color: #f3e8ff; color: #7c3aed; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;"><t t-esc="user.role"/></span>
                                 </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">10/01/2024</td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">
+                                    <t t-if="user.general_manager">
+                                        <t t-esc="user.general_manager"/>
+                                    </t>
+                                    <t t-else="">
+                                        —
+                                    </t>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">
+                                    <t t-if="user.supervisor">
+                                        <t t-esc="user.supervisor"/>
+                                    </t>
+                                    <t t-else="">
+                                        —
+                                    </t>
+                                </td>
+                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="user.create_date"/></td>
                                 <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">AM</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Abena Mensah</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">abena.mensah</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">abena.mensah@sarfosco.com</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">General Manager</span>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kwame Asante</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">12/01/2024</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            <tr style="background-color: white;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">KB</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Kofi Boateng</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">kofi.boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">kofi.boateng@sarfosco.com</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #ffedd5; color: #ea580c; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">Sales Administrator</span>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kwame Asante</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">15/01/2024</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">AO</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Ama Owusu</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">ama.owusu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">ama.owusu@sarfosco.com</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #d1fae5; color: #059669; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">Sales Manager</span>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">01/02/2024</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            <tr style="background-color: white;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">YD</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Yaw Darko</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">yaw.darko</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">yaw.darko@sarfosco.com</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #d1fae5; color: #059669; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">Sales Manager</span>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 14px;">—</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">05/02/2024</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">AF</div>
-                                        <span style="font-weight: 500; color: #1e293b; font-size: 14px;">Akosua Frimpong</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">akosua.frimpong</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">akosua.frimpong@sarfosco.com</td>
-                                <td style="padding: 16px 20px; border: none;">
-                                    <span style="background-color: #ccfbf1; color: #0d9488; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">Sales Agent</span>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">10/02/2024</td>
-                                <td style="padding: 16px 20px; border: none;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;"><t t-esc="user.active"/></span>
                                 </td>
                             </tr>
                         </tbody>

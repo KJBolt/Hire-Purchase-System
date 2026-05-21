@@ -42,6 +42,12 @@ export class Dashboard extends Component {
                 previousYear: [0, 0, 0, 0, 0, 0],
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
             },
+            stockAgingData: {
+                '0-30': 0,
+                '31-60': 0,
+                '61-90': 0,
+                '90+': 0
+            },
             loading: true
         });
         
@@ -317,6 +323,57 @@ export class Dashboard extends Component {
             console.error('Error fetching chart data:', error);
         }
     }
+
+    // Add this method to fetch stock aging data
+    async fetchStockAgingData() {
+        try {
+            // Get stock quantities with aging information
+            const stockData = await this.orm.call('stock.quant', 'read_group', [
+                // Domain: only positive stock
+                [['quantity', '>', 0]],
+                // Fields to group by
+                ['product_id', 'location_id', 'quantity', 'in_date'],
+                // Group by
+                ['product_id', 'location_id'],
+                // Lazy loading
+                false,
+            ]);
+            
+            // Calculate aging based on in_date (when stock was received)
+            const today = new Date();
+            const agingCategories = {
+                '0-30': 0,
+                '31-60': 0, 
+                '61-90': 0,
+                '90+': 0
+            };
+            
+            stockData.forEach(record => {
+                if (record.in_date) {
+                    const inDate = new Date(record.in_date);
+                    const daysOld = Math.floor((today - inDate) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysOld <= 30) agingCategories['0-30'] += record.quantity;
+                    else if (daysOld <= 60) agingCategories['31-60'] += record.quantity;
+                    else if (daysOld <= 90) agingCategories['61-90'] += record.quantity;
+                    else agingCategories['90+'] += record.quantity;
+                }
+            });
+            
+            // Update state with aging data
+            this.state.stockAgingData = agingCategories;
+            
+        } catch (error) {
+            console.error('Error fetching stock aging data:', error);
+            // Set default values on error
+            this.state.stockAgingData = {
+                '0-30': 0,
+                '31-60': 0,
+                '61-90': 0,
+                '90+': 0
+            };
+        }
+    }
     
     renderCharts() {
         if (!window.Chart) {
@@ -442,6 +499,12 @@ export class Dashboard extends Component {
         
         // Stock Aging Line Chart
         if (this.stockChartRef.el) {
+            const agingData = this.state.stockAgingData || {
+                '0-30': 0,
+                '31-60': 0, 
+                '61-90': 0,
+                '90+': 0
+            };
             new Chart(this.stockChartRef.el.getContext("2d"), {
                 type: "line",
                 data: {
@@ -449,36 +512,12 @@ export class Dashboard extends Component {
                     datasets: [
                         {
                             label: "0-30 days",
-                            data: [150, 180, 200, 220],
+                            data: [agingData['0-30'] * 0.9, agingData['0-30'], agingData['0-30'] * 1.1, agingData['0-30'] * 1.2],
                             borderColor: "#3b82f6",
                             backgroundColor: "rgba(59, 130, 246, 0.1)",
                             fill: true,
                             tension: 0.4
                         },
-                        {
-                            label: "31-60 days",
-                            data: [80, 90, 85, 95],
-                            borderColor: "#10b981",
-                            backgroundColor: "rgba(16, 185, 129, 0.1)",
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: "61-90 days",
-                            data: [40, 45, 50, 48],
-                            borderColor: "#f59e0b",
-                            backgroundColor: "rgba(245, 158, 11, 0.1)",
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: "90+ days",
-                            data: [20, 25, 30, 28],
-                            borderColor: "#ef4444",
-                            backgroundColor: "rgba(239, 68, 68, 0.1)",
-                            fill: true,
-                            tension: 0.4
-                        }
                     ]
                 },
                 options: {

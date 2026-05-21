@@ -52,8 +52,14 @@ class RepaymentItemLine(models.Model):
             if record.lot_id and record.product_id:
                 if record.lot_id.product_id != record.product_id:
                     raise ValidationError("Selected serial number doesn't belong to this product")
-                if record.lot_id.product_qty <= 0:
-                    raise ValidationError("This serial number is not available")
+                # Check actual stock quantity in company's internal locations
+                stock_quant = self.env['stock.quant'].search([
+                    ('lot_id', '=', record.lot_id.id),
+                    ('location_id.usage', '=', 'internal'),
+                    ('company_id', '=', self.env.company.id)
+                ], limit=1)
+                if not stock_quant or stock_quant.quantity <= 0:
+                    raise ValidationError("This serial number is not available in stock")
 
     @api.onchange('quantity')
     def _onchange_quantity(self):

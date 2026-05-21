@@ -22,7 +22,7 @@
                                 <i class="fa fa-users" style="color: #3b82f6; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">8</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.totalCustomers"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Total Customers</p>
                             </div>
                         </div>
@@ -36,8 +36,8 @@
                                 <i class="fa fa-file-text" style="color: #10b981; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">6</h3>
-                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Active HP</p>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.active"/></h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Active</p>
                             </div>
                         </div>
                     </div>
@@ -50,7 +50,7 @@
                                 <i class="fa fa-check-circle" style="color: #3b82f6; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">1</h3>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.completed"/></h3>
                                 <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Completed</p>
                             </div>
                         </div>
@@ -64,8 +64,8 @@
                                 <i class="fa fa-flag" style="color: #ef4444; font-size: 20px;"/>
                             </div>
                             <div>
-                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">1</h3>
-                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Defaulted</p>
+                                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;"><t t-esc="state.overdue"/></h3>
+                                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Overdue</p>
                             </div>
                         </div>
                     </div>
@@ -76,13 +76,13 @@
             <div class="d-flex gap-3 mb-4">
                 <div class="flex-grow-1 position-relative">
                     <i class="fa fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"/>
-                    <input type="text" class="form-control" placeholder="Search customers..." style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
+                    <input type="text" class="form-control" placeholder="Search customers..." t-on-input="onSearchInput" style="padding-left: 44px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; background-color: white;"/>
                 </div>
-                <select class="form-select" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
-                    <option>All Status</option>
-                    <option>Active</option>
-                    <option>Completed</option>
-                    <option>Defaulted</option>
+                <select class="form-select" t-on-change="onFilterChange" style="width: 160px; border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 44px; font-size: 14px; color: #64748b; background-color: white;">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="overdue">Overdue</option>
                 </select>
             </div>
 
@@ -105,209 +105,53 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Emmanuel Tetteh -->
-                            <tr style="background-color: white;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">ET</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Emmanuel Tetteh</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">etetteh@gmail.com</div>
+                            <t t-foreach="filteredCustomers" t-as="customer" t-key="customer.id">
+                                <tr>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                        <div class="d-flex align-items-center">
+                                            <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">
+                                                <t t-esc="customer.customer_name[1].substring(0, 2).toUpperCase()"/>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 500; color: #1e293b; font-size: 14px;"><t t-esc="customer.customer_name[1]"/></div>
+                                                <div style="color: #94a3b8; font-size: 11px;"><t t-esc="customer.customer_email or ''"/></div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                                    <div>0244123456</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">etetteh@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Akosua Frimpong</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Samsung Galaxy S24</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵4,800</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵3,600</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 75%; background-color: #22c55e; border-radius: 3px;"></div>
+                                    </td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                                        <div><t t-esc="customer.phone_no or ''"/></div>
+                                        <div style="color: #94a3b8; font-size: 11px;"><t t-esc="customer.customer_email or ''"/></div>
+                                    </td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="customer.sales_agent or ''"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="customer.sales_manager or ''"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="customer.sales_administrator or ''"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;"><t t-esc="customer.product_names or ''"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵<t t-esc="customer.selling_price"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵<t t-esc="customer.total_paid"/></td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+                                                <div t-attf-style="height: 100%; width: {{ customer.percentage_paid }}%; background-color: {{ customer.percentage_paid >= 75 ? '#22c55e' : customer.percentage_paid >= 50 ? '#f97316' : '#ef4444' }}; border-radius: 3px;"/>
+                                            </div>
+                                            <span style="color: #64748b; font-size: 12px; font-weight: 500;"><t t-esc="customer.percentage_paid.toFixed(1)"/>%</span>
                                         </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">75.0%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            
-                            <!-- Gifty Amoah -->
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">GA</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Gifty Amoah</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">g.amoah@gmail.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                                    <div>0277654321</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">g.amoah@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Akosua Frimpong</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">iPhone 15 Pro</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵7,200</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵5,400</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 75%; background-color: #22c55e; border-radius: 3px;"></div>
-                                        </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">75.0%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            
-                            <!-- Bright Osei -->
-                            <tr style="background-color: white;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">BO</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Bright Osei</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">b.osei@gmail.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                                    <div>0201987654</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">b.osei@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kweku Amponsah</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Tecno Camon 20</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵2,400</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,200</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 50%; background-color: #f97316; border-radius: 3px;"></div>
-                                        </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">50.0%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            
-                            <!-- Patricia Acheampong -->
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">PA</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Patricia Acheampong</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">p.acheampong@gmail.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                                    <div>0554321098</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">p.acheampong@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kweku Amponsah</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Ama Owusu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Infinix Hot 40</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,800</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵600</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 33%; background-color: #ef4444; border-radius: 3px;"></div>
-                                        </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">33.3%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">defaulted</span>
-                                </td>
-                            </tr>
-                            
-                            <!-- Isaac Mensah -->
-                            <tr style="background-color: white;">
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">IM</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Isaac Mensah</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">i.mensah@gmail.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                                    <div>0265432109</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">i.mensah@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Efua Asiedu</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Yaw Darko</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">Xiaomi Redmi Note 13</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵2,100</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">₵1,890</td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 90%; background-color: #22c55e; border-radius: 3px;"></div>
-                                        </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">90.0%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
-                                </td>
-                            </tr>
-                            
-                            <!-- Cecilia Boateng -->
-                            <tr style="background-color: #fafafa;">
-                                <td style="padding: 16px 20px; border: none;">
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 36px; height: 36px; background-color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; margin-right: 12px;">CB</div>
-                                        <div>
-                                            <div style="font-weight: 500; color: #1e293b; font-size: 14px;">Cecilia Boateng</div>
-                                            <div style="color: #94a3b8; font-size: 11px;">c.boateng@gmail.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">
-                                    <div>0233210987</div>
-                                    <div style="color: #94a3b8; font-size: 11px;">c.boateng@gmail.com</div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Efua Asiedu</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Yaw Darko</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Kofi Boateng</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">Samsung Galaxy A55</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">₵3,600</td>
-                                <td style="padding: 16px 20px; border: none; color: #64748b; font-size: 14px;">₵3,600</td>
-                                <td style="padding: 16px 20px; border: none;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div style="flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
-                                            <div style="height: 100%; width: 100%; background-color: #22c55e; border-radius: 3px;"></div>
-                                        </div>
-                                        <span style="color: #64748b; font-size: 12px; font-weight: 500;">100.0%</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 16px 20px; border: none;">
-                                    <span style="background-color: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">completed</span>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td style="padding: 16px 20px; border: none; border-bottom: 1px solid #f1f5f9;">
+                                        <t t-if="customer.state === 'progress'">
+                                            <span style="background-color: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">active</span>
+                                        </t>
+                                        <t t-elif="customer.state === 'paid'">
+                                            <span style="background-color: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">completed</span>
+                                        </t>
+                                        <t t-elif="customer.overdue_status">
+                                            <span style="background-color: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;">overdue</span>
+                                        </t>
+                                        <t t-else="">
+                                            <span style="background-color: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;"><t t-esc="customer.state"/></span>
+                                        </t>
+                                    </td>
+                                </tr>
+                            </t>
                         </tbody>
                     </table>
                 </div>
