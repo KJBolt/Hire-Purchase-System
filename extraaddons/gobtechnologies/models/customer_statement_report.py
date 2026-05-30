@@ -12,6 +12,8 @@ import datetime
 
 _logger = logging.getLogger(__name__)
 
+OPPO_API_URL = "https://ilockcardf-isp.apps.coloros.com"
+
 PAYMENT_STATE = [
     ('draft', "Draft"),
     ('progress', "Progress"),
@@ -140,8 +142,8 @@ class RepaymentPaymentLine(models.Model):
         repayment = res.repayment_id
 
         # Check if customer has an invoice id
-        if not repayment.invoice_id:
-            raise UserError("You can only add payment for customers with an invoice generated for them")
+        # if not repayment.invoice_id:
+        #     raise UserError("You can only add payment for customers with an invoice generated for them")
 
         # Only mark as paid if total_paid matches or exceeds selling_price
         if repayment.total_paid >= repayment.selling_price:
@@ -173,6 +175,13 @@ class RepaymentPaymentLine(models.Model):
                 
         except Exception as e:
             _logger.error(f"Error sending payment SMS: {str(e)}")
+        
+        # Trigger Oppo push notification if deposit is not 0
+        if repayment.deposit and repayment.deposit > 0:
+            try:
+                repayment.action_oppo_trigger_push()
+            except Exception as e:
+                _logger.warning(f"Failed to send Oppo trigger push on payment: {str(e)}")
         
         res.testpayment(vals)
         return res
@@ -231,11 +240,11 @@ class RepaymentPaymentLine(models.Model):
                         })
                         
                         # Send SMS to customer
-                        phone_no = self.repayment_id.phone_no
-                        customer_name = self.repayment_id.customer_name.name
-                        sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
+                        # phone_no = self.repayment_id.phone_no
+                        # customer_name = self.repayment_id.customer_name.name
+                        # sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
 
-                        self.repayment_id._send_hubtel_sms(phone_no, sms_message, customer_name)
+                        # self.repayment_id._send_hubtel_sms(phone_no, sms_message, customer_name)
 
                     else:
                         # Create new payment record for previous date
@@ -381,14 +390,14 @@ class Repayment(models.Model):
     # Invoice field
     branch = fields.Selection([
         ('sarfosco', 'Sarfosco'),
-    ], string='Branch', required=True)
+    ], string='Branch', required=False)
     invoice_id = fields.Char(string='Invoice ID', required=False)
     invoice_no = fields.Char(string='Invoice No', readonly=True, required=False, default=lambda self: self.env['ir.sequence'].next_by_code('invoice.ref'))
     invoice_payment_method = fields.Selection([
         # ('pay_at_once', 'Pay At Once'),
         # ('pay_in_installments', 'Pay In Installments'),
         ('auto_debit', 'Pay In Installments with Auto Debit')
-    ], string='Payment Method', required=True)
+    ], string='Payment Method', required=False)
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
     created_by = fields.Many2one('res.partner', string='Created By', required=True)
@@ -580,8 +589,8 @@ class Repayment(models.Model):
             if record.selling_price == 0:
                 raise ValidationError('Please enter the selling price')
 
-            if record.deposit == 0:
-                raise ValidationError('Please enter the deposit')
+            # if record.deposit == 0:
+            #     raise ValidationError('Please enter the deposit')
 
             if record.expected_to_pay == 0:
                 raise ValidationError('Please enter the expected to pay')
@@ -598,204 +607,204 @@ class Repayment(models.Model):
 
 
     # Fetch Invoicing api
-    def fetch_invoicing_api(self, vals):
-        # Get customer name from the ID
-        customer_id = vals.get('customer_name')
-        customer_name = ""
-        if customer_id:
-            customer = self.env['res.partner'].browse(customer_id)
-            if not customer:
-                raise UserError('Customer not found on the system')
-            customer_name = customer.name
-        else:
-            raise UserError('Customer ID not provided')
+    # def fetch_invoicing_api(self, vals):
+    #     # Get customer name from the ID
+    #     customer_id = vals.get('customer_name')
+    #     customer_name = ""
+    #     if customer_id:
+    #         customer = self.env['res.partner'].browse(customer_id)
+    #         if not customer:
+    #             raise UserError('Customer not found on the system')
+    #         customer_name = customer.name
+    #     else:
+    #         raise UserError('Customer ID not provided')
 
-        # Scrutinize the repayment frequency
-        repayment_frequency_scrutinized = ''
-        if vals.get('repayment_frequency') == '1':
-            repayment_frequency_scrutinized = 'Daily'
-        elif vals.get('repayment_frequency') == '7':
-            repayment_frequency_scrutinized = 'Weekly'
-        elif vals.get('repayment_frequency') == '30':
-            repayment_frequency_scrutinized = 'Monthly'
-        else:
-            raise UserError('Invalid repayment frequency')
+    #     # Scrutinize the repayment frequency
+    #     repayment_frequency_scrutinized = ''
+    #     if vals.get('repayment_frequency') == '1':
+    #         repayment_frequency_scrutinized = 'Daily'
+    #     elif vals.get('repayment_frequency') == '7':
+    #         repayment_frequency_scrutinized = 'Weekly'
+    #     elif vals.get('repayment_frequency') == '30':
+    #         repayment_frequency_scrutinized = 'Monthly'
+    #     else:
+    #         raise UserError('Invalid repayment frequency')
 
-        # Get other input values
-        phone_no = vals.get('phone_no')
-        invoice_no = vals.get('invoice_no')
+    #     # Get other input values
+    #     phone_no = vals.get('phone_no')
+    #     invoice_no = vals.get('invoice_no')
 
-        # Get Hubtel credentials
-        settings = self.env['res.config.settings'].get_hubtel_credentials()
-        callback_url = settings.get('webhook_url')
+    #     # Get Hubtel credentials
+    #     settings = self.env['res.config.settings'].get_hubtel_credentials()
+    #     callback_url = settings.get('webhook_url')
 
-        issue_by = vals.get('branch')
-        created_by = vals.get("branch")
-        start_date = vals.get("start_date")
-        end_date = vals.get("end_date")
-        selling_price = vals.get("selling_price")
-        has_tax = ''
-        days = int(vals.get('repayment_frequency', '0'))
-        first_payment_amount = vals.get('deposit')
-        frequency = repayment_frequency_scrutinized
+    #     issue_by = vals.get('branch')
+    #     created_by = vals.get("branch")
+    #     start_date = vals.get("start_date")
+    #     end_date = vals.get("end_date")
+    #     selling_price = vals.get("selling_price")
+    #     has_tax = ''
+    #     days = int(vals.get('repayment_frequency', '0'))
+    #     first_payment_amount = vals.get('deposit')
+    #     frequency = repayment_frequency_scrutinized
 
-        # Selling price validation
-        if selling_price <= 0:
-            raise UserError("Selling price cannot be 0")
+    #     # Selling price validation
+    #     if selling_price <= 0:
+    #         raise UserError("Selling price cannot be 0")
 
-        # Get price from repayment.item.line
-        # item_lines = self.env['repayment.item.line'].search([('repayment_id', '=', self.id)])
-        # for item_line in item_lines:
-        #     if item_line.price > selling_price:
-        #         raise UserError("Price of the product(s) cannot exceed the selling price")
+    #     # Get price from repayment.item.line
+    #     # item_lines = self.env['repayment.item.line'].search([('repayment_id', '=', self.id)])
+    #     # for item_line in item_lines:
+    #     #     if item_line.price > selling_price:
+    #     #         raise UserError("Price of the product(s) cannot exceed the selling price")
             
         
-        # Format dates in ISO 8601 format (YYYY-MM-DDTHH:MM:SS.sssZ)
-        def format_date_to_iso8601(date_value):
-            """Convert date to ISO 8601 format expected by the API"""
-            if not date_value:
-                return None
+    #     # Format dates in ISO 8601 format (YYYY-MM-DDTHH:MM:SS.sssZ)
+    #     def format_date_to_iso8601(date_value):
+    #         """Convert date to ISO 8601 format expected by the API"""
+    #         if not date_value:
+    #             return None
             
-            # Convert to date object if it's a string
-            if isinstance(date_value, str):
-                try:
-                    date_obj = fields.Date.from_string(date_value)
-                except ValueError:
-                    raise UserError(f'Invalid date format: {date_value}')
-            else:
-                date_obj = date_value
+    #         # Convert to date object if it's a string
+    #         if isinstance(date_value, str):
+    #             try:
+    #                 date_obj = fields.Date.from_string(date_value)
+    #             except ValueError:
+    #                 raise UserError(f'Invalid date format: {date_value}')
+    #         else:
+    #             date_obj = date_value
             
-            # Convert date to datetime at midnight
-            dt = datetime.datetime.combine(date_obj, datetime.time.min)
-            # Format in ISO 8601 format
-            return dt.isoformat() + "Z"
+    #         # Convert date to datetime at midnight
+    #         dt = datetime.datetime.combine(date_obj, datetime.time.min)
+    #         # Format in ISO 8601 format
+    #         return dt.isoformat() + "Z"
 
         
-        # Process start date
-        start_date_obj = None
-        if start_date:
-            if isinstance(start_date, str):
-                start_date_obj = fields.Date.from_string(start_date)
-            else:
-                start_date_obj = start_date
+    #     # Process start date
+    #     start_date_obj = None
+    #     if start_date:
+    #         if isinstance(start_date, str):
+    #             start_date_obj = fields.Date.from_string(start_date)
+    #         else:
+    #             start_date_obj = start_date
         
         
-        # Format start date for API
-        start_date_formatted = format_date_to_iso8601(start_date_obj)
+    #     # Format start date for API
+    #     start_date_formatted = format_date_to_iso8601(start_date_obj)
 
-        # end date formatted
-        end_date_obj = None
-        if end_date:
-            if isinstance(end_date, str):
-                end_date_obj = fields.Date.from_string(end_date)
-            else:
-                end_date_obj = end_date
+    #     # end date formatted
+    #     end_date_obj = None
+    #     if end_date:
+    #         if isinstance(end_date, str):
+    #             end_date_obj = fields.Date.from_string(end_date)
+    #         else:
+    #             end_date_obj = end_date
 
-        # Format end date for API
-        end_date_formatted = format_date_to_iso8601(end_date_obj)
+    #     # Format end date for API
+    #     end_date_formatted = format_date_to_iso8601(end_date_obj)
         
-        # Calculate and format first payment due date
-        first_payment_due_date = None
-        if start_date_obj and vals.get('repayment_frequency'):
-            freq = int(vals.get('repayment_frequency'))
+    #     # Calculate and format first payment due date
+    #     first_payment_due_date = None
+    #     if start_date_obj and vals.get('repayment_frequency'):
+    #         freq = int(vals.get('repayment_frequency'))
             
-            if freq == 1:  # Daily
-                first_payment_due_date = start_date_obj
-            elif freq == 7:  # Weekly
-                first_payment_due_date = start_date_obj + timedelta(weeks=1)
-            elif freq == 30:  # Monthly
-                first_payment_due_date = start_date_obj + relativedelta(months=1)
-            else:
-                first_payment_due_date = start_date_obj
-        first_payment_due_date_formatted = format_date_to_iso8601(first_payment_due_date)
+    #         if freq == 1:  # Daily
+    #             first_payment_due_date = start_date_obj
+    #         elif freq == 7:  # Weekly
+    #             first_payment_due_date = start_date_obj + timedelta(weeks=1)
+    #         elif freq == 30:  # Monthly
+    #             first_payment_due_date = start_date_obj + relativedelta(months=1)
+    #         else:
+    #             first_payment_due_date = start_date_obj
+    #     first_payment_due_date_formatted = format_date_to_iso8601(first_payment_due_date)
 
-        _logger.info(f"End Date Formatted: {end_date_formatted}, First Payment Due Date Formatted: {first_payment_due_date_formatted}")
+    #     _logger.info(f"End Date Formatted: {end_date_formatted}, First Payment Due Date Formatted: {first_payment_due_date_formatted}")
 
-        item_lines = self.env['repayment.item.line'].search([('repayment_id', '=', self.id)])        
-        items = []
-        for item_line in item_lines:
-            items.append({
-                "description": item_line.product_id.name,
-                "quantity": int(item_line.quantity),
-                "unitPrice": item_line.price
-            })
+    #     item_lines = self.env['repayment.item.line'].search([('repayment_id', '=', self.id)])        
+    #     items = []
+    #     for item_line in item_lines:
+    #         items.append({
+    #             "description": item_line.product_id.name,
+    #             "quantity": int(item_line.quantity),
+    #             "unitPrice": item_line.price
+    #         })
 
-            # If total items price greater than selling price throw error
-            total_price = sum(item.price for item in self.product_lines)
-            if total_price > selling_price:
-                raise UserError("The total price of items should match the selling price specified ")
+    #         # If total items price greater than selling price throw error
+    #         total_price = sum(item.price for item in self.product_lines)
+    #         if total_price > selling_price:
+    #             raise UserError("The total price of items should match the selling price specified ")
 
         
 
-        if len(items) == 0:
-            raise UserError("Product is empty")
+    #     if len(items) == 0:
+    #         raise UserError("Product is empty")
         
-        # convert str to boolean
-        str_value = 'false'
-        is_before = bool(str_value.lower() == 'true')
+    #     # convert str to boolean
+    #     str_value = 'false'
+    #     is_before = bool(str_value.lower() == 'true')
 
-        # Create payload
-        payload = {
-            "invoiceNumber": invoice_no,
-            "customerName": customer_name,
-            "customerPhoneNumber": phone_no,
-            "IssuedBy": issue_by,
-            "createdBy": created_by,
-            "dueDate": end_date_formatted,
-            "callbackUrl": callback_url,
-            "firstPaymentDueDate": first_payment_due_date_formatted,
-            "firstPaymentAmount": first_payment_amount,
-            "frequency": frequency,
-            "reminders": [
-                {
-                    "days": days,
-                    "isBefore": is_before
-                }
-            ],
-            "items": items
-        }
+    #     # Create payload
+    #     payload = {
+    #         "invoiceNumber": invoice_no,
+    #         "customerName": customer_name,
+    #         "customerPhoneNumber": phone_no,
+    #         "IssuedBy": issue_by,
+    #         "createdBy": created_by,
+    #         "dueDate": end_date_formatted,
+    #         "callbackUrl": callback_url,
+    #         "firstPaymentDueDate": first_payment_due_date_formatted,
+    #         "firstPaymentAmount": first_payment_amount,
+    #         "frequency": frequency,
+    #         "reminders": [
+    #             {
+    #                 "days": days,
+    #                 "isBefore": is_before
+    #             }
+    #         ],
+    #         "items": items
+    #     }
         
-        # Send request
-        headers = {
-            "Host": "invoicing.hubtel.com",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": "Basic TmtNdnpvODo3MmMzZWYxZWFhNzQ0OGMxYjVhMjE4YzE1YWRmYWMxZg==",
-            "Cache-Control": "no-cache",
-        }
-        url = f"https://invoicing.hubtel.com/api/invoice/2030161/auto-debit"
+    #     # Send request
+    #     headers = {
+    #         "Host": "invoicing.hubtel.com",
+    #         "Accept": "application/json",
+    #         "Content-Type": "application/json",
+    #         "Authorization": "Basic TmtNdnpvODo3MmMzZWYxZWFhNzQ0OGMxYjVhMjE4YzE1YWRmYWMxZg==",
+    #         "Cache-Control": "no-cache",
+    #     }
+    #     url = f"https://invoicing.hubtel.com/api/invoice/2030161/auto-debit"
         
-        try:
-            response = requests.post(url, headers=headers, json=payload)
-            _logger.info(f"Response: {response.text}")
-            if response.status_code == 200:
-                response_data = response.json()
-                _logger.info(f"Response Data: {response_data}")
+    #     try:
+    #         response = requests.post(url, headers=headers, json=payload)
+    #         _logger.info(f"Response: {response.text}")
+    #         if response.status_code == 200:
+    #             response_data = response.json()
+    #             _logger.info(f"Response Data: {response_data}")
                 
-                # Update the record with the invoice ID
-                self.write({
-                    'invoice_id': response_data['data']['invoiceId'],
-                    'payment_url': response_data['data']['paymentUrl']
-                })
+    #             # Update the record with the invoice ID
+    #             self.write({
+    #                 'invoice_id': response_data['data']['invoiceId'],
+    #                 'payment_url': response_data['data']['paymentUrl']
+    #             })
 
-                # Log message to chatter
-                self.message_post(
-                    body=f'Invoice generated successfully',
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_note'
-                )
+    #             # Log message to chatter
+    #             self.message_post(
+    #                 body=f'Invoice generated successfully',
+    #                 message_type='comment',
+    #                 subtype_xmlid='mail.mt_note'
+    #             )
 
-                # Send notification to user
-                # channel = f"hubtel_notification_{self.env.user.partner_id.id}"
-                # notification_type = 'invoice'
-                # message = {'msg': f'Invoice generated successfully'}
-                # self.env['bus.bus']._sendone(channel, notification_type, message)
-            else:
-                _logger.info(f"Failed to create invoice: {response.text}")
-                raise UserError(f"Oops something went wrong while creating the invoice. Please try again later.")
-        except Exception as e:
-            _logger.error(f"Exception during API call: {str(e)}")
-            raise UserError(f"Oops something went wrong while creating the invoice. Please check the network and try again.")
+    #             # Send notification to user
+    #             # channel = f"hubtel_notification_{self.env.user.partner_id.id}"
+    #             # notification_type = 'invoice'
+    #             # message = {'msg': f'Invoice generated successfully'}
+    #             # self.env['bus.bus']._sendone(channel, notification_type, message)
+    #         else:
+    #             _logger.info(f"Failed to create invoice: {response.text}")
+    #             raise UserError(f"Oops something went wrong while creating the invoice. Please try again later.")
+    #     except Exception as e:
+    #         _logger.error(f"Exception during API call: {str(e)}")
+    #         raise UserError(f"Oops something went wrong while creating the invoice. Please check the network and try again.")
 
 
 
@@ -817,26 +826,26 @@ class Repayment(models.Model):
 
 
     # Create invoice for customer
-    def action_create_invoice(self):
-        # Check if the invoice already exists
-        if self.invoice_id:
-            raise UserError("Invoice already created for this customer.")
+    # def action_create_invoice(self):
+    #     # Check if the invoice already exists
+    #     if self.invoice_id:
+    #         raise UserError("Invoice already created for this customer.")
 
-        # Validate required fields
-        if not self.invoice_no or not self.branch or not self.invoice_payment_method or not self.product_lines:
-            raise UserError("Please fill in the Invoice Details before generating an invoice.")
+    #     # Validate required fields
+    #     if not self.invoice_no or not self.branch or not self.invoice_payment_method or not self.product_lines:
+    #         raise UserError("Please fill in the Invoice Details before generating an invoice.")
 
-        # Call the API to create the invoice
-        try:
-            self.fetch_invoicing_api(self._prepare_invoice_vals())
+    #     # Call the API to create the invoice
+    #     try:
+    #         self.fetch_invoicing_api(self._prepare_invoice_vals())
 
-            # Set state to progress
-            self.state = 'progress'
+    #         # Set state to progress
+    #         self.state = 'progress'
             
-        except Exception as e:
-            raise UserError(f"Error creating invoice: {str(e)}")
+    #     except Exception as e:
+    #         raise UserError(f"Error creating invoice: {str(e)}")
 
-        return True
+    #     return True
 
 
 
@@ -886,7 +895,74 @@ class Repayment(models.Model):
         # else:
         #     _logger.info("Successfully imported record")
 
+        # Check if Product lines price is greater than selling price
+        total_price = sum(item.price for item in res.product_lines)
+        if total_price > res.selling_price:
+            raise UserError("The total price of items should match the selling price specified ")
+
+        # Trigger Oppo push notification if deposit is not 0
+        if res.deposit and res.deposit > 0:
+            try:
+                res.action_oppo_trigger_push()
+            except Exception as e:
+                _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
+
+
+                
+
+        # Create oppo lock record
+        try:
+            # Extract IMEIs from product lines
+            imeis = []
+            for line in res.product_lines:
+                if line.lot_id:
+                    for lot in line.lot_id:
+                        if lot.name:
+                            imeis.append(lot.name)
+            
+            oppo_lock_vals = {
+                'repayment_id': res.id,
+                'customer_name': res.customer_name.name if res.customer_name else '',
+                'device_name': res.product_lines[0].product_id.name if res.product_lines and res.product_lines[0].product_id else 'Oppo Device',
+                'imei_list': json.dumps(imeis) if imeis else json.dumps([]),
+                'device_uid': imeis[0] if imeis else '',
+            }
+            self.env['oppo.lock'].create(oppo_lock_vals)
+            _logger.info(f"Oppo lock record created for repayment {res.unique_id}")
+        except Exception as e:
+            _logger.warning(f"Failed to create oppo lock record: {str(e)}")
+
         return res
+
+
+    # Edit oppo lock helper function
+    def _edit_oppo_lock(self):
+        """Helper method to sync oppo.lock record with repayment data"""
+        try:
+            oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', self.id)], limit=1)
+            if oppo_lock:
+                # Extract IMEIs from product lines
+                imeis = []
+                for line in self.product_lines:
+                    if line.lot_id:
+                        for lot in line.lot_id:
+                            if lot.name:
+                                imeis.append(lot.name)
+                
+                # Prepare update values
+                lock_vals = {
+                    'imei_list': json.dumps(imeis) if imeis else json.dumps([]),
+                    'device_uid': imeis[0] if imeis else '',
+                    'device_name': self.product_lines[0].product_id.name if self.product_lines and self.product_lines[0].product_id else 'Oppo Device',
+                    'customer_name': self.customer_name.name if self.customer_name else '',
+                }
+                oppo_lock.write(lock_vals)
+                _logger.info(f"Oppo lock record synced for repayment {self.unique_id}")
+        except Exception as e:
+            _logger.warning(f"Failed to sync oppo lock record: {str(e)}")
+
+
+
 
     # update state when record is updated
     def write(self, vals):
@@ -896,8 +972,135 @@ class Repayment(models.Model):
                 vals['state'] = 'paid'
             else:
                 vals['state'] = 'progress'
+        
+        # Check if Product lines price is greater than selling price
+        total_price = sum(item.price for item in self.product_lines)
+        if total_price > self.selling_price:
+            raise UserError("The total price of items should match the selling price specified ")
+        elif total_price < self.selling_price:
+            raise UserError("The total price of items should match the selling price specified ")
+
+        # Call the edit oppo lock helper function
+        self._edit_oppo_lock()
 
         return res
+
+
+    # Generate the x_sign
+    def _generate_oppo_x_sign(self, request_body):
+        _logger.info("Oppo x-sign running")
+
+        """Generate x-sign signature using the signing server"""
+        self.ensure_one()
+        
+        oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+        carrier_code = oppo_credentials.get('carrier_code')
+        token = oppo_credentials.get('token')
+        signature_server_url = oppo_credentials.get('signature_server_url')
+        
+        if not carrier_code or not token:
+            raise UserError(_('Oppo carrier code or token is not configured. Please configure it in the settings.'))
+        
+        # Stringify the request body as JSON
+        data_string = json.dumps(request_body, separators=(',', ':'))
+        
+        payload = {
+            "carrierCode": carrier_code,
+            "token": token,
+            "data": data_string
+        }
+        
+        try:
+            response = requests.post(
+                signature_server_url,
+                headers={'Content-Type': 'application/json'},
+                json=payload,
+                timeout=30
+            )
+            response.raise_for_status()
+            
+            response_data = response.json()
+            _logger.info(f"Signature server response: {response_data}")
+            
+            if response_data.get('status') == 'success':
+                return response_data.get('x-sign')
+            else:
+                raise UserError(_('Failed to generate x-sign: %s') % response_data.get('error', 'Unknown error'))
+                
+        except requests.exceptions.RequestException as e:
+            _logger.error(f"Error calling signature server: {e}")
+            raise UserError(_('Failed to connect to signature server: %s') % str(e))
+
+    # Trigger the push message
+    def action_oppo_trigger_push(self):
+        _logger.info("Trigger push message running")
+
+        """Send payment balance message via Oppo trigger push API"""
+        for record in self:
+            # Check if there's an associated oppo.lock record
+            oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', record.id)], limit=1)
+            
+            if not oppo_lock:
+                _logger.info(f"No Oppo lock record found for repayment {record.unique_id}")
+                return
+            
+            oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+            carrier_code = oppo_credentials.get('carrier_code')
+            
+            if not carrier_code:
+                raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
+            
+            # Parse IMEI list
+            try:
+                imei_list = json.loads(oppo_lock.imei_list) if isinstance(oppo_lock.imei_list, str) else [oppo_lock.device_uid]
+            except json.JSONDecodeError:
+                imei_list = [oppo_lock.device_uid]
+            
+            # Generate transaction ID
+            transaction_id = f"{record.unique_id}_{int(datetime.datetime.now().timestamp())}"
+            
+            # Build request body
+            request_body = {
+                "deviceUid": oppo_lock.device_uid,
+                "imeiList": imei_list
+            }
+            
+            # Generate x-sign
+            x_sign = record._generate_oppo_x_sign(request_body)
+            
+            # Call Oppo API
+            headers = {
+                'Content-Type': 'application/json',
+                'x-carrier-code': carrier_code,
+                'x-sign': x_sign,
+                'x-transactionId': transaction_id
+            }
+            
+            try:
+                response = requests.post(
+                    f"{OPPO_API_URL}/triggerPush",
+                    headers=headers,
+                    json=request_body,
+                    timeout=30
+                )
+                response.raise_for_status()
+                
+                response_data = response.json()
+                _logger.info(f"Oppo trigger push API response: {response_data}")
+                
+                if response_data.get('code') == 0:
+                    record.message_post(
+                        body=f'Payment balance message sent via Oppo API: Deposit: GHS {record.deposit}, Total Balance: GHS {record.selling_price}, New Balance: GHS {record.outstanding_loan}',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                    _logger.info(f"Trigger push successful for repayment {record.unique_id}")
+                else:
+                    raise UserError(_('Oppo API error: %s') % response_data.get('message', 'Unknown error'))
+                    
+            except requests.exceptions.RequestException as e:
+                _logger.error(f"Error calling Oppo trigger push API: {e}")
+                raise UserError(_('Failed to send trigger push via Oppo API: %s') % str(e))
 
 
     # Show overdue badge if todays date is greater than end date

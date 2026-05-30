@@ -34,6 +34,21 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='gobtechnologies.nuovopay_api_url'
     )
 
+    # Add Oppo Pay Configuration
+    oppo_carrier_code = fields.Char(
+        string='Oppo Carrier Code',
+        config_parameter='gobtechnologies.oppo_carrier_code'
+    )
+    oppo_token = fields.Char(
+        string='Oppo Token',
+        config_parameter='gobtechnologies.oppo_token'
+    )
+    oppo_signature_server_url = fields.Char(
+        string='Oppo Signature Server URL',
+        config_parameter='gobtechnologies.oppo_signature_server_url',
+        default='http://sarfosco-phones.com/sign'
+    )
+
 
     @api.model
     def get_values(self):
@@ -47,7 +62,12 @@ class ResConfigSettings(models.TransientModel):
             'hubtel_merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', '')),
             'nuovopay_api_key': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_key', '')),
-            'nuovopay_api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', ''))
+            'nuovopay_api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', '')),
+
+            # oppo pay
+            'oppo_carrier_code': decrypt_text(params.get_param('gobtechnologies.oppo_carrier_code', '')),
+            'oppo_token': decrypt_text(params.get_param('gobtechnologies.oppo_token', '')),
+            'oppo_signature_server_url': decrypt_text(params.get_param('gobtechnologies.oppo_signature_server_url', ''))
         })
         return res
 
@@ -80,6 +100,20 @@ class ResConfigSettings(models.TransientModel):
             encrypt_text(self.nuovopay_api_url or '')
         )
 
+        # oppo pay
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.oppo_carrier_code',
+            encrypt_text(self.oppo_carrier_code or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.oppo_token',
+            encrypt_text(self.oppo_token or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.oppo_signature_server_url',
+            encrypt_text(self.oppo_signature_server_url or '')
+        )
+
     @api.model
     def get_hubtel_credentials(self):
         """Get decrypted Hubtel credentials"""
@@ -98,4 +132,14 @@ class ResConfigSettings(models.TransientModel):
         return {
             'api_key': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_key', '')),
             'api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', ''))
+        }
+
+    @api.model
+    def get_oppo_credentials(self):
+        """Get decrypted Oppo credentials"""
+        params = self.env['ir.config_parameter'].sudo()
+        return {
+            'carrier_code': decrypt_text(params.get_param('gobtechnologies.oppo_carrier_code', '')),
+            'token': decrypt_text(params.get_param('gobtechnologies.oppo_token', '')),
+            'signature_server_url': decrypt_text(params.get_param('gobtechnologies.oppo_signature_server_url', 'http://sarfosco-phones.com/sign'))
         }

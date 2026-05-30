@@ -31,6 +31,13 @@
         <field name="name">NuovoPay</field>
         <field name="tag">gobtechnologies.nuovo_pay</field>
     </record>
+    
+    <record id="action_oppo_lock" model="ir.actions.client">
+        <field name="name">Oppo Lock</field>
+        <field name="tag">gobtechnologies.oppo_lock</field>
+    </record>
+
+    
 
     <record id="action_nuovo_pay_lock_form" model="ir.actions.act_window">
         <field name="name">Register Device</field>
@@ -39,11 +46,25 @@
         <field name="target">new</field>
     </record>
 
-    <menuitem 
+    <record id="action_oppo_lock_form" model="ir.actions.act_window">
+        <field name="name">Add Oppo Device</field>
+        <field name="res_model">oppo.lock</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- <menuitem 
         id="menu_nuovo_pay" 
         name="Lock Device"
         parent="menu_repayment_root"
         action="action_nuovo_pay"
+    /> -->
+
+    <menuitem 
+        id="menu_oppo_lock" 
+        name="Oppo Lock"
+        parent="menu_repayment_root"
+        action="action_oppo_lock"
     />
 
 

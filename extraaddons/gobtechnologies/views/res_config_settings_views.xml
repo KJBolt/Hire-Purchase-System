@@ -69,6 +69,37 @@
                             </div>
                         </div>
                     </div>
+                    <h2>Oppo Configuration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Oppo API Credentials</span>
+                                <div class="text-muted">
+                                    Configure your Oppo device lock API credentials
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="oppo_carrier_code">Carrier Code</label>
+                                        <div class="col-lg-8">
+                                            <field name="oppo_carrier_code"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="oppo_token">Token</label>
+                                        <div class="col-lg-8">
+                                            <field name="oppo_token" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="oppo_signature_server_url">Signature Server URL</label>
+                                        <div class="col-lg-8">
+                                            <field name="oppo_signature_server_url"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </xpath>
         </field>

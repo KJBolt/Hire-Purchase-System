@@ -44,10 +44,10 @@
         <field name="view_mode">tree</field>
     </record>
 
-    <menuitem 
+    <!-- <menuitem 
         id="menu_payment_notifications" 
         name="Auto Debit Payments"
         parent="menu_repayment_root"
         action="server_action_payment_notifications"
-    />
+    /> -->
 </odoo>

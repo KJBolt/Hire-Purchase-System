@@ -1,0 +1,398 @@
+<templates xml:space="preserve">
+    <t t-name="gobtechnologies.oppo_lock" owl="1">
+        <div class="o_oppo_lock_dashboard">
+
+            <!-- Header -->
+            <div class="olod-header">
+                <div class="olod-header-left">
+                    <div class="olod-header-icon">
+                        <i class="fa fa-mobile"/>
+                    </div>
+                    <div>
+                        <h1 class="olod-title">Oppo Device Management</h1>
+                        <p class="olod-subtitle">Monitor and control device lock statuses</p>
+                    </div>
+                </div>
+                <div class="olod-header-actions">
+                    <button class="olod-btn olod-btn-ghost" t-on-click="() => this.fetchDevices()">
+                        <i class="fa fa-refresh"/> Refresh
+                    </button>
+                    <!-- <button class="olod-btn olod-btn-primary" t-on-click="() => this.action.doAction('gobtechnologies.action_oppo_lock_form')">
+                        <i class="fa fa-plus"/> Add Device
+                    </button> -->
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="olod-stats-row">
+                <div class="olod-stat-card">
+                    <div class="olod-stat-icon olod-icon-neutral">
+                        <i class="fa fa-mobile fa-lg"/>
+                    </div>
+                    <div class="olod-stat-body">
+                        <span class="olod-stat-label">Total Devices</span>
+                        <span class="olod-stat-value" t-esc="state.devices.length"/>
+                    </div>
+                </div>
+                <div class="olod-stat-card">
+                    <div class="olod-stat-icon olod-icon-danger">
+                        <i class="fa fa-lock fa-lg"/>
+                    </div>
+                    <div class="olod-stat-body">
+                        <span class="olod-stat-label">Locked</span>
+                        <span class="olod-stat-value olod-text-danger" t-esc="state.lockedCount"/>
+                    </div>
+                </div>
+                <div class="olod-stat-card">
+                    <div class="olod-stat-icon olod-icon-success">
+                        <i class="fa fa-unlock fa-lg"/>
+                    </div>
+                    <div class="olod-stat-body">
+                        <span class="olod-stat-label">Unlocked</span>
+                        <span class="olod-stat-value olod-text-success" t-esc="state.unlockedCount"/>
+                    </div>
+                </div>
+                <div class="olod-stat-card">
+                    <div class="olod-stat-icon olod-icon-warning">
+                        <i class="fa fa-hourglass-half fa-lg"/>
+                    </div>
+                    <div class="olod-stat-body">
+                        <span class="olod-stat-label">Pending</span>
+                        <span class="olod-stat-value olod-text-warning" t-esc="state.pendingCount"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Table Card -->
+            <div class="olod-table-card">
+                <div class="olod-table-header">
+                    <h2 class="olod-table-title">Registered Devices</h2>
+                    <div class="olod-search-wrapper">
+                        <i class="fa fa-search olod-search-icon"/>
+                        <input
+                            type="text"
+                            class="olod-search-input"
+                            placeholder="Search by name, UID…"
+                            t-on-input="onSearchInput"
+                        />
+                    </div>
+                </div>
+
+                <div class="olod-table-wrap">
+                    <table class="olod-table">
+                        <thead>
+                            <tr>
+                                <th class="olod-th">Device</th>
+                                <th class="olod-th">Customer</th>
+                                <th class="olod-th">Device UID</th>
+                                <th class="olod-th">Status</th>
+                                <th class="olod-th">Last Action</th>
+                                <th class="olod-th olod-th-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.filteredDevices" t-as="device" t-key="device.id">
+
+                                <!-- Confirm Delete Row -->
+                                <tr t-if="state.confirmDeleteId === device.id" class="olod-confirm-row">
+                                    <td colspan="6" class="olod-confirm-cell">
+                                        <div class="olod-confirm-inner">
+                                            <i class="fa fa-exclamation-triangle olod-warn-icon"/>
+                                            <span>Delete <strong t-esc="device.device_name"/>? This action cannot be undone.</span>
+                                            <button class="olod-btn olod-btn-danger olod-btn-sm" t-on-click="() => this.deleteDevice(device)">
+                                                <i class="fa fa-trash"/> Delete
+                                            </button>
+                                            <button class="olod-btn olod-btn-ghost olod-btn-sm" t-on-click="() => this.cancelDelete()">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Normal Row -->
+                                <tr t-else="" class="olod-row">
+                                    <td class="olod-td">
+                                        <div class="olod-device-cell">
+                                            <div class="olod-device-avatar">
+                                                <i class="fa fa-mobile"/>
+                                            </div>
+                                            <div>
+                                                <div class="olod-device-name" t-esc="device.device_name"/>
+                                                <div class="olod-device-id">ID: <t t-esc="device.id"/></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="olod-td">
+                                        <span class="olod-ref-badge" t-esc="device.repayment_id[1]"/>
+                                    </td>
+                                    <td class="olod-td">
+                                        <code class="olod-uid" t-esc="device.device_uid"/>
+                                    </td>
+                                    <td class="olod-td">
+                                        <span t-attf-class="olod-status-badge olod-status-#{device.status}">
+                                            <i t-attf-class="fa #{device.status === 'locked' ? 'fa-lock' : device.status === 'unlocked' ? 'fa-unlock-alt' : device.status === 'pending' ? 'fa-clock-o' : 'fa-exclamation-circle'}"/>
+                                            <t t-esc="device.status"/>
+                                        </span>
+                                    </td>
+                                    <td class="olod-td olod-td-muted">
+                                        <t t-if="device.lock_date">
+                                            <i class="fa fa-clock-o"/> <t t-esc="device.lock_date"/>
+                                        </t>
+                                        <span t-else="" class="olod-na">—</span>
+                                    </td>
+                                    <td class="olod-td olod-td-right">
+                                        <div class="olod-action-group">
+                                            <!-- Lock: show when pending or unlocked -->
+                                            <button
+                                                t-if="device.status === 'pending' or device.status === 'unlocked'"
+                                                class="olod-btn olod-btn-danger olod-btn-sm"
+                                                t-on-click="() => this.lockDevice(device)"
+                                                title="Lock Device">
+                                                <i class="fa fa-lock"/> Lock
+                                            </button>
+                                            <!-- Unlock: show only when locked -->
+                                            <button
+                                                t-if="device.status === 'locked'"
+                                                class="olod-btn olod-btn-success olod-btn-sm"
+                                                t-on-click="() => this.unlockDevice(device)"
+                                                title="Unlock Device">
+                                                <i class="fa fa-unlock"/> Unlock
+                                            </button>
+                                            <!-- Edit: always visible -->
+                                            <button
+                                                class="olod-btn olod-btn-info olod-btn-sm"
+                                                t-on-click="() => this.editDevice(device.id)"
+                                                title="Edit Device">
+                                                <i class="fa fa-pencil"/> Edit
+                                            </button>
+                                            <button class="olod-btn olod-btn-ghost olod-btn-sm olod-btn-icon-warn" t-on-click="() => this.confirmDelete(device.id)" title="Delete Device">
+                                                <i class="fa fa-trash"/>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </t>
+
+                            <!-- Empty State -->
+                            <tr t-if="state.filteredDevices.length === 0">
+                                <td colspan="6" class="olod-empty">
+                                    <i class="fa fa-search olod-empty-icon"/>
+                                    <p class="olod-empty-text">No devices match your search.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <style>
+            /* ── Root ── */
+            .o_oppo_lock_dashboard {
+                padding: 28px 32px;
+                background: #f5f6f8;
+                min-height: 100vh;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+
+            /* ── Header ── */
+            .olod-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #fff;
+                border: 1px solid #e8eaed;
+                border-radius: 14px;
+                padding: 20px 24px;
+                margin-bottom: 24px;
+            }
+            .olod-header-left { display: flex; align-items: center; gap: 16px; }
+            .olod-header-icon {
+                width: 48px; height: 48px;
+                background: #e8f5e9;
+                border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                color: #2e7d32;
+                font-size: 22px;
+            }
+            .olod-title { margin: 0; font-size: 20px; font-weight: 700; color: #1a1f2e; }
+            .olod-subtitle { margin: 2px 0 0; font-size: 13px; color: #8f9aab; }
+            .olod-header-actions { display: flex; gap: 10px; }
+
+            /* ── Buttons ── */
+            .olod-btn {
+                display: inline-flex; align-items: center; gap: 6px;
+                padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+                cursor: pointer; border: 1px solid transparent; transition: all .15s;
+            }
+            .olod-btn-sm { padding: 5px 11px; font-size: 12px; }
+            .olod-btn-primary { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+            .olod-btn-primary:hover { background: #1b5e20; }
+            .olod-btn-danger { background: #c62828; color: #fff; border-color: #c62828; }
+            .olod-btn-danger:hover { background: #b71c1c; }
+            .olod-btn-success { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+            .olod-btn-success:hover { background: #1b5e20; }
+            .olod-btn-info { background: #1565c0; color: #fff; border-color: #1565c0; }
+            .olod-btn-info:hover { background: #0d47a1; }
+            .olod-btn-ghost { background: #fff; color: #3d4451; border-color: #e0e3e8; }
+            .olod-btn-ghost:hover { background: #f5f6f8; }
+            .olod-btn-icon-warn { color: #b71c1c; }
+            .olod-btn-icon-warn:hover { background: #fdecea; border-color: #f5c6c6; }
+
+            /* ── Stats ── */
+            .olod-stats-row {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+            .olod-stat-card {
+                background: #fff;
+                border: 1px solid #e8eaed;
+                border-radius: 14px;
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            .olod-stat-icon {
+                width: 48px; height: 48px; border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+            }
+            .olod-icon-neutral { background: #f1f3f4; color: #5f6368; }
+            .olod-icon-danger  { background: #fdecea; color: #c62828; }
+            .olod-icon-success { background: #e8f5e9; color: #2e7d32; }
+            .olod-icon-warning { background: #fff8e1; color: #f57f17; }
+            .olod-stat-body { display: flex; flex-direction: column; gap: 2px; }
+            .olod-stat-label { font-size: 12px; font-weight: 500; color: #8f9aab; text-transform: uppercase; letter-spacing: .5px; }
+            .olod-stat-value { font-size: 28px; font-weight: 700; color: #1a1f2e; line-height: 1; }
+            .olod-text-danger  { color: #c62828 !important; }
+            .olod-text-success { color: #2e7d32 !important; }
+            .olod-text-warning { color: #f57f17 !important; }
+
+            /* ── Table Card ── */
+            .olod-table-card {
+                background: #fff;
+                border: 1px solid #e8eaed;
+                border-radius: 14px;
+                overflow: hidden;
+            }
+            .olod-table-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 18px 24px;
+                border-bottom: 1px solid #f0f2f5;
+            }
+            .olod-table-title { margin: 0; font-size: 15px; font-weight: 700; color: #1a1f2e; }
+
+            /* ── Search ── */
+            .olod-search-wrapper {
+                position: relative;
+                display: flex; align-items: center;
+            }
+            .olod-search-icon {
+                position: absolute; left: 10px;
+                color: #aab0bb; font-size: 13px;
+                pointer-events: none;
+            }
+            .olod-search-input {
+                padding: 7px 12px 7px 30px;
+                border: 1px solid #e0e3e8;
+                border-radius: 8px;
+                font-size: 13px;
+                color: #1a1f2e;
+                background: #f9fafb;
+                width: 230px;
+                outline: none;
+                transition: border .15s, background .15s;
+            }
+            .olod-search-input:focus { border-color: #2e7d32; background: #fff; }
+
+            /* ── Table ── */
+            .olod-table-wrap { overflow-x: auto; }
+            .olod-table { width: 100%; border-collapse: collapse; }
+            .olod-th {
+                padding: 11px 16px;
+                font-size: 11px; font-weight: 600;
+                text-transform: uppercase; letter-spacing: .6px;
+                color: #8f9aab;
+                background: #f9fafb;
+                border-bottom: 1px solid #f0f2f5;
+                white-space: nowrap;
+            }
+            .olod-th-right { text-align: right; }
+            .olod-row:hover td { background: #fafbfc; }
+            .olod-td {
+                padding: 14px 16px;
+                border-bottom: 1px solid #f5f6f8;
+                font-size: 13.5px;
+                color: #2d3343;
+                vertical-align: middle;
+            }
+            .olod-td-muted { color: #8f9aab; font-size: 12.5px; }
+            .olod-td-right { text-align: right; }
+
+            /* ── Device Cell ── */
+            .olod-device-cell { display: flex; align-items: center; gap: 12px; }
+            .olod-device-avatar {
+                width: 38px; height: 38px; border-radius: 10px;
+                background: #f1f3f4; color: #5f6368;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 17px; flex-shrink: 0;
+            }
+            .olod-device-name { font-weight: 600; font-size: 13.5px; color: #1a1f2e; }
+            .olod-device-id { font-size: 11.5px; color: #aab0bb; margin-top: 1px; }
+
+            /* ── Ref Badge ── */
+            .olod-ref-badge {
+                display: inline-block;
+                padding: 3px 10px;
+                background: #f1f3f4;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+                color: #3d4451;
+            }
+
+            /* ── UID ── */
+            .olod-uid {
+                font-family: "SFMono-Regular", Consolas, monospace;
+                font-size: 12px;
+                color: #5c6bc0;
+                background: #ede7f6;
+                padding: 2px 8px;
+                border-radius: 5px;
+            }
+
+            /* ── Status Badges ── */
+            .olod-status-badge {
+                display: inline-flex; align-items: center; gap: 5px;
+                padding: 4px 11px; border-radius: 20px;
+                font-size: 12px; font-weight: 600;
+                text-transform: capitalize;
+            }
+            .olod-status-locked   { background: #fdecea; color: #c62828; }
+            .olod-status-unlocked { background: #e8f5e9; color: #2e7d32; }
+            .olod-status-pending  { background: #fff8e1; color: #f57f17; }
+            .olod-status-badge:not(.olod-status-locked):not(.olod-status-unlocked):not(.olod-status-pending) {
+                background: #f1f3f4; color: #5f6368;
+            }
+
+            /* ── Action Group ── */
+            .olod-action-group { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+
+            /* ── Confirm Row ── */
+            .olod-confirm-row td { background: #fffde7 !important; }
+            .olod-confirm-cell { padding: 14px 16px !important; }
+            .olod-confirm-inner { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: #2d3343; }
+            .olod-warn-icon { color: #f57f17; font-size: 16px; }
+
+            /* ── Empty State ── */
+            .olod-empty { text-align: center; padding: 60px 16px !important; }
+            .olod-empty-icon { font-size: 36px; color: #d0d5dd; display: block; margin-bottom: 12px; }
+            .olod-empty-text { color: #aab0bb; font-size: 14px; margin: 0; }
+            .olod-na { color: #d0d5dd; }
+        </style>
+    </t>
+</templates>

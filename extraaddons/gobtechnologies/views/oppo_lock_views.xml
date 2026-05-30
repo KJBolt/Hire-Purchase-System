@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_oppo_lock_form" model="ir.ui.view">
+        <field name="name">oppo.lock.form</field>
+        <field name="model">oppo.lock</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+
+                            <field name="lock_title"/>
+                            <field name="lock_message"/>
+                            <field name="device_name"/>
+                            <field name="repayment_id" options="{'no_create': True, 'no_quick_create': True}"/>
+                            <field name="device_uid"/>
+                            <field name="imei_list"/>
+                            <field name="expired_time"/>
+                            <field name="display_type"/>
+                            <field name="status"/>
+                        </group>
+                        <group string="Prepaid Messages">
+                            <field name="one_day_title"/>
+                            <field name="one_day_content"/>
+                            <field name="three_day_title"/>
+                            <field name="three_day_content"/>
+                            <field name="seven_day_title"/>
+                            <field name="seven_day_content"/>
+                        </group>
+
+                        <group string="API Response" invisible="not api_response">
+                            <field name="api_response" readonly="1" widget="text"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_oppo_lock_tree" model="ir.ui.view">
+        <field name="name">oppo.lock.tree</field>
+        <field name="model">oppo.lock</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="device_name"/>
+                <field name="repayment_id"/>
+                <field name="device_uid"/>
+                <field name="status"/>
+                <field name="lock_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action to open the views -->
+    <record id="action_oppo_lock_window" model="ir.actions.act_window">
+        <field name="name">Oppo Devices</field>
+        <field name="res_model">oppo.lock</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Oppo device
+            </p>
+        </field>
+    </record>
+
+    <!-- Specific action for the add button (opens form in create mode) -->
+    <record id="action_oppo_lock_form" model="ir.actions.act_window">
+        <field name="name">Add Oppo Device</field>
+        <field name="res_model">oppo.lock</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_oppo_lock_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>

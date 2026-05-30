@@ -2,6 +2,9 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_repayment_penalty_user,repayment.penalty.user,model_repayment_penalty,base.group_user,1,1,1,1
 access_nuovopay_lock_user,nuovopay.lock.user,model_nuovopay_lock,base.group_user,1,1,1,1
 
+access_oppo_lock,access.oppo.lock,model_oppo_lock,base.group_user,1,1,1,1
+access_oppo_lock_manager,access.oppo.lock.manager,model_oppo_lock,base.group_system,1,1,1,1
+
 
 
 

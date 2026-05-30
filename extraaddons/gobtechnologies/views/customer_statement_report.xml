@@ -50,10 +50,10 @@
                         string="Confirm" class="btn-primary" type="object"
                         invisible="state in ['paid']"
                     /> -->
-                    <button name="action_create_invoice" id="action_create_invoice"
+                    <!-- <button name="action_create_invoice" id="action_create_invoice"
                         string="Create Invoice" class="btn-primary" type="object"
                         invisible="state in ['progress', 'paid']"
-                    />
+                    /> -->
 
                     <button name="action_cancel" type="object" string="Cancel" 
                         invisible="state in ['draft', 'progress']" 
@@ -133,9 +133,9 @@
 
                     <notebook>
                         <!-- Invoice Details -->
-                        <page string="Invoice Details" name="invoice_details">
+                        <page string="Product Details" name="product_details">
                             <sheet>
-                                <group string="Business Details">
+                                <!-- <group string="Business Details">
                                     <field name="branch" />
                                 </group>
 
@@ -145,7 +145,7 @@
 
                                 <group string="How do you want this customer to pay for this invoice?">
                                     <field name="invoice_payment_method" />
-                                </group>
+                                </group> -->
 
                                 <group string="Add products">
                                     <field name="product_lines" readonly="state in ['cancel', 'paid']">
@@ -159,9 +159,9 @@
                                     </field>
                                 </group>
 
-                                <group string="Add a Note">
+                                <!-- <group string="Add a Note">
                                     <field name="note" />
-                                </group>
+                                </group> -->
                             </sheet>
                         </page>
 

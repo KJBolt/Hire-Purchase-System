@@ -7,5 +7,6 @@ from . import product_template_inherit
 from . import nuovopay_lock
 from . import res_user_inherit
 from . import res_partner
+from . import oppo_lock
 
 # from . import settings_inherit
