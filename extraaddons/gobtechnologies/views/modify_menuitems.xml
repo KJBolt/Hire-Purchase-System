@@ -85,7 +85,7 @@
         <field name="tag">gobtechnologies.customer_management</field>
     </record>
     
-    <record id="action_stock_management" model="ir.actions.client">
+    <!-- <record id="action_stock_management" model="ir.actions.client">
         <field name="name">Stock Management</field>
         <field name="tag">gobtechnologies.stock_management</field>
     </record>
@@ -98,7 +98,7 @@
     <record id="action_reports" model="ir.actions.client">
         <field name="name">Reports</field>
         <field name="tag">gobtechnologies.reports</field>
-    </record>
+    </record> -->
     
 
     <!-- Dashboard Menu Items -->
@@ -123,7 +123,7 @@
         action="action_customer_management"
     />
 
-    <menuitem 
+    <!-- <menuitem 
         id="menu_stock_management" 
         name="Stock Management"
         parent="menu_dashboard"
@@ -142,6 +142,6 @@
         name="Auditing"
         parent="menu_dashboard"
         action="action_auditing"
-    />
+    /> -->
 
 </odoo>

@@ -32,15 +32,62 @@ export class OppoLock extends Component{
             "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response"
         ]);
         this.state.devices = devices;
+        await this.fetchDeviceStatuses();
         this.filterDevices();
         this.updateCounts();
     }
 
+    async fetchDeviceStatuses() {
+        // Status code to description mapping
+        const statusMap = {
+            '-1': 'Error',
+            '0': 'Normal',
+            '1': 'Locked',
+            '2': 'Locking',
+            '3': 'Completed',
+            '4': 'Completing',
+            '5': 'Unlocking',
+            '7': 'Activating',
+            '8': 'Releasing PhoneLOCK',
+            '9': 'Released PhoneLOCK',
+            '10': 'Releasing SIMLOCK',
+            '11': 'Released SIMLOCK',
+            '12': 'Deleting',
+            '13': 'Deleted',
+            '14': 'CK Unlock',
+        };
+        // Fetch status from Oppo API for each device
+        for (const device of this.state.devices) {
+            try {
+                const result = await this.orm.call("oppo.lock", "action_get_device_status", [[device.id]]);
+                // Update the device status in the state
+                const deviceIndex = this.state.devices.findIndex(d => d.id === device.id);
+                if (deviceIndex !== -1) {
+                    this.state.devices[deviceIndex].status = statusMap[result.status] || result.status;
+                    this.state.devices[deviceIndex].api_status = result.api_status;
+                    this.state.devices[deviceIndex].info = result.info;
+                }
+            } catch (error) {
+                console.error(`Failed to fetch status for device ${device.id}:`, error);
+                // Keep existing status if API call fails
+            }
+        }
+
+        // Update counts after fetching all statuses
+        this.updateCounts();
+    }
+
+    // Update device counts based on status
     updateCounts() {
-        this.state.lockedCount = this.state.devices.filter(d => d.status === 'locked').length;
-        this.state.unlockedCount = this.state.devices.filter(d => d.status === 'unlocked').length;
-        this.state.pendingCount = this.state.devices.filter(d => d.status === 'pending').length;
-        this.state.errorCount = this.state.devices.filter(d => d.status === 'error').length;
+        // Count based on new status descriptions
+        this.state.lockedCount = this.state.devices.filter(d => d.status === 'Locked').length;
+        this.state.unlockedCount = this.state.devices.filter(d => 
+            ['Normal', 'Completed', 'Released PhoneLOCK', 'Released SIMLOCK', 'Deleted', 'CK Unlock'].includes(d.status)
+        ).length;
+        this.state.pendingCount = this.state.devices.filter(d => 
+            ['Locking', 'Completing', 'Unlocking', 'Activating', 'Releasing PhoneLOCK', 'Releasing SIMLOCK', 'Deleting'].includes(d.status)
+        ).length;
+        this.state.errorCount = this.state.devices.filter(d => d.status === 'Error').length;
     }
 
     filterDevices() {
@@ -80,6 +127,43 @@ export class OppoLock extends Component{
             await this.fetchDevices();
         } catch (error) {
             this.notification.add(`Failed to unlock device`, { type: 'danger' });
+            this.notification.add(`Error: ${error.message}`, { type: 'danger' });
+        }
+    }
+
+    async refreshDeviceStatus(device) {
+        // Status code to description mapping
+        const statusMap = {
+            '-1': 'Error',
+            '0': 'Normal',
+            '1': 'Locked',
+            '2': 'Locking',
+            '3': 'Completed',
+            '4': 'Completing',
+            '5': 'Unlocking',
+            '7': 'Activating',
+            '8': 'Releasing PhoneLOCK',
+            '9': 'Released PhoneLOCK',
+            '10': 'Releasing SIMLOCK',
+            '11': 'Released SIMLOCK',
+            '12': 'Deleting',
+            '13': 'Deleted',
+            '14': 'CK Unlock',
+        };
+
+        try {
+            const result = await this.orm.call("oppo.lock", "action_get_device_status", [[device.id]]);
+            const deviceIndex = this.state.devices.findIndex(d => d.id === device.id);
+            if (deviceIndex !== -1) {
+                this.state.devices[deviceIndex].status = statusMap[result.status] || result.status;
+                this.state.devices[deviceIndex].api_status = result.api_status;
+                this.state.devices[deviceIndex].info = result.info;
+            }
+            this.filterDevices();
+            this.updateCounts();
+            this.notification.add(`Device status refreshed`, { type: 'success' });
+        } catch (error) {
+            this.notification.add(`Failed to refresh device status`, { type: 'danger' });
             this.notification.add(`Error: ${error.message}`, { type: 'danger' });
         }
     }

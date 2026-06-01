@@ -35,10 +35,21 @@ class OppoLock(models.Model):
     seven_day_content = fields.Text('Seven Day Content', default='Your device is locked. Please pay to unlock.')
 
     status = fields.Selection([
-        ('pending', 'Pending'),
-        ('locked', 'Locked'),
-        ('unlocked', 'Unlocked'),
-        ('error', 'Error'),
+        ('-1', 'Error'),
+        ('0', 'Normal'),
+        ('1', 'Locked'),
+        ('2', 'Locking'),
+        ('3', 'Completed'),
+        ('4', 'Completing'),
+        ('5', 'Unlocking'),
+        ('7', 'Activating'),
+        ('8', 'Releasing PhoneLOCK'),
+        ('9', 'Released PhoneLOCK'),
+        ('10', 'Releasing SIMLOCK'),
+        ('11', 'Released SIMLOCK'),
+        ('12', 'Deleting'),
+        ('13', 'Deleted'),
+        ('14', 'CK Unlock'),
     ], default='pending', string='Lock Status')
     lock_date = fields.Datetime('Lock Date')
     api_response = fields.Text('API Response', readonly=True)
@@ -81,6 +92,9 @@ class OppoLock(models.Model):
         if not carrier_code or not token:
             raise UserError(_('Oppo carrier code or token is not configured. Please configure it in the settings.'))
 
+        if not signature_server_url:
+            raise UserError(_('Signature server URL is not configured. Please configure it in the settings.'))
+
         # Stringify the request body as JSON
         data_string = json.dumps(request_body, separators=(',', ':'))
 
@@ -95,6 +109,7 @@ class OppoLock(models.Model):
                 signature_server_url,
                 headers={'Content-Type': 'application/json'},
                 json=payload,
+                timeout=30
             )
             response.raise_for_status()
 
@@ -257,3 +272,77 @@ class OppoLock(models.Model):
                 _logger.error(f"Error calling Oppo unlock API: {e}")
                 record.write({'status': 'error'})
                 raise UserError(_('Failed to unlock device via Oppo API: %s') % str(e))
+
+    def action_get_device_status(self):
+        """Get device status from Oppo API"""
+        for record in self:
+            oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+            carrier_code = oppo_credentials.get('carrier_code')
+
+            if not carrier_code:
+                raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
+
+            # Use device_uid if available, otherwise use imei_list
+            if record.device_uid:
+                request_body = {
+                    "deviceUid": record.device_uid
+                }
+            else:
+                try:
+                    imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else []
+                except json.JSONDecodeError:
+                    imei_list = []
+
+                if not imei_list:
+                    raise UserError(_('Device UID or IMEI list is required to check status.'))
+
+                request_body = {
+                    "imeiList": imei_list
+                }
+
+            # Generate x-sign
+            x_sign = record._generate_x_sign(request_body)
+            record.x_sign = x_sign
+
+            # Generate transaction ID
+            # import uuid
+            # transaction_id = str(uuid.uuid4())
+
+            # Call Oppo API
+            headers = {
+                'Content-Type': 'application/json',
+                'x-carrier-code': carrier_code,
+                'x-sign': x_sign,
+                # 'x-transactionId': transaction_id
+            }
+
+            try:
+                response = requests.post(
+                    f"{OPPO_API_URL}/getStatus",
+                    headers=headers,
+                    json=request_body
+                )
+                response.raise_for_status()
+
+                response_data = response.json()
+                _logger.info(f"Oppo getStatus API response: {response_data}")
+
+                record.api_response = json.dumps(response_data, indent=2)
+
+                # Map API status codes to our status field
+                api_status = response_data.get('status')
+
+                new_status = str(api_status) if api_status is not None else '-1'
+                record.write({'status': new_status})
+
+                return {
+                    'status': new_status,
+                    'api_status': api_status,
+                    'info': response_data.get('info', ''),
+                    'result': response_data.get('result', '')
+                }
+
+            except requests.exceptions.RequestException as e:
+                _logger.error(f"Error calling Oppo getStatus API: {e}")
+                record.write({'status': 'error'})
+                raise UserError(_('Failed to get device status from Oppo API: %s') % str(e))

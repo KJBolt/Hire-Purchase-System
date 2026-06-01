@@ -91,10 +91,10 @@
         <field name="domain">[('description', '=', '')]</field>
     </record>
 
-    <menuitem 
+    <!-- <menuitem 
         id="menu_hubtel_webhook" 
         name="Ussd Payments"
         parent="menu_repayment_root"
         action="server_action_hubtel_webhook"
-    />
+    /> -->
 </odoo>

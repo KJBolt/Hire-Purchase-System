@@ -142,9 +142,16 @@
                                     </td>
                                     <td class="olod-td olod-td-right">
                                         <div class="olod-action-group">
-                                            <!-- Lock: show when pending or unlocked -->
+                                            <!-- Refresh Status: always visible -->
                                             <button
-                                                t-if="device.status === 'pending' or device.status === 'unlocked'"
+                                                class="olod-btn olod-btn-ghost olod-btn-sm"
+                                                t-on-click="() => this.refreshDeviceStatus(device)"
+                                                title="Refresh Status">
+                                                <i class="fa fa-refresh"/>
+                                            </button>
+                                            <!-- Lock: show when device is in unlocked or normal state -->
+                                            <button
+                                                t-if="['Normal'].includes(device.status)"
                                                 class="olod-btn olod-btn-danger olod-btn-sm"
                                                 t-on-click="() => this.lockDevice(device)"
                                                 title="Lock Device">
@@ -152,7 +159,7 @@
                                             </button>
                                             <!-- Unlock: show only when locked -->
                                             <button
-                                                t-if="device.status === 'locked'"
+                                                t-if="device.status === 'Locked'"
                                                 class="olod-btn olod-btn-success olod-btn-sm"
                                                 t-on-click="() => this.unlockDevice(device)"
                                                 title="Unlock Device">
