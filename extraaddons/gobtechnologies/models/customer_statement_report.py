@@ -598,11 +598,15 @@ class Repayment(models.Model):
 
 
     # Compute the repayment amount
-    @api.depends('payment_lines.payment_amount')
+    @api.depends('payment_lines.payment_amount', 'expected_to_pay', 'state')
     def _compute_repayment(self):
         for rec in self: 
-            if rec.payment_lines:
+            if rec.state == 'paid':
+                rec.repayment = 0.0
+            elif rec.payment_lines:
                 rec.repayment = sum(rec.payment_lines.mapped('payment_amount'))
+            else:
+                rec.repayment = rec.expected_to_pay
 
 
 
@@ -1253,7 +1257,7 @@ class Repayment(models.Model):
             # If no payment lines, calculate from start date
             if not record.payment_lines:
                 if freq == 1:
-                    record.repayment_date = record.start_date
+                    record.repayment_date = record.start_date + timedelta(days=1)
                 elif freq == 7:
                     record.repayment_date = record.start_date + timedelta(weeks=1)
                 elif freq == 30:
