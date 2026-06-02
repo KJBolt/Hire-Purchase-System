@@ -50,7 +50,7 @@ class OppoLock(models.Model):
         ('12', 'Deleting'),
         ('13', 'Deleted'),
         ('14', 'CK Unlock'),
-    ], default='pending', string='Lock Status')
+    ], default='0', string='Lock Status')
     lock_date = fields.Datetime('Lock Date')
     api_response = fields.Text('API Response', readonly=True)
     x_sign = fields.Char('Generated X-Sign', readonly=True)
@@ -144,21 +144,36 @@ class OppoLock(models.Model):
             if not carrier_code:
                 raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
 
-            # Parse IMEI list
-            try:
-                imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else [record.device_uid]
-            except json.JSONDecodeError:
-                imei_list = [record.device_uid]
+            # Use device_uid if available, otherwise use imei_list
+            if record.device_uid:
+                request_body = {
+                    "title": record.lock_title,
+                    "message": record.lock_message,
+                    "deviceUid": record.device_uid
+                }
+            else:
+                try:
+                    imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else []
+                except json.JSONDecodeError:
+                    imei_list = []
+
+                if not imei_list:
+                    raise UserError(_('Device UID or IMEI list is required to check status.'))
+
+                request_body = {
+                    "title": record.lock_title,
+                    "message": record.lock_message,
+                    "imeiList": imei_list
+                }
 
             if not imei_list:
                 raise UserError(_('IMEI List is required. Please enter at least one IMEI.'))
 
             # Build request body
-            request_body = {
-                "title": record.lock_title,
-                "message": record.lock_message,
-                "imeiList": imei_list,
-            }
+            # request_body = {
+                
+            #     "imeiList": imei_list,
+            # }
 
             # Generate x-sign
             x_sign = record._generate_x_sign(request_body)
@@ -189,7 +204,7 @@ class OppoLock(models.Model):
 
                 if response_data.get('code') == 0:
                     record.write({
-                        'status': 'locked',
+                        'status': '1',
                         'lock_date': fields.Datetime.now()
                     })
                     record.message_post(
@@ -198,12 +213,12 @@ class OppoLock(models.Model):
                         subtype_xmlid='mail.mt_note'
                     )
                 else:
-                    record.write({'status': 'error'})
+                    record.write({'status': '-1'})
                     raise UserError(_('Oppo API error: %s') % response_data.get('errorInfo', 'Unknown error'))
 
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Error calling Oppo API: {e}")
-                record.write({'status': 'error'})
+                record.write({'status': '-1'})
                 raise UserError(_('Failed to lock device via Oppo API: %s') % str(e))
 
     def action_unlock_device(self):
@@ -215,14 +230,27 @@ class OppoLock(models.Model):
             if not carrier_code:
                 raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
 
-            # if record.status != 'locked':
+            # if record.status != '1':
             #     raise UserError(_('Device is not currently locked.'))
 
             # Parse IMEI list
-            try:
-                imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else [record.device_uid]
-            except json.JSONDecodeError:
-                imei_list = [record.device_uid]
+            # Use device_uid if available, otherwise use imei_list
+            if record.device_uid:
+                request_body = {
+                    "deviceUid": record.device_uid
+                }
+            else:
+                try:
+                    imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else []
+                except json.JSONDecodeError:
+                    imei_list = []
+
+                if not imei_list:
+                    raise UserError(_('Device UID or IMEI list is required to check status.'))
+
+                request_body = {
+                    "imeiList": imei_list
+                }
 
             # Build request body
             request_body = {
@@ -256,7 +284,7 @@ class OppoLock(models.Model):
 
                 if response_data.get('code') == 0:
                     record.write({
-                        'status': 'unlocked',
+                        'status': '0',
                         'lock_date': fields.Datetime.now()
                     })
                     record.message_post(
@@ -265,12 +293,12 @@ class OppoLock(models.Model):
                         subtype_xmlid='mail.mt_note'
                     )
                 else:
-                    record.write({'status': 'error'})
+                    record.write({'status': '-1'})
                     raise UserError(_('Oppo API error: %s') % response_data.get('errorInfo', 'Unknown error'))
 
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Error calling Oppo unlock API: {e}")
-                record.write({'status': 'error'})
+                record.write({'status': '-1'})
                 raise UserError(_('Failed to unlock device via Oppo API: %s') % str(e))
 
     def action_get_device_status(self):
@@ -344,5 +372,5 @@ class OppoLock(models.Model):
 
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Error calling Oppo getStatus API: {e}")
-                record.write({'status': 'error'})
+                record.write({'status': '-1'})
                 raise UserError(_('Failed to get device status from Oppo API: %s') % str(e))

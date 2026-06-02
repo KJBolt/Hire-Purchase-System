@@ -605,8 +605,8 @@ class Repayment(models.Model):
                 rec.repayment = 0.0
             elif rec.payment_lines:
                 rec.repayment = sum(rec.payment_lines.mapped('payment_amount'))
-            else:
-                rec.repayment = rec.expected_to_pay
+            # else:
+            #     rec.repayment = rec.expected_to_pay
 
 
 
@@ -1257,7 +1257,7 @@ class Repayment(models.Model):
             # If no payment lines, calculate from start date
             if not record.payment_lines:
                 if freq == 1:
-                    record.repayment_date = record.start_date + timedelta(days=1)
+                    record.repayment_date = record.start_date
                 elif freq == 7:
                     record.repayment_date = record.start_date + timedelta(weeks=1)
                 elif freq == 30:
