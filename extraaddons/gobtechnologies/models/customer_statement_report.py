@@ -8,6 +8,8 @@ import json
 import base64
 import magic
 import datetime
+import math
+from datetime import timedelta
 
 
 _logger = logging.getLogger(__name__)
@@ -183,6 +185,22 @@ class RepaymentPaymentLine(models.Model):
             except Exception as e:
                 _logger.warning(f"Failed to send Oppo trigger push on payment: {str(e)}")
         
+
+        # Trigger Oppo prepaid edit API call when payment is received
+        try:
+            _logger.info("Triggering Oppo prepaid edit API call after payment")
+            oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+            if oppo_lock:
+                payment_amount = vals.get('payment_amount', 0)
+                repayment_frequency = repayment.repayment_frequency
+                oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
+                _logger.info(f"Prepaid edit API called for repayment {repayment.unique_id} with payment amount {payment_amount}")
+            else:
+                _logger.info(f"No Oppo lock record found for repayment {repayment.unique_id}, skipping prepaid edit")
+        except Exception as e:
+            _logger.error(f"Failed to call prepaid edit API on payment: {str(e)}")
+            # Don't block the payment if prepaid edit fails
+        
         res.testpayment(vals)
         return res
         
@@ -318,7 +336,7 @@ class Repayment(models.Model):
     selling_price = fields.Float(string='Selling Price', required=True)
     deposit = fields.Float(string='Deposit', required=True)
     repayment = fields.Float(string='Repayment Amount', compute='_compute_repayment', readonly=True, store=True)
-    expected_to_pay = fields.Float(string='Expected to Pay', required=True)
+    expected_to_pay = fields.Float(string='Expected to Pay', compute='_compute_expected_to_pay', store=True)
     repayment_frequency = fields.Selection([
         ('1', 'Daily'),
         ('7', 'Weekly'),
@@ -419,6 +437,42 @@ class Repayment(models.Model):
                 ('res_field', '=', 'mobile_money_statement')
             ], limit=1)
             record.mobile_money_statement_filename = attachment.name if attachment else False
+
+    @api.depends('selling_price', 'deposit', 'start_date', 'end_date', 'repayment_frequency')
+    def _compute_expected_to_pay(self):
+        for record in self:
+            # Guard: need all fields
+            if not (record.selling_price and record.start_date and record.end_date and record.repayment_frequency):
+                record.expected_to_pay = 0.0
+                continue
+
+            frequency_days = int(record.repayment_frequency)
+
+            # Cash plan — no installment calculation
+            if frequency_days == 0:
+                record.expected_to_pay = 0.0
+                continue
+
+            # Total days in the repayment plan
+            duration_days = (record.end_date - record.start_date).days
+
+            if duration_days <= 0:
+                record.expected_to_pay = 0.0
+                continue
+
+            # Number of installments: round up so partial periods count as 1 full installment
+            # e.g. 3 days / 7 days (weekly) = ceil(0.43) = 1 weekly installment
+            # e.g. 3 days / 1 day (daily)   = ceil(3.0)  = 3 daily installments
+            # e.g. 30 days / 7 days (weekly) = ceil(4.28) = 5 weekly installments
+            num_installments = math.ceil(duration_days / frequency_days)
+
+            # Amount still owed after deposit
+            remaining_amount = record.selling_price - record.deposit
+
+            if num_installments > 0 and remaining_amount > 0:
+                record.expected_to_pay = remaining_amount / num_installments
+            else:
+                record.expected_to_pay = 0.0
 
     @api.depends('product_lines.product_id')
     def _compute_sales_commission(self):
@@ -583,30 +637,36 @@ class Repayment(models.Model):
 
 
     # Ensure the selling price, deposit and expected to pay is not zero
-    @api.constrains('selling_price', 'deposit', 'expected_to_pay')
+    @api.constrains('selling_price', 'deposit', 'start_date', 'end_date', 'repayment_frequency')
     def _check_not_zero_values(self):
         for record in self:
             if record.selling_price == 0:
                 raise ValidationError('Please enter the selling price')
 
             # if record.deposit == 0:
-            #     raise ValidationError('Please enter the deposit')
+            # raise ValidationError('Please enter the deposit')
 
-            if record.expected_to_pay == 0:
-                raise ValidationError('Please enter the expected to pay')
+            if not record.start_date or not record.end_date:
+                raise ValidationError('Please enter the start date and end date')
+
+            if record.start_date > record.end_date:
+                raise ValidationError('End date must be after start date')
+
+            if record.repayment_frequency == '0':
+                raise ValidationError('Repayment frequency cannot be Cash when computing expected to pay')
 
 
 
     # Compute the repayment amount
     @api.depends('payment_lines.payment_amount', 'expected_to_pay', 'state')
     def _compute_repayment(self):
-        for rec in self: 
+        for rec in self:
             if rec.state == 'paid':
                 rec.repayment = 0.0
             elif rec.payment_lines:
                 rec.repayment = sum(rec.payment_lines.mapped('payment_amount'))
             # else:
-            #     rec.repayment = rec.expected_to_pay
+            # rec.repayment = rec.expected_to_pay
 
 
 
@@ -904,16 +964,6 @@ class Repayment(models.Model):
         if total_price > res.selling_price:
             raise UserError("The total price of items should match the selling price specified ")
 
-        # Trigger Oppo push notification if deposit is not 0
-        if res.deposit and res.deposit > 0:
-            try:
-                res.action_oppo_trigger_push()
-            except Exception as e:
-                _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
-
-
-                
-
         # Create oppo lock record
         try:
             # Extract IMEIs from product lines
@@ -933,6 +983,14 @@ class Repayment(models.Model):
             }
             self.env['oppo.lock'].create(oppo_lock_vals)
             _logger.info(f"Oppo lock record created for repayment {res.unique_id}")
+
+
+             # Trigger Oppo push notification if deposit is not 0
+            if res.deposit and res.deposit > 0:
+                try:
+                    res.action_oppo_trigger_push()
+                except Exception as e:
+                    _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
         except Exception as e:
             _logger.warning(f"Failed to create oppo lock record: {str(e)}")
 
@@ -1035,6 +1093,61 @@ class Repayment(models.Model):
             _logger.error(f"Error calling signature server: {e}")
             raise UserError(_('Failed to connect to signature server: %s') % str(e))
 
+    # Check 24-hour grace period for Oppo device lock
+    def _check_grace_period_lock(self):
+        """Cron job method to check for repayments that need to be locked after 24-hour grace period"""
+        
+        # Calculate the cutoff time (24 hours ago)
+        cutoff_time = fields.Datetime.now() - timedelta(hours=24)
+        
+        # Search for repayments with deposit but no payment after 24 hours
+        repayments_to_lock = self.search([
+            ('deposit', '>', 0),
+            ('create_date', '<=', cutoff_time),
+        ])
+        
+        for repayment in repayments_to_lock:
+            # Check if there are any payment lines
+            if not repayment.payment_lines:
+                _logger.info(f"Checking grace period lock for repayment {repayment.unique_id}")
+                # No payments at all - lock the device
+                try:
+                    oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+                    if oppo_lock:
+                        # Call prepaid edit with 0 days to lock immediately
+                        oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
+                        _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (no payments)")
+                        repayment.message_post(
+                            body=f'24-hour grace period expired. Device locked via prepaid edit (no payments received).',
+                            message_type='comment',
+                            subtype_xmlid='mail.mt_note'
+                        )
+                except Exception as e:
+                    _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
+            else:
+                # Check if the latest payment is more than 24 hours old
+                _logger.info(f"Checking grace period for payment more tha 24hrs {repayment.unique_id} (has payments)")
+                latest_payment = repayment.payment_lines.sorted(key=lambda x: x.payment_date, reverse=True)[:1]
+                if latest_payment:
+                    latest_payment_date = latest_payment.payment_date
+                    if latest_payment_date:
+                        # Convert payment_date (Date) to Datetime for comparison
+                        latest_payment_datetime = fields.Datetime.to_datetime(latest_payment_date)
+                        if latest_payment_datetime < cutoff_time:
+                            try:
+                                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+                                if oppo_lock:
+                                    # Call prepaid edit with 0 days to lock immediately
+                                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
+                                    _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (payment expired)")
+                                    repayment.message_post(
+                                        body=f'24-hour grace period expired since last payment. Device locked via prepaid edit.',
+                                        message_type='comment',
+                                        subtype_xmlid='mail.mt_note'
+                                    )
+                            except Exception as e:
+                                _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
+
     # Trigger the push message
     def action_oppo_trigger_push(self):
         _logger.info("Trigger push message running")
@@ -1060,9 +1173,6 @@ class Repayment(models.Model):
             except json.JSONDecodeError:
                 imei_list = [oppo_lock.device_uid]
             
-            # Generate transaction ID
-            transaction_id = f"{record.unique_id}_{int(datetime.datetime.now().timestamp())}"
-            
             # Build request body
             request_body = {
                 "deviceUid": oppo_lock.device_uid,
@@ -1077,7 +1187,6 @@ class Repayment(models.Model):
                 'Content-Type': 'application/json',
                 'x-carrier-code': carrier_code,
                 'x-sign': x_sign,
-                'x-transactionId': transaction_id
             }
             
             try:

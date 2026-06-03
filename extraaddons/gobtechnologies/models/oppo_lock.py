@@ -4,6 +4,7 @@ import requests
 import json
 import logging
 import time
+import datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -54,6 +55,11 @@ class OppoLock(models.Model):
     lock_date = fields.Datetime('Lock Date')
     api_response = fields.Text('API Response', readonly=True)
     x_sign = fields.Char('Generated X-Sign', readonly=True)
+    
+    # Prepaid edit tracking fields
+    last_prepaid_edit_date = fields.Datetime('Last Prepaid Edit Date', readonly=True)
+    last_prepaid_edit_days = fields.Integer('Last Prepaid Edit Days', readonly=True)
+    prepaid_edit_count = fields.Integer('Prepaid Edit Count', readonly=True, default=0)
     
     # @api.onchange('device_uid')
     # def _onchange_device_uid(self):
@@ -374,3 +380,137 @@ class OppoLock(models.Model):
                 _logger.error(f"Error calling Oppo getStatus API: {e}")
                 record.write({'status': '-1'})
                 raise UserError(_('Failed to get device status from Oppo API: %s') % str(e))
+
+    def _calculate_days_from_payment(self, payment_amount, expected_to_pay, repayment_frequency):
+        """Calculate number of days from payment amount based on repayment frequency"""
+        if repayment_frequency == '0':  # Cash
+            return 0
+        elif expected_to_pay == 0:
+            return 0
+        
+        base_days = payment_amount / expected_to_pay
+        frequency_days = int(repayment_frequency)
+        
+        return int(base_days * frequency_days)
+
+    def action_edit_prepaid(self, payment_amount, repayment_frequency):
+        _logger.info("Action Edit Prepaid called")
+        """Edit device lock using Oppo prepaid/edit API"""
+        for record in self:
+            if not record.repayment_id:
+                raise UserError(_('Repayment ID is required for prepaid edit.'))
+            
+            expected_to_pay = record.repayment_id.expected_to_pay
+            if not expected_to_pay:
+                raise UserError(_('Expected to pay amount is not set on the repayment record.'))
+            
+            # Calculate days from payment
+            days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
+            
+            oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+            carrier_code = oppo_credentials.get('carrier_code')
+            
+            if not carrier_code:
+                raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
+            
+            # Parse IMEI list
+            try:
+                imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else []
+            except json.JSONDecodeError:
+                imei_list = []
+
+            _logger.info(f'Expire time => {str(int((datetime.datetime.now() + datetime.timedelta(days=days)).timestamp() * 1000))}')
+            
+            # Use device_uid if available, otherwise use imei_list
+            if record.device_uid:
+                request_body = {
+                    "deviceUid": record.device_uid,
+                    "expiredTime": str(int((datetime.datetime.now() + datetime.timedelta(days=days)).timestamp() * 1000)),
+                    "displayType": int(record.display_type),
+                    "oneDayTitle": record.one_day_title or None,
+                    "oneDayContent": record.one_day_content or None,
+                    "threeDayTitle": record.three_day_title or None,
+                    "threeDayContent": record.three_day_content or None,
+                    "sevenDayTitle": record.seven_day_title or None,
+                    "sevenDayContent": record.seven_day_content or None,
+                }
+            else:
+                if not imei_list:
+                    raise UserError(_('Device UID or IMEI list is required for prepaid edit.'))
+                
+                request_body = {
+                    "imeiList": imei_list,
+                    "expiredTime": str(int((datetime.datetime.now() + datetime.timedelta(days=days)).timestamp() * 1000)),
+                    "displayType": int(record.display_type),
+                    "oneDayTitle": record.one_day_title or None,
+                    "oneDayContent": record.one_day_content or None,
+                    "threeDayTitle": record.three_day_title or None,
+                    "threeDayContent": record.three_day_content or None,
+                    "sevenDayTitle": record.seven_day_title or None,
+                    "sevenDayContent": record.seven_day_content or None,
+                }
+            
+            # Generate transaction ID
+            import uuid
+            transaction_id = str(uuid.uuid4())
+            
+            # Generate x-sign with retry logic
+            max_retries = 3
+            retry_delay = 1
+            
+            for attempt in range(max_retries):
+                try:
+                    x_sign = record._generate_x_sign(request_body)
+                    record.x_sign = x_sign
+                    
+                    _logger.info(f"Prepaid edit - X-Sign: {x_sign}")
+                    _logger.info(f"Prepaid edit - Carrier Code: {carrier_code}")
+                    _logger.info(f"Prepaid edit - Days: {days}, Payment Amount: {payment_amount}")
+                    
+                    # Call Oppo API
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'x-carrier-code': carrier_code,
+                        'x-sign': x_sign,
+                        'x-transactionId': transaction_id
+                    }
+                    
+                    response = requests.post(
+                        f"{OPPO_API_URL}/prepaid/edit",
+                        headers=headers,
+                        json=request_body,
+                        timeout=30
+                    )
+                    response.raise_for_status()
+                    
+                    response_data = response.json()
+                    _logger.info(f"Oppo prepaid/edit API response: {response_data}")
+                    
+                    record.api_response = json.dumps(response_data, indent=2)
+                    
+                    if response_data.get('code') == 0:
+                        record.write({
+                            'last_prepaid_edit_date': fields.Datetime.now(),
+                            'last_prepaid_edit_days': days,
+                            'prepaid_edit_count': record.prepaid_edit_count + 1,
+                        })
+                        record.message_post(
+                            body=f'Prepaid edit successful: Device will remain unlocked for {days} day(s). Payment amount: GHS {payment_amount}',
+                            message_type='comment',
+                            subtype_xmlid='mail.mt_note'
+                        )
+                        _logger.info(f"Prepaid edit successful for repayment {record.repayment_id.unique_id}")
+                        return True
+                    else:
+                        record.write({'status': '-1'})
+                        raise UserError(_('Oppo API error: %s') % response_data.get('errorInfo', response_data.get('message', 'Unknown error')))
+                        
+                except requests.exceptions.RequestException as e:
+                    _logger.error(f"Error calling Oppo prepaid/edit API (attempt {attempt + 1}/{max_retries}): {e}")
+                    if attempt < max_retries - 1:
+                        _logger.info(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        record.write({'status': '-1'})
+                        raise UserError(_('Failed to edit prepaid via Oppo API after {max_retries} attempts: %s') % str(e))

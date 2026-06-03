@@ -25,6 +25,18 @@
             <field name="active" eval="True"/>
         </record>
 
+        <record id="ir_cron_check_grace_period_lock" model="ir.cron">
+            <field name="name">Check 24-hour Grace Period for Oppo Device Lock</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="state">code</field>
+            <field name="code">model._check_grace_period_lock()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
+
         <!-- <record id="ir_cron_process_payment" model="ir.cron">
             <field name="name">Process Payment</field>
             <field name="model_id" ref="model_payment_notifications"/>
