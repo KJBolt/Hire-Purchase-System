@@ -149,22 +149,6 @@
                                                 title="Refresh Status">
                                                 <i class="fa fa-refresh"/>
                                             </button>
-                                            <!-- Lock: show when device is in unlocked or normal state -->
-                                            <button
-                                                t-if="['Normal'].includes(device.status)"
-                                                class="olod-btn olod-btn-danger olod-btn-sm"
-                                                t-on-click="() => this.lockDevice(device)"
-                                                title="Lock Device">
-                                                <i class="fa fa-lock"/> Lock
-                                            </button>
-                                            <!-- Unlock: show only when locked -->
-                                            <button
-                                                t-if="device.status === 'Locked'"
-                                                class="olod-btn olod-btn-success olod-btn-sm"
-                                                t-on-click="() => this.unlockDevice(device)"
-                                                title="Unlock Device">
-                                                <i class="fa fa-unlock"/> Unlock
-                                            </button>
                                             <!-- Edit: always visible -->
                                             <button
                                                 class="olod-btn olod-btn-info olod-btn-sm"

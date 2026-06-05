@@ -109,27 +109,6 @@ export class OppoLock extends Component{
         this.filterDevices();
     }
 
-    async lockDevice(device) {
-        try {
-            await this.orm.call("oppo.lock", "action_lock_device", [[device.id]]);
-            this.notification.add(`Device locked successfully`, { type: 'success' });
-            await this.fetchDevices();
-        } catch (error) {
-            this.notification.add(`Failed to lock device`, { type: 'danger' });
-            this.notification.add(`Error: ${error.message}`, { type: 'danger' });
-        }
-    }
-
-    async unlockDevice(device) {
-        try {
-            await this.orm.call("oppo.lock", "action_unlock_device", [[device.id]]);
-            this.notification.add(`Device unlocked successfully`, { type: 'success' });
-            await this.fetchDevices();
-        } catch (error) {
-            this.notification.add(`Failed to unlock device`, { type: 'danger' });
-            this.notification.add(`Error: ${error.message}`, { type: 'danger' });
-        }
-    }
 
     async refreshDeviceStatus(device) {
         // Status code to description mapping
