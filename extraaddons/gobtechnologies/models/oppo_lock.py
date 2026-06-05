@@ -319,7 +319,17 @@ class OppoLock(models.Model):
                     return True
                 else:
                     record.write({'status': '-1'})
-                    raise UserError(_('Oppo API error: %s') % response_data.get('errorInfo', response_data.get('message', 'Unknown error')))
-                    
+                    record.repayment_id.message_post(
+                        body=f'Prepaid edit failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))}',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                
+                
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Error calling Oppo prepaid/edit API: {e}")
+                record.repayment_id.message_post(
+                    body=f'Prepaid edit failed: {str(e)}',
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note'
+                )
