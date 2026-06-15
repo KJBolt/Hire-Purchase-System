@@ -44,6 +44,52 @@
                             </div>
                         </div>
                     </div>
+                    <h2>Hubtel Payment Configuration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Mobile Money Collection</span>
+                                <div class="text-muted">
+                                    Configure your Hubtel collection account for mobile money payments
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="hubtel_collection_account">Collection Account</label>
+                                        <div class="col-lg-8">
+                                            <field name="hubtel_collection_account" password="true"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <h2>BulkClix SMS Configuration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">BulkClix API Credentials</span>
+                                <div class="text-muted">
+                                    Configure your BulkClix SMS API credentials
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="bulkclix_api_key">API Key</label>
+                                        <div class="col-lg-8">
+                                            <field name="bulkclix_api_key" password="true"/>
+                                        </div>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label class="col-lg-4 o_light_label" for="bulkclix_sender_id">Sender ID</label>
+                                        <div class="col-lg-8">
+                                            <field name="bulkclix_sender_id" password="true"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <h2>NuovoPay Configuration</h2>
                     <div class="row mt16 o_settings_container">
                         <div class="col-12 col-lg-6 o_setting_box">
@@ -81,7 +127,7 @@
                                     <div class="row mt16">
                                         <label class="col-lg-4 o_light_label" for="oppo_carrier_code">Carrier Code</label>
                                         <div class="col-lg-8">
-                                            <field name="oppo_carrier_code"/>
+                                            <field name="oppo_carrier_code" password="true"/>
                                         </div>
                                     </div>
                                     <div class="row mt16">

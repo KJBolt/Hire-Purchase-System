@@ -47,7 +47,7 @@ class CustomerPortal(models.Model):
         sms_message = f"Your OTP code is {otp}. Valid for 5 minutes. Do not share this code with anyone."
         try:
             if repayment:
-                repayment._send_hubtel_sms(self.phone_no, sms_message, customer_name)
+                repayment._send_bulkclix_sms(self.phone_no, sms_message, customer_name)
             else:
                 _logger.warning(f"No repayment found for phone {self.phone_no}, cannot send SMS via repayment model")
                 return False
@@ -79,10 +79,12 @@ class CustomerPortal(models.Model):
 
     def find_or_create(self, phone_no):
         portal = self.sudo().search([('phone_no', '=', phone_no)], limit=1)
+        repayment = self.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
         if not portal:
-            repayment = self.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
             portal = self.sudo().create({
                 'phone_no': phone_no,
                 'repayment_id': repayment.id if repayment else False,
             })
+        elif repayment and not portal.repayment_id:
+            portal.write({'repayment_id': repayment.id})
         return portal

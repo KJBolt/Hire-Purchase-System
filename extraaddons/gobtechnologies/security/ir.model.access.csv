@@ -4,6 +4,7 @@ access_nuovopay_lock_user,nuovopay.lock.user,model_nuovopay_lock,base.group_user
 
 access_oppo_lock,access.oppo.lock,model_oppo_lock,base.group_user,1,1,1,1
 access_oppo_lock_manager,access.oppo.lock.manager,model_oppo_lock,base.group_system,1,1,1,1
+access_customer_portal_user,customer.portal.user,model_customer_portal,base.group_user,1,1,1,1
 
 
 

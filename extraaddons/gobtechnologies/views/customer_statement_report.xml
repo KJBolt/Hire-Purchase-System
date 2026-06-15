@@ -45,11 +45,17 @@
         <field name="arch" type="xml">
             <form string="Repayment" >
                 <header>
-                    <!-- <button 
-                        name="action_confirm_payment" id="action_confirm_payment"
-                        string="Confirm" class="btn-primary" type="object"
-                        invisible="state in ['paid']"
-                    /> -->
+                    <field name="invoice_id" invisible="1"/>
+                    <button 
+                        name="action_initiate_delivery" id="action_approve"
+                        string="Initiate Delivery" class="btn-primary" type="object"
+                        invisible="invoice_id or not id"
+                    />
+                    <button 
+                        name="action_view_sales_order" id="action_view_sales_order"
+                        string="View Sales Order" class="btn-primary" type="object"
+                        invisible="not invoice_id"
+                    />
                     <!-- <button name="action_create_invoice" id="action_create_invoice"
                         string="Create Invoice" class="btn-primary" type="object"
                         invisible="state in ['progress', 'paid']"
@@ -129,6 +135,7 @@
                     </group>
                     <group>
                         <field name="sales_commission" readonly="1" />
+                        <field name="delivery_status" readonly="1" decoration-success="delivery_status == 'delivered'" decoration-danger="delivery_status == 'not_delivered'" widget="badge"/>
                     </group>
 
                     <notebook>

@@ -18,6 +18,7 @@ OPPO_API_URL = "https://ilockcardf-isp.apps.coloros.com"
 
 PAYMENT_STATE = [
     ('draft', "Draft"),
+    ('approved', "Approved"),
     ('progress', "Progress"),
     ('paid', "Paid"),
     ('termination_warning', "Termination Warning"),
@@ -98,6 +99,8 @@ class RepaymentPaymentLine(models.Model):
         ('bank', 'Bank Transfer')
     ], string='Mode of Payment', required=False)
     payment_amount = fields.Float(string='Payment Amount', required=False)
+    receipt_no = fields.Char(string='Receipt Number')
+    transaction_ref = fields.Char(string='Transaction Reference')
     is_payment_insufficient = fields.Boolean(
         string='Payment Insufficient',
         compute='_compute_is_payment_insufficient',
@@ -164,16 +167,14 @@ class RepaymentPaymentLine(models.Model):
             
             # Send SMS if phone number exists
             if repayment.phone_no:
-                repayment._send_hubtel_sms(repayment.phone_no, sms_message, customer_name)
-                # Log message to chatter
+                repayment._send_bulkclix_sms(repayment.phone_no, sms_message, customer_name)
+            else:
+                _logger.warning(f"Could not send payment SMS: No phone number for {customer_name}")
                 repayment.message_post(
-                    body=f"Payment of GHS {payment_amount} has been made. SMS sent to customer",
+                    body=f"Could not send payment SMS: No phone number for {customer_name}",
                     message_type='comment',
                     subtype_xmlid='mail.mt_note'
                 )
-                _logger.info(f"Payment SMS sent to {repayment.phone_no}")
-            else:
-                _logger.warning(f"Could not send payment SMS: No phone number for {customer_name}")
                 
         except Exception as e:
             _logger.error(f"Error sending payment SMS: {str(e)}")
@@ -221,7 +222,6 @@ class RepaymentPaymentLine(models.Model):
 
 
     def testpayment(self, vals):
-        
         # Get current payment date and amount
         current_payment_date = fields.Date.from_string(vals.get('payment_date'))
         current_payment_amount = vals.get('payment_amount')
@@ -258,11 +258,11 @@ class RepaymentPaymentLine(models.Model):
                         })
                         
                         # Send SMS to customer
-                        # phone_no = self.repayment_id.phone_no
-                        # customer_name = self.repayment_id.customer_name.name
-                        # sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
+                        phone_no = self.repayment_id.phone_no
+                        customer_name = self.repayment_id.customer_name.name
+                        sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
 
-                        # self.repayment_id._send_hubtel_sms(phone_no, sms_message, customer_name)
+                        self.repayment_id._send_bulkclix_sms(phone_no, sms_message, customer_name)
 
                     else:
                         # Create new payment record for previous date
@@ -392,7 +392,10 @@ class Repayment(models.Model):
     ], string='Payment Status', compute='_compute_payment_status', store=True)
     penalty_ids = fields.One2many('repayment.penalty', 'repayment_id', string='Penalties')
     total_penalties = fields.Float(string='Total Penalties', compute='_compute_total_penalties', store=True)
-    
+    delivery_status = fields.Selection([
+        ('not_delivered', 'Not Delivered'),
+        ('delivered', 'Delivered')
+    ], string='Delivery Status', default='not_delivered', readonly=True, required=True)
 
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
@@ -409,6 +412,8 @@ class Repayment(models.Model):
     branch = fields.Selection([
         ('sarfosco', 'Sarfosco'),
     ], string='Branch', required=False)
+
+    #Invoice id used for the sales order computations
     invoice_id = fields.Char(string='Invoice ID', required=False)
     invoice_no = fields.Char(string='Invoice No', readonly=True, required=False, default=lambda self: self.env['ir.sequence'].next_by_code('invoice.ref'))
     invoice_payment_method = fields.Selection([
@@ -665,9 +670,6 @@ class Repayment(models.Model):
                 rec.repayment = 0.0
             elif rec.payment_lines:
                 rec.repayment = sum(rec.payment_lines.mapped('payment_amount'))
-            # else:
-            # rec.repayment = rec.expected_to_pay
-
 
 
     # Fetch Invoicing api
@@ -930,34 +932,27 @@ class Repayment(models.Model):
         is_import = self.env.context.get('import_file', False)
         
         # Only send SMS if this is not an import operation
-        # if not is_import:
-        #     try:
-        #         # Get customer name from res.partner
-        #         customer = self.env['res.partner'].browse(vals.get('customer_name'))
-        #         customer_name = customer.name if customer else "Customer"
+        if not is_import:
+            try:
+                # Get customer name from res.partner
+                customer = self.env['res.partner'].browse(vals.get('customer_name'))
+                customer_name = customer.name if customer else "Customer"
 
-        #         _logger.info(f"Customer Name, {customer_name}")
-        #         _logger.info(f"Customer, {customer}")
-        #         _logger.info(f"Phone No, {res.phone_no}")
+                _logger.info(f"Customer Name, {customer_name}")
+                _logger.info(f"Customer, {customer}")
+                _logger.info(f"Phone No, {res.phone_no}")
 
-        #         # Log message in chatter
-        #         res.message_post(
-        #             body=f"Sms message sent to {customer_name}",
-        #             message_type='comment',
-        #             subtype_xmlid='mail.mt_note'
-        #         )
+                # Prepare SMS message
+                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
 
-        #         # Prepare SMS message
-        #         sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
-
-        #         # Send SMS
-        #         if res.phone_no and res.state == 'draft':
-        #             self._send_hubtel_sms(res.phone_no, sms_message, customer_name)
+                # Send SMS
+                if res.phone_no and res.state == 'draft':
+                    res._send_bulkclix_sms(res.phone_no, sms_message, customer_name)
             
-        #     except Exception as e:
-        #         raise UserError(f"Error sending welcome SMS: {str(e)}")
-        # else:
-        #     _logger.info("Successfully imported record")
+            except Exception as e:
+                raise UserError(f"Error sending onboarding SMS: {str(e)}")
+        else:
+            _logger.info("Successfully imported record")
 
         # Check if Product lines price is greater than selling price
         total_price = sum(item.price for item in res.product_lines)
@@ -1336,6 +1331,74 @@ class Repayment(models.Model):
             }
         }
 
+    # Approve button
+    def action_initiate_delivery(self):
+        # Check if sales order already exists
+        if self.invoice_id:
+            sale_order = self.env['sale.order'].browse(int(self.invoice_id))
+            if sale_order.exists():
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': 'Sales Order',
+                    'res_model': 'sale.order',
+                    'res_id': sale_order.id,
+                    'view_mode': 'form',
+                    'target': 'current',
+                }
+        
+        self.state = 'progress'
+        
+        # Create sales order
+        sale_order = self.env['sale.order'].create({
+            'partner_id': self.customer_name.id,
+            'origin': self.unique_id,
+            'note': f"Hire Purchase Order for {self.customer_name.name}",
+            'client_order_ref': self.unique_id,
+        })
+        
+        # Add product lines
+        for line in self.product_lines:
+            self.env['sale.order.line'].create({
+                'order_id': sale_order.id,
+                'product_id': line.product_id.id,
+                'name': line.product_id.name,
+                'product_uom_qty': line.quantity,
+                'price_unit': line.price / line.quantity if line.quantity else line.price,
+            })
+        
+        # Confirm the sales order
+        sale_order.action_confirm()
+        
+        # Check if delivery is done (all pickings are done)
+        all_delivered = all(picking.state == 'done' for picking in sale_order.picking_ids)
+        
+        # Link the sales order to the repayment and update delivery status
+        self.write({
+            'invoice_id': str(sale_order.id),
+            'delivery_status': 'delivered' if all_delivered else 'not_delivered'
+        })
+        
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Sales Order',
+            'res_model': 'sale.order',
+            'res_id': sale_order.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
+    def action_view_sales_order(self):
+        if self.invoice_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Sales Order',
+                'res_model': 'sale.order',
+                'res_id': int(self.invoice_id),
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        return False
+
     # Confirm button
     def action_confirm_payment(self):
         self.state = 'paid'
@@ -1512,6 +1575,55 @@ class Repayment(models.Model):
             return False
 
 
+    # BulkClix SMS API
+    def _send_bulkclix_sms(self, phone, sms_message, customer_name):
+        """Helper method to send SMS via BulkClix API using POST request"""
+        try:
+            settings = self.env['res.config.settings'].get_bulkclix_credentials()
+            api_key = settings.get('api_key')
+            sender_id = settings.get('sender_id')
+
+            if not all([api_key, sender_id]):
+                raise UserError("Missing BulkClix credentials")
+
+            if not phone or len(phone) < 10:
+                _logger.error(f"Invalid phone number: {phone}")
+                return False
+
+            url = 'https://api.bulkclix.com/api/v1/sms-api/send'
+            headers = {
+                'x-api-key': api_key,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+            payload = {
+                'sender_id': sender_id,
+                'message': sms_message,
+                'recipients': [phone],
+            }
+            response = requests.post(url, json=payload, headers=headers)
+
+            if response.status_code in [200, 201]:
+                self.message_post(
+                    body=f"SMS sent successfully to {phone}",
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note'
+                )
+                return True
+
+            self.message_post(
+                body=f"Failed to send SMS. Status: {response.status_code}, Response: {response.text}",
+                message_type='comment',
+                subtype_xmlid='mail.mt_note'
+            )
+            channel = f"hubtel_notification_{self.env.user.partner_id.id}"
+            self.env['bus.bus']._sendone(channel, 'sms_error', {'msg': 'Something went wrong sending sms!'})
+            return False
+
+        except Exception as e:
+            raise UserError(f"Failed to send SMS: {str(e)}")
+
+
 
     # Send repayment reminders
     @api.model
@@ -1599,7 +1711,7 @@ class Repayment(models.Model):
                         )
                         
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, termination_warning_message, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, termination_warning_message, repayment.customer_name.name)
                         
                         _logger.info(
                             f"Sent termination warning to {repayment.customer_name.name} "
@@ -1631,7 +1743,7 @@ class Repayment(models.Model):
                             f"Kindly dial *713*7678# to make immediate payment. Thank you for choosing Sarfosco Phones. "
                         )
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, termination_warning_message_two, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, termination_warning_message_two, repayment.customer_name.name)
 
                         # Update the state to indicate termination warning
                         if repayment.state != 'termination_warning':
@@ -1680,13 +1792,13 @@ class Repayment(models.Model):
                         )
                         
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, final_termination_message, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, final_termination_message, repayment.customer_name.name)
 
                         if repayment.guarantor_contact:
-                            self._send_hubtel_sms(repayment.guarantor_contact, guarantor_message, repayment.guarantor_name.name)
+                            self._send_bulkclix_sms(repayment.guarantor_contact, guarantor_message, repayment.guarantor_name.name)
 
                         if repayment.head_of_gob_contact:
-                            self._send_hubtel_sms(repayment.head_of_gob_contact, head_message, "Head of Sarfosco Phones")
+                            self._send_bulkclix_sms(repayment.head_of_gob_contact, head_message, "Head of Sarfosco Phones")
                         
                         _logger.info(
                             f"Sent final termination notice to {repayment.customer_name.name} "
@@ -1711,7 +1823,7 @@ class Repayment(models.Model):
                     )
                     
                     if repayment.phone_no:
-                        self._send_hubtel_sms(repayment.phone_no, reminder_message, repayment.customer_name.name)
+                        self._send_bulkclix_sms(repayment.phone_no, reminder_message, repayment.customer_name.name)
                         
                     _logger.info(
                         f"Sent reminder to {repayment.customer_name.name} "
@@ -1740,7 +1852,7 @@ class Repayment(models.Model):
                         )
                         
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, overdue_message, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, overdue_message, repayment.customer_name.name)
                             
                         _logger.info(
                             f"Sent overdue notice to {repayment.customer_name.name} "
@@ -1773,7 +1885,7 @@ class Repayment(models.Model):
                         )
                         
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, penalty_reminder_message, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, penalty_reminder_message, repayment.customer_name.name)
                         
                         _logger.info(
                             f"Sent penalty warning to {repayment.customer_name.name} "
@@ -1818,7 +1930,7 @@ class Repayment(models.Model):
                         )
                         
                         if repayment.phone_no:
-                            self._send_hubtel_sms(repayment.phone_no, penalty_charge_message, repayment.customer_name.name)
+                            self._send_bulkclix_sms(repayment.phone_no, penalty_charge_message, repayment.customer_name.name)
                         
                         _logger.info(
                             f"Applied penalty charge to {repayment.customer_name.name} "
