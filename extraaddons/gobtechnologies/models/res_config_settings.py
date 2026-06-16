@@ -19,6 +19,10 @@ class ResConfigSettings(models.TransientModel):
         string='Merchant Account',
         config_parameter='gobtechnologies.hubtel_merchant_account'
     )
+    hubtel_collection_account = fields.Char(
+        string='Collection Account',
+        config_parameter='gobtechnologies.hubtel_collection_account'
+    )
 
     webhook_url = fields.Char(
         string='Webhook URL',
@@ -49,6 +53,15 @@ class ResConfigSettings(models.TransientModel):
         default='http://sarfosco-phones.com/sign'
     )
 
+    bulkclix_api_key = fields.Char(
+        string='BulkClix API Key',
+        config_parameter='gobtechnologies.bulkclix_api_key'
+    )
+    bulkclix_sender_id = fields.Char(
+        string='BulkClix Sender ID',
+        config_parameter='gobtechnologies.bulkclix_sender_id'
+    )
+
 
     @api.model
     def get_values(self):
@@ -60,6 +73,7 @@ class ResConfigSettings(models.TransientModel):
             'hubtel_client_id': decrypt_text(params.get_param('gobtechnologies.hubtel_client_id', '')),
             'hubtel_client_secret': decrypt_text(params.get_param('gobtechnologies.hubtel_client_secret', '')),
             'hubtel_merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
+            'hubtel_collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', '')),
             'nuovopay_api_key': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_key', '')),
             'nuovopay_api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', '')),
@@ -67,7 +81,11 @@ class ResConfigSettings(models.TransientModel):
             # oppo pay
             'oppo_carrier_code': decrypt_text(params.get_param('gobtechnologies.oppo_carrier_code', '')),
             'oppo_token': decrypt_text(params.get_param('gobtechnologies.oppo_token', '')),
-            'oppo_signature_server_url': decrypt_text(params.get_param('gobtechnologies.oppo_signature_server_url', ''))
+            'oppo_signature_server_url': decrypt_text(params.get_param('gobtechnologies.oppo_signature_server_url', '')),
+
+            # BulkClix SMS credentials
+            'bulkclix_api_key': decrypt_text(params.get_param('gobtechnologies.bulkclix_api_key', '')),
+            'bulkclix_sender_id': decrypt_text(params.get_param('gobtechnologies.bulkclix_sender_id', '')),
         })
         return res
 
@@ -86,6 +104,10 @@ class ResConfigSettings(models.TransientModel):
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.hubtel_merchant_account', 
             encrypt_text(self.hubtel_merchant_account or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.hubtel_collection_account', 
+            encrypt_text(self.hubtel_collection_account or '')
         )
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.webhook_url', 
@@ -114,6 +136,16 @@ class ResConfigSettings(models.TransientModel):
             encrypt_text(self.oppo_signature_server_url or '')
         )
 
+        # BulkClix SMS credentials
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.bulkclix_api_key',
+            encrypt_text(self.bulkclix_api_key or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.bulkclix_sender_id',
+            encrypt_text(self.bulkclix_sender_id or '')
+        )
+
     @api.model
     def get_hubtel_credentials(self):
         """Get decrypted Hubtel credentials"""
@@ -122,6 +154,7 @@ class ResConfigSettings(models.TransientModel):
             'client_id': decrypt_text(params.get_param('gobtechnologies.hubtel_client_id', '')),
             'client_secret': decrypt_text(params.get_param('gobtechnologies.hubtel_client_secret', '')),
             'merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
+            'collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', ''))
         }
 
@@ -142,4 +175,13 @@ class ResConfigSettings(models.TransientModel):
             'carrier_code': decrypt_text(params.get_param('gobtechnologies.oppo_carrier_code', '')),
             'token': decrypt_text(params.get_param('gobtechnologies.oppo_token', '')),
             'signature_server_url': decrypt_text(params.get_param('gobtechnologies.oppo_signature_server_url', 'http://sarfosco-phones.com/sign'))
+        }
+
+    @api.model
+    def get_bulkclix_credentials(self):
+        """Get decrypted BulkClix SMS credentials"""
+        params = self.env['ir.config_parameter'].sudo()
+        return {
+            'api_key': decrypt_text(params.get_param('gobtechnologies.bulkclix_api_key', '')),
+            'sender_id': decrypt_text(params.get_param('gobtechnologies.bulkclix_sender_id', '')),
         }

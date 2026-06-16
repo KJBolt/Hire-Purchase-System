@@ -13,7 +13,8 @@
         'contacts',
         'account',
         'stock',
-        'mail'
+        'mail',
+        'sale'
     ],
     'data': [
         # 'security/groups.xml',
@@ -42,6 +43,7 @@
     'assets': {
         'web.assets_frontend': [
             'gobtechnologies/static/src/scss/custom_styles.scss',
+            'gobtechnologies/static/src/scss/customer_portal.scss',
             'gobtechnologies/static/src/js/static/src/js/change_title.js',
             'gobtechnologies/static/src/js/static/src/js/nuovo_pay.js',
             'gobtechnologies/static/src/js/static/src/js/oppo_lock.js',

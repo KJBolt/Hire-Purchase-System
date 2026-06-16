@@ -5,17 +5,313 @@
             <t t-set="head">
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-                <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet" />
-                <style>
-                    body, h1, h2, h3, h4, h5, h6, p, a, button, .btn {
-                        font-family: 'Droid Sans', sans-serif !important;
-                    }
-                </style>
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+            </t>
+            <div class="portal-page">
+                <div class="portal-card portal-card-home">
+                    <div class="portal-card-inner text-center">
+                        <div class="portal-logo">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <h1 class="portal-title">Sarfosco Hire Purchase</h1>
+                        <p class="portal-subtitle">Manage your payments online</p>
+                        <a href="/customer/portal" class="btn-primary-custom d-inline-block">
+                            <i class="fas fa-sign-in-alt me-2"></i>Go to Customer Portal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template name="customer_portal_template" id="customer_portal_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
             </t>
 
-            <section class="py-5">
-                
-            </section>
+            <div class="portal-page">
+                <div class="portal-bg-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-inner">
+                        <div class="portal-logo">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <h1 class="portal-title">Customer Portal</h1>
+                        <p class="portal-subtitle">Sign in to manage your hire purchase payments</p>
+
+                        <t t-if="error_message">
+                            <div class="alert-custom alert-error">
+                                <i class="fas fa-exclamation-circle me-2"></i><t t-esc="error_message" />
+                            </div>
+                        </t>
+                        <t t-if="success_message">
+                            <div class="alert-custom alert-success">
+                                <i class="fas fa-check-circle me-2"></i><t t-esc="success_message" />
+                            </div>
+                        </t>
+
+                        <t t-if="not show_otp_form">
+                            <form action="/customer/request-otp" method="post" class="portal-form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="input-group-custom">
+                                    <i class="fas fa-phone-alt input-icon"></i>
+                                    <input type="tel" name="phone_no" class="form-input" placeholder=" " required="required" autocomplete="tel" t-att-value="phone_no or ''" />
+                                    <label class="input-label">Phone Number</label>
+                                </div>
+                                <button type="submit" class="btn-primary-custom w-100">
+                                    <i class="fas fa-paper-plane me-2"></i>Request OTP
+                                </button>
+                                <div class="portal-footer-text">
+                                    <i class="fas fa-shield-alt me-1"></i>We'll send a 6-digit code to your phone
+                                </div>
+                            </form>
+                        </t>
+
+                        <t t-if="show_otp_form">
+                            <form action="/customer/verify-otp" method="post" class="portal-form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="phone_no" t-att-value="phone_no"/>
+                                <p class="otp-instruction">
+                                    <i class="fas fa-mobile-alt me-2"></i>Enter the 6-digit code sent to
+                                    <strong><t t-esc="phone_no" /></strong>
+                                </p>
+                                <div class="input-group-custom">
+                                    <i class="fas fa-key input-icon"></i>
+                                    <input type="text" name="otp_code" class="form-input otp-single-input" placeholder=" " required="required" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" />
+                                    <label class="input-label">OTP Code</label>
+                                </div>
+                                <button type="submit" class="btn-primary-custom w-100">
+                                    <i class="fas fa-check-circle me-2"></i>Verify &amp; Sign In
+                                </button>
+                            </form>
+                            <form action="/customer/request-otp" method="post" class="portal-form mt-2">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="phone_no" t-att-value="phone_no"/>
+                                <button type="submit" class="btn-secondary-custom w-100">
+                                    <i class="fas fa-redo me-2"></i>Resend OTP
+                                </button>
+                            </form>
+                            <a href="/customer/portal" class="btn-link-custom w-100 mt-2 d-block text-center">
+                                <i class="fas fa-arrow-left me-2"></i>Change Phone Number
+                            </a>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template name="customer_dashboard_template" id="customer_dashboard_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+            </t>
+
+            <div class="dash-wrap">
+                <header class="dash-header">
+                    <div class="dash-header-bg"></div>
+                    <div class="container">
+                        <div class="dash-header-row">
+                            <div class="dash-welcome">
+                                <div class="dash-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h2>Welcome back</h2>
+                                    <p><t t-esc="customer_name or phone_no" /></p>
+                                </div>
+                            </div>
+                            <a href="/customer/logout" class="dash-logout-btn">
+                                <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                            </a>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="container dash-main">
+                    <t t-if="error_message">
+                        <div class="alert-custom alert-error mb-4">
+                            <i class="fas fa-exclamation-circle me-2"></i><t t-esc="error_message" />
+                        </div>
+                    </t>
+                    <t t-if="success_message">
+                        <div class="alert-custom alert-success mb-4">
+                            <i class="fas fa-check-circle me-2"></i><t t-esc="success_message" />
+                        </div>
+                    </t>
+
+                    <t t-if="repayment">
+                        <div class="info-bar">
+                            <div class="info-item">
+                                <div class="info-icon info-icon-ref">
+                                    <i class="fas fa-hashtag"></i>
+                                </div>
+                                <div>
+                                    <span class="info-label">Reference</span>
+                                    <span class="info-value"><t t-esc="repayment.unique_id" /></span>
+                                </div>
+                            </div>
+                            <div class="info-divider"></div>
+                            <div class="info-item">
+                                <div class="info-icon info-icon-phone">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div>
+                                    <span class="info-label">Phone</span>
+                                    <span class="info-value"><t t-esc="phone_no" /></span>
+                                </div>
+                            </div>
+                            <div class="info-divider"></div>
+                            <div class="info-item">
+                                <div class="info-icon info-icon-status">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div>
+                                    <span class="info-label">Status</span>
+                                    <span class="info-value"><t t-esc="repayment.state" /></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="stat-card stat-card-primary">
+                                    <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
+                                    <div class="stat-card-body">
+                                        <div class="stat-card-label">Total Price</div>
+                                        <div class="stat-card-value">GHS <t t-esc="selling_price" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card stat-card-success">
+                                    <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="stat-card-body">
+                                        <div class="stat-card-label">Total Paid</div>
+                                        <div class="stat-card-value">GHS <t t-esc="total_paid" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card stat-card-warning">
+                                    <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+                                    <div class="stat-card-body">
+                                        <div class="stat-card-label">Outstanding</div>
+                                        <div class="stat-card-value">GHS <t t-esc="outstanding_balance" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dash-card mb-4">
+                            <div class="dash-card-header">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Make a Payment</span>
+                            </div>
+                            <div class="dash-card-body">
+                                <form action="/customer/initiate-payment" method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-8">
+                                            <label class="payment-label">
+                                                <i class="fas fa-money-bill-wave me-1"></i>Payment Amount (GHS)
+                                            </label>
+                                            <div class="payment-input-wrap">
+                                                <span class="payment-currency">GHS</span>
+                                                <input type="number" name="amount" class="payment-input" placeholder="0.00" step="0.01" min="0.01" required="required" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="submit" class="btn-pay w-100">
+                                                <i class="fas fa-bolt me-2"></i>Pay Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="dash-card mb-4">
+                            <div class="dash-card-header">
+                                <i class="fas fa-clock-rotate-left"></i>
+                                <span>Payment History</span>
+                            </div>
+                            <div class="dash-card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="dash-table">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="far fa-calendar-alt me-1"></i>Date</th>
+                                                <th>Amount</th>
+                                                <th>Mode</th>
+                                                <th>Status</th>
+                                                <th class="text-center">Receipt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="payment_lines" t-as="payment">
+                                                <tr>
+                                                    <td data-label="Date">
+                                                        <span class="cell-date"><t t-esc="payment['payment_date']" /></span>
+                                                    </td>
+                                                    <td data-label="Amount">
+                                                        <span class="cell-amount">GHS <t t-esc="payment['payment_amount']" /></span>
+                                                    </td>
+                                                    <td data-label="Mode">
+                                                        <span class="cell-mode"><t t-esc="payment['payment_mode']" /></span>
+                                                    </td>
+                                                    <td data-label="Status">
+                                                        <span class="badge badge-info"><t t-esc="payment['payment_status']" /></span>
+                                                    </td>
+                                                    <td class="text-center" data-label="Receipt">
+                                                        <a t-attf-href="/customer/receipt/{{ payment['id'] }}" class="btn-receipt" target="_blank">
+                                                            <i class="fas fa-download me-1"></i>PDF
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            <t t-if="not payment_lines">
+                                                <tr>
+                                                    <td colspan="5" class="empty-state">
+                                                        <i class="fas fa-receipt"></i>
+                                                        <p>No payment history yet</p>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="dash-card mb-4">
+                            <div class="dash-card-body text-center py-5">
+                                <i class="fas fa-info-circle fa-2x mb-3" style="color:#94a3b8;"></i>
+                                <p>No hire purchase account is linked to this phone number.</p>
+                            </div>
+                        </div>
+                    </t>
+                </main>
+
+                <footer class="dash-footer">
+                    <div class="container">
+                        <p>Sarfosco Hire Purchase System &#169; <t t-esc="current_year" />. All rights reserved.</p>
+                    </div>
+                </footer>
+            </div>
         </t>
     </template>
 </odoo>
