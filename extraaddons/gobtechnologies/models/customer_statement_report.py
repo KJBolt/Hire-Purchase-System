@@ -34,20 +34,40 @@ class RepaymentItemLine(models.Model):
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
     price = fields.Float(string='Price', required=True)
-    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI', domain="[('product_id', '=', product_id)]")
+    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI')
 
 
     @api.onchange('product_id')
     def _onchange_product_id(self):          
         """Fetch the price of the selected product."""
+        result = {}
         if self.product_id:
             self.price = self.product_id.lst_price * self.quantity
-
-            # Reset serial number when product changes
             self.lot_id = False
+
+            # Get warehouse from context or repayment
+            warehouse_id = self.env.context.get('warehouse_id')
+            if warehouse_id:
+                warehouse = self.env['stock.warehouse'].browse(warehouse_id)
+            elif self.repayment_id:
+                warehouse = self.repayment_id.warehouse_id
+            else:
+                warehouse = False
+
+            # Filter serial numbers by warehouse stock
+            if warehouse:
+                quants = self.env['stock.quant'].search([
+                    ('product_id', '=', self.product_id.id),
+                    ('location_id', 'child_of', warehouse.lot_stock_id.id),
+                    ('quantity', '>', 0)
+                ])
+                lot_ids = quants.mapped('lot_id').ids
+                _logger.info(f"Filtered lot_ids: {lot_ids}")
+                result['domain'] = {'lot_id': [('id', 'in', lot_ids)]}
         else:
             self.lot_id = False
             self.price = 0.0
+        return result
 
     # Add this method to check availability
     @api.constrains('lot_id', 'product_id')
@@ -57,12 +77,18 @@ class RepaymentItemLine(models.Model):
             if record.lot_id and record.product_id:
                 if record.lot_id.product_id != record.product_id:
                     raise ValidationError("Selected serial number doesn't belong to this product")
-                # Check actual stock quantity in company's internal locations
-                stock_quant = self.env['stock.quant'].search([
+                # Check actual stock quantity in the repayment's warehouse
+                warehouse = record.repayment_id.warehouse_id
+                stock_location = warehouse.lot_stock_id if warehouse else False
+                domain = [
                     ('lot_id', '=', record.lot_id.id),
-                    ('location_id.usage', '=', 'internal'),
                     ('company_id', '=', self.env.company.id)
-                ], limit=1)
+                ]
+                if stock_location:
+                    domain.append(('location_id', 'child_of', stock_location.id))
+                else:
+                    domain.append(('location_id.usage', '=', 'internal'))
+                stock_quant = self.env['stock.quant'].search(domain, limit=1)
                 if not stock_quant or stock_quant.quantity <= 0:
                     raise ValidationError("This serial number is not available in stock")
 
@@ -424,6 +450,38 @@ class Repayment(models.Model):
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
     created_by = fields.Many2one('res.partner', string='Created By', required=True)
+    warehouse_id = fields.Many2one(
+        'stock.warehouse', string='Warehouse',
+        default=lambda self: self._default_warehouse(),
+        required=True
+    )
+
+    @api.model
+    def _default_warehouse(self):
+        try:
+            return self.env.user.property_warehouse_id or self.env['stock.warehouse'].search([], limit=1)
+        except (AttributeError, KeyError):
+            return self.env['stock.warehouse'].search([], limit=1)
+
+    available_product_ids = fields.Many2many(
+        'product.product', compute='_compute_available_products',
+        string='Available Products'
+    )
+
+
+    @api.depends('warehouse_id')
+    def _compute_available_products(self):
+        for record in self:
+            if record.warehouse_id:
+                quants = self.env['stock.quant'].read_group([
+                    ('location_id', 'child_of', record.warehouse_id.lot_stock_id.id),
+                    ('quantity', '>', 0)
+                ], ['product_id'], ['product_id'])
+                record.available_product_ids = [
+                    q['product_id'][0] for q in quants if q['product_id']
+                ]
+            else:
+                record.available_product_ids = False
 
 
     def name_get(self):
@@ -1352,6 +1410,7 @@ class Repayment(models.Model):
         sale_order = self.env['sale.order'].create({
             'partner_id': self.customer_name.id,
             'origin': self.unique_id,
+            'warehouse_id': self.warehouse_id.id,
             'note': f"Hire Purchase Order for {self.customer_name.name}",
             'client_order_ref': self.unique_id,
         })
