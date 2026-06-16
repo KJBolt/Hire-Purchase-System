@@ -14,7 +14,8 @@
         'account',
         'stock',
         'mail',
-        'sale'
+        'sale',
+        'website'
     ],
     'data': [
         # 'security/groups.xml',

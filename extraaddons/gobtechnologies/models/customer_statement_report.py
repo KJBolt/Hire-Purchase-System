@@ -451,17 +451,20 @@ class Repayment(models.Model):
     payment_url = fields.Char(string="Payment Url", required=False)
     created_by = fields.Many2one('res.partner', string='Created By', required=True)
     warehouse_id = fields.Many2one(
-        'stock.warehouse', string='Warehouse',
-        default=lambda self: self._default_warehouse(),
-        required=True
+        'stock.warehouse', string='Warehouse'
     )
 
     @api.model
     def _default_warehouse(self):
-        try:
-            return self.env.user.property_warehouse_id or self.env['stock.warehouse'].search([], limit=1)
-        except (AttributeError, KeyError):
-            return self.env['stock.warehouse'].search([], limit=1)
+        wh_field = self.env['res.users']._fields.get('property_warehouse_id') or self.env['res.users']._fields.get('warehouse_id')
+        if wh_field:
+            try:
+                user_wh = self.env.user.property_warehouse_id or self.env.user.warehouse_id
+                if user_wh:
+                    return user_wh
+            except Exception:
+                pass
+        return self.env['stock.warehouse'].search([], limit=1)
 
     available_product_ids = fields.Many2many(
         'product.product', compute='_compute_available_products',
@@ -980,6 +983,9 @@ class Repayment(models.Model):
     def create(self, vals):
         if vals.get('unique_id', _('New')) == _('New'):
             vals['unique_id'] = self.env['ir.sequence'].next_by_code('repayment.sequence') or _('New')
+        
+        if not vals.get('warehouse_id'):
+            vals['warehouse_id'] = self._default_warehouse().id
         
         # vals['state'] = 'progress'
         res = super(Repayment, self).create(vals)
