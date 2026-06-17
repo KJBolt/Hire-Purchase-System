@@ -23,6 +23,10 @@ class ResConfigSettings(models.TransientModel):
         string='Collection Account',
         config_parameter='gobtechnologies.hubtel_collection_account'
     )
+    hubtel_token = fields.Char(
+        string='Hubtel Token',
+        config_parameter='gobtechnologies.hubtel_token'
+    )
 
     webhook_url = fields.Char(
         string='Webhook URL',
@@ -74,6 +78,7 @@ class ResConfigSettings(models.TransientModel):
             'hubtel_client_secret': decrypt_text(params.get_param('gobtechnologies.hubtel_client_secret', '')),
             'hubtel_merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
             'hubtel_collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
+            'hubtel_token': decrypt_text(params.get_param('gobtechnologies.hubtel_token', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', '')),
             'nuovopay_api_key': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_key', '')),
             'nuovopay_api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', '')),
@@ -108,6 +113,10 @@ class ResConfigSettings(models.TransientModel):
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.hubtel_collection_account', 
             encrypt_text(self.hubtel_collection_account or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.hubtel_token', 
+            encrypt_text(self.hubtel_token or '')
         )
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.webhook_url', 
@@ -155,6 +164,7 @@ class ResConfigSettings(models.TransientModel):
             'client_secret': decrypt_text(params.get_param('gobtechnologies.hubtel_client_secret', '')),
             'merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
             'collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
+            'hubtel_token': decrypt_text(params.get_param('gobtechnologies.hubtel_token', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', ''))
         }
 

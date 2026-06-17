@@ -253,9 +253,12 @@ class CustomerPortalController(http.Controller):
         settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
         collection_account = settings.get('collection_account')
         webhook_url = settings.get('webhook_url', '')
+        token = settings.get('hubtel_token')
 
         if not collection_account:
             return {'success': False, 'message': 'Hubtel collection account not configured. Please contact support.'}
+        if not token:
+            return {'success': False, 'message': 'Hubtel token not configured. Please contact support.'}
 
         phone = portal.phone_no.replace(' ', '').replace('-', '')
         if phone.startswith('0'):
@@ -277,11 +280,16 @@ class CustomerPortalController(http.Controller):
 
         url = f"https://rmp.hubtel.com/merchantaccount/merchants/{collection_account}/receive/mobilemoney"
 
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}',
+        }
+
         response = requests.post(
             url,
             json=payload,
             timeout=30,
-            headers={'Content-Type': 'application/json'},
+            headers=headers,
         )
 
         _logger.info("Hubtel receive-money response: %s - %s", response.status_code, response.text)
