@@ -1,3 +1,4 @@
+version: '3.1'
 services:
   web:
     build: ./dockerfiles/
@@ -9,9 +10,9 @@ services:
       - "8069:8069"
       - "8072:8072"
     restart: always
-    mem_limit: 1500m
     volumes:
       - odoo-web-data:/var/lib/odoo
+      #- ./config:/etc/odoo
       - ./extraaddons:/mnt/extra-addons
     environment:
       - PASSWORD_FILE=/run/secrets/postgresql_password
@@ -24,19 +25,11 @@ services:
       --proxy-mode
       --limit-time-cpu=60
       --limit-time-real=120
-      --limit-memory-hard=1200000000
-      --limit-memory-soft=1000000000
-      --limit-request=8192
+      --dev=reload          
   db:
     image: postgres:latest
     container_name: hirepurchasesystemdb
     platform: linux/x86_64
-    shm_size: '256mb'
-    command: >
-      postgres
-      -c shared_buffers=512MB
-      -c work_mem=8MB
-      -c maintenance_work_mem=128MB
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgresql_password
