@@ -252,8 +252,8 @@ class CustomerPortalController(http.Controller):
     def _initiate_hubtel_payment(self, portal, repayment, amount):
         settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
         collection_account = settings.get('collection_account')
-        webhook_url = settings.get('webhook_url', '')
         token = settings.get('hubtel_token')
+        hubtel_receive_money_webhook = settings.get('hubtel_receive_money_webhook', '')
 
         if not collection_account:
             return {'success': False, 'message': 'Hubtel collection account not configured. Please contact support.'}
@@ -273,9 +273,9 @@ class CustomerPortalController(http.Controller):
             'CustomerEmail': '',
             'Channel': self._detect_momo_channel(phone),
             'Amount': round(float(amount), 2),
-            'PrimaryCallbackUrl': webhook_url or request.httprequest.url_root.rstrip('/') + '/web/hook/d69a6f81-e899-4509-85dd-8655a1543259',
-            'Description': str(repayment.unique_id),
-            'ClientReference': client_ref,
+            'PrimaryCallbackUrl': str(hubtel_receive_money_webhook),
+            'Description': client_ref,
+            'ClientReference': str(repayment.id),
         }
 
         _logger.info(f'Payload => {payload}')

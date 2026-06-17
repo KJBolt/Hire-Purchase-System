@@ -27,6 +27,10 @@ class ResConfigSettings(models.TransientModel):
         string='Hubtel Token',
         config_parameter='gobtechnologies.hubtel_token'
     )
+    hubtel_receive_money_webhook = fields.Char(
+        string='Receive Money Webhook',
+        config_parameter='gobtechnologies.hubtel_receive_money_webhook'
+    )
 
     webhook_url = fields.Char(
         string='Webhook URL',
@@ -79,6 +83,7 @@ class ResConfigSettings(models.TransientModel):
             'hubtel_merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
             'hubtel_collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
             'hubtel_token': decrypt_text(params.get_param('gobtechnologies.hubtel_token', '')),
+            'hubtel_receive_money_webhook': decrypt_text(params.get_param('gobtechnologies.hubtel_receive_money_webhook', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', '')),
             'nuovopay_api_key': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_key', '')),
             'nuovopay_api_url': decrypt_text(params.get_param('gobtechnologies.nuovopay_api_url', '')),
@@ -117,6 +122,10 @@ class ResConfigSettings(models.TransientModel):
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.hubtel_token', 
             encrypt_text(self.hubtel_token or '')
+        )
+        self.env['ir.config_parameter'].sudo().set_param(
+            'gobtechnologies.hubtel_receive_money_webhook', 
+            encrypt_text(self.hubtel_receive_money_webhook or '')
         )
         self.env['ir.config_parameter'].sudo().set_param(
             'gobtechnologies.webhook_url', 
@@ -165,6 +174,7 @@ class ResConfigSettings(models.TransientModel):
             'merchant_account': decrypt_text(params.get_param('gobtechnologies.hubtel_merchant_account', '')),
             'collection_account': decrypt_text(params.get_param('gobtechnologies.hubtel_collection_account', '')),
             'hubtel_token': decrypt_text(params.get_param('gobtechnologies.hubtel_token', '')),
+            'hubtel_receive_money_webhook': decrypt_text(params.get_param('gobtechnologies.hubtel_receive_money_webhook', '')),
             'webhook_url': decrypt_text(params.get_param('gobtechnologies.webhook_url', ''))
         }
 

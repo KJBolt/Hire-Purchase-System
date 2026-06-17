@@ -65,6 +65,12 @@
                                         <field name="hubtel_token" password="true"/>
                                     </div>
                                 </div>
+                                <div class="row mt16">
+                                    <label class="col-lg-4 o_light_label" for="hubtel_receive_money_webhook">Receive Money Webhook</label>
+                                    <div class="col-lg-8">
+                                        <field name="hubtel_receive_money_webhook" password="true"/>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
