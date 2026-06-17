@@ -278,6 +278,8 @@ class CustomerPortalController(http.Controller):
             'ClientReference': client_ref,
         }
 
+        _logger.info(f'Payload => {payload}')
+
         url = f"https://rmp.hubtel.com/merchantaccount/merchants/{collection_account}/receive/mobilemoney"
 
         headers = {
@@ -287,7 +289,7 @@ class CustomerPortalController(http.Controller):
 
         response = requests.post(
             url,
-            json=payload,
+            data=payload,
             timeout=30,
             headers=headers,
         )
