@@ -274,7 +274,7 @@ class CustomerPortalController(http.Controller):
             'Channel': self._detect_momo_channel(phone),
             'Amount': round(float(amount), 2),
             'PrimaryCallbackUrl': webhook_url or request.httprequest.url_root.rstrip('/') + '/web/hook/d69a6f81-e899-4509-85dd-8655a1543259',
-            'Description': f"HP Payment - {repayment.unique_id}",
+            'Description': str(repayment.unique_id),
             'ClientReference': client_ref,
         }
 
@@ -284,12 +284,15 @@ class CustomerPortalController(http.Controller):
 
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}',
+            'Authorization': f'Basic {token}',
+            'Cache-Control': 'no-cache',
         }
+
+        body_string = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))
 
         response = requests.post(
             url,
-            data=payload,
+            data=body_string,
             timeout=30,
             headers=headers,
         )
