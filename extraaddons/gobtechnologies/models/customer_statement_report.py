@@ -1666,7 +1666,7 @@ class Repayment(models.Model):
                 'message': sms_message,
                 'recipients': [phone],
             }
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=15)
 
             if response.status_code in [200, 201]:
                 self.message_post(
