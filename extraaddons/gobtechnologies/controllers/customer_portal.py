@@ -275,7 +275,7 @@ class CustomerPortalController(http.Controller):
             'Amount': round(float(amount), 2),
             'PrimaryCallbackUrl': str(hubtel_receive_money_webhook),
             'Description': client_ref,
-            'ClientReference': str(repayment.id),
+            'ClientReference': str(repayment.unique_id),
         }
 
         _logger.info(f'Payload => {payload}')
