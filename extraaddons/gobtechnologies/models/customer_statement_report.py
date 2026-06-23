@@ -1758,122 +1758,122 @@ class Repayment(models.Model):
                     continue
 
                 # Handle termination warning period (7-14 days)
-                if should_send_termination_warning and repayment.outstanding_loan > 0:
-                    # Check if any payments were made in the last 7 days
-                    recent_payments = repayment.payment_lines.filtered(
-                        lambda p: p.payment_date >= seven_days_ago
-                    )
-                    total_recent_payment = sum(recent_payments.mapped('payment_amount'))
+                # if should_send_termination_warning and repayment.outstanding_loan > 0:
+                #     # Check if any payments were made in the last 7 days
+                #     recent_payments = repayment.payment_lines.filtered(
+                #         lambda p: p.payment_date >= seven_days_ago
+                #     )
+                #     total_recent_payment = sum(recent_payments.mapped('payment_amount'))
                     
-                    if not recent_payments or total_recent_payment < repayment.expected_to_pay:
-                        termination_warning_message = (
-                            f"Dear {repayment.customer_name.name}, "
-                            f"your contract with Sarfosco Phones terminates, "
-                            f"in 14 days if payment is not made today. "
-                            f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
-                            f"Kindly dial *713*7678# to make immediate payment. "
-                            f"Thank you for choosing Sarfosco Phones."
-                        )
+                #     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
+                #         termination_warning_message = (
+                #             f"Dear {repayment.customer_name.name}, "
+                #             f"your contract with Sarfosco Phones terminates, "
+                #             f"in 14 days if payment is not made today. "
+                #             f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
+                #             f"Kindly dial *713*7678# to make immediate payment. "
+                #             f"Thank you for choosing Sarfosco Phones."
+                #         )
                         
-                        if repayment.phone_no:
-                            self._send_bulkclix_sms(repayment.phone_no, termination_warning_message, repayment.customer_name.name)
+                #         if repayment.phone_no:
+                #             self._send_bulkclix_sms(repayment.phone_no, termination_warning_message, repayment.customer_name.name)
                         
-                        _logger.info(
-                            f"Sent termination warning to {repayment.customer_name.name} "
-                            f"for payment due on {seven_days_ago}"
-                        )
+                #         _logger.info(
+                #             f"Sent termination warning to {repayment.customer_name.name} "
+                #             f"for payment due on {seven_days_ago}"
+                #         )
                         
-                        # Update the state to indicate termination warning
-                        if repayment.state != 'termination_warning':
-                            repayment.write({
-                                'state': 'termination_warning'
-                            })
+                #         # Update the state to indicate termination warning
+                #         if repayment.state != 'termination_warning':
+                #             repayment.write({
+                #                 'state': 'termination_warning'
+                #             })
 
 
 
                 # Handle termination warning period (10-14 days)
-                if should_send_termination_warning_two and repayment.outstanding_loan > 0:
-                    # Check if any payments were made in the last 10 days
-                    recent_payments = repayment.payment_lines.filtered(
-                        lambda p: p.payment_date >= ten_days_ago
-                    )
-                    total_recent_payment = sum(recent_payments.mapped('payment_amount'))
+                # if should_send_termination_warning_two and repayment.outstanding_loan > 0:
+                #     # Check if any payments were made in the last 10 days
+                #     recent_payments = repayment.payment_lines.filtered(
+                #         lambda p: p.payment_date >= ten_days_ago
+                #     )
+                #     total_recent_payment = sum(recent_payments.mapped('payment_amount'))
 
-                    if not recent_payments or total_recent_payment < repayment.expected_to_pay:
-                        termination_warning_message_two = (
-                            f"Dear {repayment.customer_name.name}, "
-                            f"your contract with Sarfosco Phones terminates, "
-                            f"in 3 days if payment is not made today. "
-                            f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
-                            f"Kindly dial *713*7678# to make immediate payment. Thank you for choosing Sarfosco Phones. "
-                        )
-                        if repayment.phone_no:
-                            self._send_bulkclix_sms(repayment.phone_no, termination_warning_message_two, repayment.customer_name.name)
+                #     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
+                #         termination_warning_message_two = (
+                #             f"Dear {repayment.customer_name.name}, "
+                #             f"your contract with Sarfosco Phones terminates, "
+                #             f"in 3 days if payment is not made today. "
+                #             f"We shall retrieve our item & refund 50% of your deposit into your momo account. "
+                #             f"Kindly dial *713*7678# to make immediate payment. Thank you for choosing Sarfosco Phones. "
+                #         )
+                #         if repayment.phone_no:
+                #             self._send_bulkclix_sms(repayment.phone_no, termination_warning_message_two, repayment.customer_name.name)
 
-                        # Update the state to indicate termination warning
-                        if repayment.state != 'termination_warning':
-                            repayment.write({
-                                'state': 'termination_warning'
-                            })
+                #         # Update the state to indicate termination warning
+                #         if repayment.state != 'termination_warning':
+                #             repayment.write({
+                #                 'state': 'termination_warning'
+                #             })
 
 
 
                 # Handle final termination (after 14 days)
-                if should_send_final_termination and repayment.outstanding_loan > 0:
-                    # Check if any payments were made in the last 14 days
-                    recent_payments = repayment.payment_lines.filtered(
-                        lambda p: p.payment_date >= fourteen_days_ago
-                    )
-                    total_recent_payment = sum(recent_payments.mapped('payment_amount'))
+                # if should_send_final_termination and repayment.outstanding_loan > 0:
+                #     # Check if any payments were made in the last 14 days
+                #     recent_payments = repayment.payment_lines.filtered(
+                #         lambda p: p.payment_date >= fourteen_days_ago
+                #     )
+                #     total_recent_payment = sum(recent_payments.mapped('payment_amount'))
                     
-                    if not recent_payments or total_recent_payment < repayment.expected_to_pay:
-                        # Message for customer
-                        customer_message = (
-                            f"Dear {repayment.customer_name.name}, "
-                            f"Due to non-payment for the past 14 days, "
-                            f"your contract with Sarfosco Phones has been terminated. "
-                            f"Please contact our office immediately to resolve this issue."
-                        )
+                #     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
+                #         # Message for customer
+                #         customer_message = (
+                #             f"Dear {repayment.customer_name.name}, "
+                #             f"Due to non-payment for the past 14 days, "
+                #             f"your contract with Sarfosco Phones has been terminated. "
+                #             f"Please contact our office immediately to resolve this issue."
+                #         )
 
-                        # Message for guarantor
-                        guarantor_message = (
-                            f"Dear {repayment.guarantor_name.name}, "
-                            f"This is to inform you that {repayment.customer_name.name}, "
-                            f"for whom you stood as guarantor, has defaulted on their payment, "
-                            f"for the past 14 days. "
-                            f"As a guarantor, you may be contacted regarding this matter."
-                        )
+                #         # Message for guarantor
+                #         guarantor_message = (
+                #             f"Dear {repayment.guarantor_name.name}, "
+                #             f"This is to inform you that {repayment.customer_name.name}, "
+                #             f"for whom you stood as guarantor, has defaulted on their payment, "
+                #             f"for the past 14 days. "
+                #             f"As a guarantor, you may be contacted regarding this matter."
+                #         )
 
-                        # Message for Head of Sarfosco Phones
-                        head_message = (
-                            f"TERMINATION NOTICE\n"
-                            f"Customer: {repayment.customer_name.name}\n"
-                            f"Phone: {repayment.phone_no}\n"
-                            f"Outstanding Balance: GHS {repayment.outstanding_loan}\n"
-                            f"Default Duration: 14+ days\n"
-                            f"Guarantor: {repayment.guarantor_name.name}\n"
-                            f"Guarantor Phone: {repayment.guarantor_phone}\n"
-                            f"Contract has been automatically terminated due to payment default."
-                        )
+                #         # Message for Head of Sarfosco Phones
+                #         head_message = (
+                #             f"TERMINATION NOTICE\n"
+                #             f"Customer: {repayment.customer_name.name}\n"
+                #             f"Phone: {repayment.phone_no}\n"
+                #             f"Outstanding Balance: GHS {repayment.outstanding_loan}\n"
+                #             f"Default Duration: 14+ days\n"
+                #             f"Guarantor: {repayment.guarantor_name.name}\n"
+                #             f"Guarantor Phone: {repayment.guarantor_phone}\n"
+                #             f"Contract has been automatically terminated due to payment default."
+                #         )
                         
-                        if repayment.phone_no:
-                            self._send_bulkclix_sms(repayment.phone_no, final_termination_message, repayment.customer_name.name)
+                #         if repayment.phone_no:
+                #             self._send_bulkclix_sms(repayment.phone_no, final_termination_message, repayment.customer_name.name)
 
-                        if repayment.guarantor_contact:
-                            self._send_bulkclix_sms(repayment.guarantor_contact, guarantor_message, repayment.guarantor_name.name)
+                #         if repayment.guarantor_contact:
+                #             self._send_bulkclix_sms(repayment.guarantor_contact, guarantor_message, repayment.guarantor_name.name)
 
-                        if repayment.head_of_gob_contact:
-                            self._send_bulkclix_sms(repayment.head_of_gob_contact, head_message, "Head of Sarfosco Phones")
+                #         if repayment.head_of_gob_contact:
+                #             self._send_bulkclix_sms(repayment.head_of_gob_contact, head_message, "Head of Sarfosco Phones")
                         
-                        _logger.info(
-                            f"Sent final termination notice to {repayment.customer_name.name} "
-                            f"for payment due on {fourteen_days_ago}"
-                        )
+                #         _logger.info(
+                #             f"Sent final termination notice to {repayment.customer_name.name} "
+                #             f"for payment due on {fourteen_days_ago}"
+                #         )
                         
-                        # Update the state to terminated
-                        repayment.write({
-                            'state': 'terminated'
-                        })
+                #         # Update the state to terminated
+                #         repayment.write({
+                #             'state': 'terminated'
+                #         })
 
 
 
@@ -1883,7 +1883,7 @@ class Repayment(models.Model):
                         f"Dear {repayment.customer_name.name}, "
                         f"this is a reminder that your payment of GHS {repayment.expected_to_pay} "
                         f"is due tomorrow {tomorrow.strftime('%d-%m-%Y')}. "
-                        f"Kindly dial *713*7678# to pay now to avoid any penalties. "
+                        f"Kindly pay on time. "
                         f"Thank you for choosing Sarfosco Phones."
                     )
                     
@@ -1932,75 +1932,75 @@ class Repayment(models.Model):
 
 
                 # Check for penalty reminder (2 days after due date)
-                if should_send_penalty_reminder and repayment.outstanding_loan > 0:
-                    # Check if payment was made in the last 2 days
-                    recent_payments = repayment.payment_lines.filtered(
-                        lambda p: p.payment_date >= two_days_ago
-                    )
-                    total_recent_payment = sum(recent_payments.mapped('payment_amount'))
+                # if should_send_penalty_reminder and repayment.outstanding_loan > 0:
+                #     # Check if payment was made in the last 2 days
+                #     recent_payments = repayment.payment_lines.filtered(
+                #         lambda p: p.payment_date >= two_days_ago
+                #     )
+                #     total_recent_payment = sum(recent_payments.mapped('payment_amount'))
                     
-                    if not recent_payments or total_recent_payment < repayment.expected_to_pay:
-                        penalty_reminder_message = (
-                            f"Dear {repayment.customer_name.name}, "
-                            f"your payment of GHS {repayment.expected_to_pay} is still pending. "
-                            f"Please note that a penalty fee of GHS 10 will be charged tomorrow "
-                            f"if payment is not made today. "
-                            f"Kindly dial *713*7678# to pay now. "
-                            f"Thank you for choosing Sarfosco Phones."
-                        )
+                #     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
+                #         penalty_reminder_message = (
+                #             f"Dear {repayment.customer_name.name}, "
+                #             f"your payment of GHS {repayment.expected_to_pay} is still pending. "
+                #             f"Please note that a penalty fee of GHS 10 will be charged tomorrow "
+                #             f"if payment is not made today. "
+                #             f"Kindly dial *713*7678# to pay now. "
+                #             f"Thank you for choosing Sarfosco Phones."
+                #         )
                         
-                        if repayment.phone_no:
-                            self._send_bulkclix_sms(repayment.phone_no, penalty_reminder_message, repayment.customer_name.name)
+                #         if repayment.phone_no:
+                #             self._send_bulkclix_sms(repayment.phone_no, penalty_reminder_message, repayment.customer_name.name)
                         
-                        _logger.info(
-                            f"Sent penalty warning to {repayment.customer_name.name} "
-                            f"for payment due on {two_days_ago}"
-                        )
+                #         _logger.info(
+                #             f"Sent penalty warning to {repayment.customer_name.name} "
+                #             f"for payment due on {two_days_ago}"
+                #         )
 
 
                 # Check for penalty charge (3 days after due date)
-                if should_charge_penalty and repayment.outstanding_loan > 0:
-                    # Check if payment was made in the last 3 days
-                    recent_payments = repayment.payment_lines.filtered(
-                        lambda p: p.payment_date >= three_days_ago
-                    )
-                    total_recent_payment = sum(recent_payments.mapped('payment_amount'))
+                # if should_charge_penalty and repayment.outstanding_loan > 0:
+                #     # Check if payment was made in the last 3 days
+                #     recent_payments = repayment.payment_lines.filtered(
+                #         lambda p: p.payment_date >= three_days_ago
+                #     )
+                #     total_recent_payment = sum(recent_payments.mapped('payment_amount'))
                     
-                    if not recent_payments or total_recent_payment < repayment.expected_to_pay:
-                        # Add penalty charge
-                        penalty_amount = 10.0  # GHS 10
+                #     if not recent_payments or total_recent_payment < repayment.expected_to_pay:
+                #         # Add penalty charge
+                #         penalty_amount = 10.0  # GHS 10
                         
-                        # Create penalty charge record
-                        self.env['repayment.penalty'].create({
-                            'repayment_id': repayment.id,
-                            'penalty_date': today,
-                            'penalty_amount': penalty_amount,
-                            'reason': 'Late payment penalty'
-                        })
+                #         # Create penalty charge record
+                #         self.env['repayment.penalty'].create({
+                #             'repayment_id': repayment.id,
+                #             'penalty_date': today,
+                #             'penalty_amount': penalty_amount,
+                #             'reason': 'Late payment penalty'
+                #         })
                         
                         
-                        # Update outstanding loan amount to include penalty
-                        repayment.write({
-                            'outstanding_loan': repayment.outstanding_loan + penalty_amount,
-                            'penalty': penalty_amount
-                        })
+                #         # Update outstanding loan amount to include penalty
+                #         repayment.write({
+                #             'outstanding_loan': repayment.outstanding_loan + penalty_amount,
+                #             'penalty': penalty_amount
+                #         })
                         
-                        penalty_charge_message = (
-                            f"Dear {repayment.customer_name.name}, "
-                            f"a penalty fee of GHS {penalty_amount} has been charged to your account "
-                            f"due to delayed payment. Your new outstanding balance is "
-                            f"GHS {repayment.outstanding_loan}. "
-                            f"Kindly dial *713*7678# to pay now. "
-                            f"Thank you for choosing Sarfosco Phones."
-                        )
+                #         penalty_charge_message = (
+                #             f"Dear {repayment.customer_name.name}, "
+                #             f"a penalty fee of GHS {penalty_amount} has been charged to your account "
+                #             f"due to delayed payment. Your new outstanding balance is "
+                #             f"GHS {repayment.outstanding_loan}. "
+                #             f"Kindly dial *713*7678# to pay now. "
+                #             f"Thank you for choosing Sarfosco Phones."
+                #         )
                         
-                        if repayment.phone_no:
-                            self._send_bulkclix_sms(repayment.phone_no, penalty_charge_message, repayment.customer_name.name)
+                #         if repayment.phone_no:
+                #             self._send_bulkclix_sms(repayment.phone_no, penalty_charge_message, repayment.customer_name.name)
                         
-                        _logger.info(
-                            f"Applied penalty charge to {repayment.customer_name.name} "
-                            f"for payment due on {three_days_ago}"
-                        )
+                #         _logger.info(
+                #             f"Applied penalty charge to {repayment.customer_name.name} "
+                #             f"for payment due on {three_days_ago}"
+                #         )
 
             except Exception as e:
                 _logger.error(f"Failed to process reminders for {repayment.customer_name.name}: {str(e)}")
