@@ -34,63 +34,28 @@ class RepaymentItemLine(models.Model):
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
     price = fields.Float(string='Price', required=True)
-    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI')
+    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI', domain="[('product_id', '=', product_id)]")
 
 
     @api.onchange('product_id')
     def _onchange_product_id(self):          
-        """Fetch the price of the selected product."""
-        result = {}
+        """Fetch the price of the selected product and clear serial numbers."""
         if self.product_id:
             self.price = self.product_id.lst_price * self.quantity
             self.lot_id = False
-
-            # Get warehouse from context or repayment
-            warehouse_id = self.env.context.get('warehouse_id')
-            if warehouse_id:
-                warehouse = self.env['stock.warehouse'].browse(warehouse_id)
-            elif self.repayment_id:
-                warehouse = self.repayment_id.warehouse_id
-            else:
-                warehouse = False
-
-            # Filter serial numbers by warehouse stock
-            if warehouse:
-                quants = self.env['stock.quant'].search([
-                    ('product_id', '=', self.product_id.id),
-                    ('location_id', 'child_of', warehouse.lot_stock_id.id),
-                    ('quantity', '>', 0)
-                ])
-                lot_ids = quants.mapped('lot_id').ids
-                _logger.info(f"Filtered lot_ids: {lot_ids}")
-                result['domain'] = {'lot_id': [('id', 'in', lot_ids)]}
         else:
             self.lot_id = False
             self.price = 0.0
-        return result
 
     # Add this method to check availability
     @api.constrains('lot_id', 'product_id')
     def _check_serial_availability(self):
-        """Ensure selected serial number belongs to the product and is available."""
+        """Ensure selected serial number belongs to the product."""
         for record in self:
             if record.lot_id and record.product_id:
-                if record.lot_id.product_id != record.product_id:
-                    raise ValidationError("Selected serial number doesn't belong to this product")
-                # Check actual stock quantity in the repayment's warehouse
-                warehouse = record.repayment_id.warehouse_id
-                stock_location = warehouse.lot_stock_id if warehouse else False
-                domain = [
-                    ('lot_id', '=', record.lot_id.id),
-                    ('company_id', '=', self.env.company.id)
-                ]
-                if stock_location:
-                    domain.append(('location_id', 'child_of', stock_location.id))
-                else:
-                    domain.append(('location_id.usage', '=', 'internal'))
-                stock_quant = self.env['stock.quant'].search(domain, limit=1)
-                if not stock_quant or stock_quant.quantity <= 0:
-                    raise ValidationError("This serial number is not available in stock")
+                for lot in record.lot_id:
+                    if lot.product_id != record.product_id:
+                        raise ValidationError("Selected serial number doesn't belong to this product")
 
     @api.onchange('quantity')
     def _onchange_quantity(self):
@@ -421,7 +386,7 @@ class Repayment(models.Model):
     delivery_status = fields.Selection([
         ('not_delivered', 'Not Delivered'),
         ('delivered', 'Delivered')
-    ], string='Delivery Status', default='not_delivered', readonly=True, required=True)
+    ], string='Delivery Status', compute='_compute_delivery_status', store=True, readonly=True)
 
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
@@ -450,42 +415,6 @@ class Repayment(models.Model):
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
     created_by = fields.Many2one('res.partner', string='Created By', required=True)
-    warehouse_id = fields.Many2one(
-        'stock.warehouse', string='Warehouse'
-    )
-
-    @api.model
-    def _default_warehouse(self):
-        wh_field = self.env['res.users']._fields.get('property_warehouse_id') or self.env['res.users']._fields.get('warehouse_id')
-        if wh_field:
-            try:
-                user_wh = self.env.user.property_warehouse_id or self.env.user.warehouse_id
-                if user_wh:
-                    return user_wh
-            except Exception:
-                pass
-        return self.env['stock.warehouse'].search([], limit=1)
-
-    available_product_ids = fields.Many2many(
-        'product.product', compute='_compute_available_products',
-        string='Available Products'
-    )
-
-
-    @api.depends('warehouse_id')
-    def _compute_available_products(self):
-        for record in self:
-            if record.warehouse_id:
-                quants = self.env['stock.quant'].read_group([
-                    ('location_id', 'child_of', record.warehouse_id.lot_stock_id.id),
-                    ('quantity', '>', 0)
-                ], ['product_id'], ['product_id'])
-                record.available_product_ids = [
-                    q['product_id'][0] for q in quants if q['product_id']
-                ]
-            else:
-                record.available_product_ids = False
-
 
     def name_get(self):
         result = []
@@ -984,9 +913,6 @@ class Repayment(models.Model):
         if vals.get('unique_id', _('New')) == _('New'):
             vals['unique_id'] = self.env['ir.sequence'].next_by_code('repayment.sequence') or _('New')
         
-        if not vals.get('warehouse_id'):
-            vals['warehouse_id'] = self._default_warehouse().id
-        
         # vals['state'] = 'progress'
         res = super(Repayment, self).create(vals)
 
@@ -1416,7 +1342,6 @@ class Repayment(models.Model):
         sale_order = self.env['sale.order'].create({
             'partner_id': self.customer_name.id,
             'origin': self.unique_id,
-            'warehouse_id': self.warehouse_id.id,
             'note': f"Hire Purchase Order for {self.customer_name.name}",
             'client_order_ref': self.unique_id,
         })
@@ -1434,13 +1359,9 @@ class Repayment(models.Model):
         # Confirm the sales order
         sale_order.action_confirm()
         
-        # Check if delivery is done (all pickings are done)
-        all_delivered = all(picking.state == 'done' for picking in sale_order.picking_ids)
-        
-        # Link the sales order to the repayment and update delivery status
+        # Link the sales order to the repayment
         self.write({
             'invoice_id': str(sale_order.id),
-            'delivery_status': 'delivered' if all_delivered else 'not_delivered'
         })
         
         return {
@@ -2035,6 +1956,29 @@ class Repayment(models.Model):
                     record.payment_status = 'insufficient'
                 else:
                     record.payment_status = 'on_track'
+
+
+    @api.depends('invoice_id')
+    def _compute_delivery_status(self):
+        for record in self:
+            if not record.invoice_id:
+                record.delivery_status = 'not_delivered'
+                continue
+            try:
+                sale_order = self.env['sale.order'].browse(int(record.invoice_id))
+                if not sale_order.exists():
+                    record.delivery_status = 'not_delivered'
+                    continue
+            except (ValueError, TypeError):
+                record.delivery_status = 'not_delivered'
+                continue
+            pickings = self.env['stock.picking'].search([
+                ('origin', '=', sale_order.name),
+            ])
+            if pickings and all(p.state == 'done' for p in pickings):
+                record.delivery_status = 'delivered'
+            else:
+                record.delivery_status = 'not_delivered'
 
 
     # Compute overdue amount
