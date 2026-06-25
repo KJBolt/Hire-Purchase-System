@@ -89,7 +89,6 @@
                             <field name="outstanding_loan" invisible="1"/>
                             <field name="outstanding_loan_status" readonly="1" no-open="1" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0" />
                             <field name="created_by"/>
-                            <field name="delivery_status" readonly="1" decoration-success="delivery_status == 'delivered'" decoration-danger="delivery_status == 'not_delivered'" widget="badge"/>
                         </group>
                         <group>
                             <field name="phone_no" />

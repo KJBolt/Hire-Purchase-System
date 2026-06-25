@@ -26,6 +26,23 @@ PAYMENT_STATE = [
 ]
 
 
+class StockLot(models.Model):
+    _inherit = 'stock.lot'
+
+    delivery_status = fields.Selection([
+        ('not_delivered', 'Not Delivered'),
+        ('delivered', 'Delivered')
+    ], string='Delivery Status', compute='_compute_delivery_status', store=True, readonly=True)
+
+    @api.depends('delivery_ids', 'delivery_ids.state')
+    def _compute_delivery_status(self):
+        for lot in self:
+            if lot.delivery_ids and all(p.state == 'done' for p in lot.delivery_ids):
+                lot.delivery_status = 'delivered'
+            else:
+                lot.delivery_status = 'not_delivered'
+
+
 class RepaymentItemLine(models.Model):
     _name = 'repayment.item.line'
     _description = 'Repayment Item Line'
@@ -34,11 +51,12 @@ class RepaymentItemLine(models.Model):
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
     price = fields.Float(string='Price', required=True)
-    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI', domain="[('product_id', '=', product_id)]")
+    lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
+        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered')]")
 
 
     @api.onchange('product_id')
-    def _onchange_product_id(self):          
+    def _onchange_product_id(self):
         """Fetch the price of the selected product and clear serial numbers."""
         if self.product_id:
             self.price = self.product_id.lst_price * self.quantity
@@ -47,15 +65,20 @@ class RepaymentItemLine(models.Model):
             self.lot_id = False
             self.price = 0.0
 
-    # Add this method to check availability
-    @api.constrains('lot_id', 'product_id')
+    @api.onchange('lot_id')
     def _check_serial_availability(self):
-        """Ensure selected serial number belongs to the product."""
+        """Ensure selected serial number is not already delivered."""
         for record in self:
-            if record.lot_id and record.product_id:
-                for lot in record.lot_id:
-                    if lot.product_id != record.product_id:
-                        raise ValidationError("Selected serial number doesn't belong to this product")
+            if record.lot_id:
+                delivered = record.lot_id.filtered(lambda l: l.delivery_status == 'delivered')
+                if delivered:
+                    record.lot_id = record.lot_id - delivered
+                    return {
+                        'warning': {
+                            'title': "Delivered Lot",
+                            'message': "Serial Number/IMEI '%s' has already been delivered and cannot be selected." % delivered[0].name
+                        }
+                    }
 
     @api.onchange('quantity')
     def _onchange_quantity(self):
@@ -383,10 +406,6 @@ class Repayment(models.Model):
     ], string='Payment Status', compute='_compute_payment_status', store=True)
     penalty_ids = fields.One2many('repayment.penalty', 'repayment_id', string='Penalties')
     total_penalties = fields.Float(string='Total Penalties', compute='_compute_total_penalties', store=True)
-    delivery_status = fields.Selection([
-        ('not_delivered', 'Not Delivered'),
-        ('delivered', 'Delivered')
-    ], string='Delivery Status', compute='_compute_delivery_status', store=True, readonly=True)
 
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
@@ -1957,28 +1976,6 @@ class Repayment(models.Model):
                 else:
                     record.payment_status = 'on_track'
 
-
-    @api.depends('invoice_id')
-    def _compute_delivery_status(self):
-        for record in self:
-            if not record.invoice_id:
-                record.delivery_status = 'not_delivered'
-                continue
-            try:
-                sale_order = self.env['sale.order'].browse(int(record.invoice_id))
-                if not sale_order.exists():
-                    record.delivery_status = 'not_delivered'
-                    continue
-            except (ValueError, TypeError):
-                record.delivery_status = 'not_delivered'
-                continue
-            pickings = self.env['stock.picking'].search([
-                ('origin', '=', sale_order.name),
-            ])
-            if pickings and all(p.state == 'done' for p in pickings):
-                record.delivery_status = 'delivered'
-            else:
-                record.delivery_status = 'not_delivered'
 
 
     # Compute overdue amount

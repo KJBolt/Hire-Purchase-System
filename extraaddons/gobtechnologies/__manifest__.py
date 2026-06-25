@@ -37,6 +37,7 @@
         'views/res_user_inherit.xml',
         'views/res_partner.xml',
         'views/oppo_lock_views.xml',
+        'views/stock_lot_inherit.xml',
         # 'views/settings_inherit.xml'
     ],
     'installable': True,
