@@ -410,9 +410,8 @@ class Repayment(models.Model):
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
     customer_ghana_card_back = fields.Binary(string='Customer Ghana Card Back', attachment=True, help="Upload Back Image", required=True)
-    guarantor_ghana_card_front = fields.Binary(string='Guarantor Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
-    guarantor_ghana_card_back = fields.Binary(string='Guarantor Ghana Card Back', attachment=True, help="Upload Back Image", required=True)
-    guarantor_ghana_card_back = fields.Binary(string='Guarantor Ghana Card Back', attachment=True, help="Upload Back Image", required=True)
+    guarantor_ghana_card_front = fields.Binary(string='Guarantor Ghana Card Front', attachment=True, help="Upload Front Image", required=False)
+    guarantor_ghana_card_back = fields.Binary(string='Guarantor Ghana Card Back', attachment=True, help="Upload Back Image", required=False)
     mobile_money_statement = fields.Binary(string='Mobile Money Statement', attachment=True, help="Upload Statement", required=False)
     mobile_money_statement_filename = fields.Char(string='Statement Filename', compute='_compute_mobile_money_statement_filename', store=True)
     utility_bill = fields.Binary(string='Utility Bill', attachment=True, help="Upload Utility Bill", required=False)
@@ -433,7 +432,7 @@ class Repayment(models.Model):
     ], string='Payment Method', required=False)
     note = fields.Text(string='Note', required=False)
     payment_url = fields.Char(string="Payment Url", required=False)
-    created_by = fields.Many2one('res.partner', string='Created By', required=True)
+    created_by = fields.Many2one('res.partner', string='Created By', required=True, default=lambda self: self.env.user.partner_id)
 
     def name_get(self):
         result = []
@@ -952,7 +951,7 @@ class Repayment(models.Model):
                 _logger.info(f"Phone No, {res.phone_no}")
 
                 # Prepare SMS message
-                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones."
+                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones. Visit {self.get_base_url()}/customer/portal to make payment."
 
                 # Send SMS
                 if res.phone_no and res.state == 'draft':

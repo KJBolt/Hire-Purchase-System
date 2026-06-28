@@ -156,7 +156,7 @@
                                         <field name="repayment_frequency" nolabel="1" readonly="state in ['cancel', 'paid']"/>
 
                                         <div class="o_td_label">
-                                            <label for="head_of_gob_contact" string="Management Phone Number"/>
+                                            <label for="head_of_gob_contact" string="Management/Agent Contact"/>
                                         </div>
                                         <field name="head_of_gob_contact" readonly="state in ['cancel', 'paid']" nolabel="1"/>
                                     </group>
@@ -379,7 +379,7 @@
     </record>
 
     <record id="action_repayment" model="ir.actions.act_window">
-        <field name="name">Hire Purchase</field>
+        <field name="name">Pick Now, Pay Later</field>
         <field name="res_model">repayment</field>
         <field name="view_mode">tree,form</field>
         <field name="help" type="html">
@@ -401,14 +401,8 @@
 
     <menuitem 
         id="menu_repayment_root" 
-        name="Hire Purchase"
+        name="Pick Now, Pay Later"
         sequence="1"
-    />
-
-    <menuitem 
-        id="menu_repayment" 
-        name="Hire Purchase"
-        parent="menu_repayment_root"
         action="action_repayment"
     />
 
