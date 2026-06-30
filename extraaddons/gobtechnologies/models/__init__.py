@@ -9,5 +9,6 @@ from . import res_user_inherit
 from . import res_partner
 from . import oppo_lock
 from . import customer_portal
+from . import payment_plan
 
 # from . import settings_inherit

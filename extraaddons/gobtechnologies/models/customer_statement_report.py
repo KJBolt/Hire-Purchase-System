@@ -54,7 +54,6 @@ class RepaymentItemLine(models.Model):
     lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
         domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered')]")
 
-
     @api.onchange('product_id')
     def _onchange_product_id(self):
         """Fetch the price of the selected product and clear serial numbers."""
@@ -339,13 +338,16 @@ class Repayment(models.Model):
     
 
 
-    plan = fields.Selection([
-        ('30 days', '30 days'),
-        ('60 days', '60 days'),
-        ('90 days', '90 days'),
-        ('120 days', '120 days'),
-        ('cash', 'Cash')
-    ], string='Plan', required=True)
+    plan_id = fields.Many2one('payment.plan', string='Payment Plan', ondelete='set null')
+    plan_duration = fields.Selection([
+        ('30', '1 Month - 30 Days'),
+        ('60', '2 Months - 60 Days'),
+        ('90', '3 Months - 90 Days'),
+        ('120', '4 Months - 120 Days'),
+        ('150', '5 Months - 150 Days'),
+        ('180', '6 Months - 180 Days'),
+        ('210', '7 Months - 210 Days'),
+    ], string='Plan Duration')
     start_date = fields.Date(string='Start Date', required=True)
     selling_price = fields.Float(string='Selling Price', required=True)
     deposit = fields.Float(string='Deposit', required=True)
@@ -356,7 +358,7 @@ class Repayment(models.Model):
         ('7', 'Weekly'),
         ('30', 'Monthly'),
         ('0', 'Cash')
-    ], string='Repayment Frequency', required=True)
+    ], string='Repayment Frequency', default='1', required=True)
     repayment_date = fields.Date(
         string='Repayment Date',
         compute='_compute_repayment_date',
@@ -451,39 +453,82 @@ class Repayment(models.Model):
             ], limit=1)
             record.mobile_money_statement_filename = attachment.name if attachment else False
 
-    @api.depends('selling_price', 'deposit', 'start_date', 'end_date', 'repayment_frequency')
+    @api.onchange('plan_duration')
+    def _onchange_plan_duration(self):
+        """When plan duration is selected, search payment.plan by duration and populate fields."""
+        if not self.plan_duration:
+            self.plan_id = False
+            self.selling_price = 0.0
+            self.deposit = 0.0
+            self.end_date = False
+            return
+
+        plan = self.env['payment.plan'].search([
+            ('plan_duration', '=', self.plan_duration),
+            ('active', '=', True),
+        ], limit=1)
+
+        if plan:
+            self.plan_id = plan
+            self.selling_price = plan.selling_price
+            self.deposit = plan.deposit
+        else:
+            self.plan_id = False
+            self.selling_price = 0.0
+            self.deposit = 0.0
+
+        # Compute end_date from start_date + duration
+        if self.start_date and self.plan_duration:
+            from datetime import timedelta
+            self.end_date = self.start_date + timedelta(days=int(self.plan_duration))
+
+    @api.onchange('start_date')
+    def _onchange_start_date(self):
+        """When start_date changes, recompute end_date if plan_duration is set."""
+        if self.start_date and self.plan_duration:
+            from datetime import timedelta
+            self.end_date = self.start_date + timedelta(days=int(self.plan_duration))
+
+    @api.onchange('plan_id')
+    def _onchange_plan_id(self):
+        """When a payment plan is selected, populate selling_price, deposit, and plan_duration."""
+        if self.plan_id:
+            self.selling_price = self.plan_id.selling_price
+            self.deposit = self.plan_id.deposit
+            self.plan_duration = self.plan_id.plan_duration
+
+    @api.onchange('repayment_frequency')
+    def _onchange_repayment_frequency(self):
+        """When repayment frequency changes, update expected_to_pay from the plan."""
+        if self.plan_duration and self.repayment_frequency:
+            plan = self.env['payment.plan'].search([
+                ('plan_duration', '=', self.plan_duration),
+                ('active', '=', True),
+            ], limit=1)
+            if plan:
+                freq = self.repayment_frequency
+                if freq == '1':
+                    self.expected_to_pay = plan.daily_amount
+                elif freq == '7':
+                    self.expected_to_pay = plan.weekly_amount
+                elif freq == '30':
+                    self.expected_to_pay = plan.monthly_amount
+                else:
+                    self.expected_to_pay = 0.0
+
+    @api.depends('plan_id', 'plan_duration', 'repayment_frequency')
     def _compute_expected_to_pay(self):
         for record in self:
-            # Guard: need all fields
-            if not (record.selling_price and record.start_date and record.end_date and record.repayment_frequency):
-                record.expected_to_pay = 0.0
-                continue
-
-            frequency_days = int(record.repayment_frequency)
-
-            # Cash plan — no installment calculation
-            if frequency_days == 0:
-                record.expected_to_pay = 0.0
-                continue
-
-            # Total days in the repayment plan
-            duration_days = (record.end_date - record.start_date).days
-
-            if duration_days <= 0:
-                record.expected_to_pay = 0.0
-                continue
-
-            # Number of installments: round up so partial periods count as 1 full installment
-            # e.g. 3 days / 7 days (weekly) = ceil(0.43) = 1 weekly installment
-            # e.g. 3 days / 1 day (daily)   = ceil(3.0)  = 3 daily installments
-            # e.g. 30 days / 7 days (weekly) = ceil(4.28) = 5 weekly installments
-            num_installments = math.ceil(duration_days / frequency_days)
-
-            # Amount still owed after deposit
-            remaining_amount = record.selling_price - record.deposit
-
-            if num_installments > 0 and remaining_amount > 0:
-                record.expected_to_pay = remaining_amount / num_installments
+            if record.plan_id and record.repayment_frequency:
+                freq = record.repayment_frequency
+                if freq == '1':
+                    record.expected_to_pay = record.plan_id.daily_amount
+                elif freq == '7':
+                    record.expected_to_pay = record.plan_id.weekly_amount
+                elif freq == '30':
+                    record.expected_to_pay = record.plan_id.monthly_amount
+                else:
+                    record.expected_to_pay = 0.0
             else:
                 record.expected_to_pay = 0.0
 
@@ -938,6 +983,11 @@ class Repayment(models.Model):
         
         # Check if this is an import operation
         is_import = self.env.context.get('import_file', False)
+
+        # Check if Product lines price is greater than selling price BEFORE any side effects
+        total_price = sum(item.price for item in res.product_lines)
+        if total_price > res.selling_price:
+            raise UserError("The total price of items should match the selling price specified ")
         
         # Only send SMS if this is not an import operation
         if not is_import:
@@ -961,11 +1011,6 @@ class Repayment(models.Model):
                 raise UserError(f"Error sending onboarding SMS: {str(e)}")
         else:
             _logger.info("Successfully imported record")
-
-        # Check if Product lines price is greater than selling price
-        total_price = sum(item.price for item in res.product_lines)
-        if total_price > res.selling_price:
-            raise UserError("The total price of items should match the selling price specified ")
 
         # Create oppo lock record
         try:

@@ -21,6 +21,7 @@
         # 'security/groups.xml',
         'security/ir.model.access.csv',
         'views/customer_statement_report.xml',
+        'views/payment_plan_views.xml',
         'views/modify_menuitems.xml',
         'views/login_template.xml',
         'views/hubtel_webhook.xml',

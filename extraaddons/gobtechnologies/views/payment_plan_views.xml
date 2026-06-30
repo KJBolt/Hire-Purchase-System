@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Payment Plan: Form View -->
+    <record id="view_payment_plan_form" model="ir.ui.view">
+        <field name="name">payment.plan.form</field>
+        <field name="model">payment.plan</field>
+        <field name="arch" type="xml">
+            <form string="Payment Plan">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Samsung A14 - 6 Month Plan"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Plan Details">
+                            <field name="product_id"/>
+                            <field name="plan_duration"/>
+                            <field name="active"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Pricing">
+                            <field name="selling_price"/>
+                            <field name="deposit"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Fixed Period Amounts">
+                            <field name="daily_amount"/>
+                            <field name="weekly_amount"/>
+                            <field name="monthly_amount"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Payment Plan: Tree (List) View -->
+    <record id="view_payment_plan_tree" model="ir.ui.view">
+        <field name="name">payment.plan.tree</field>
+        <field name="model">payment.plan</field>
+        <field name="arch" type="xml">
+            <tree string="Payment Plans" default_order="product_id, plan_duration">
+                <field name="product_id"/>
+                <field name="name"/>
+                <field name="plan_duration"/>
+                <field name="selling_price"/>
+                <field name="deposit"/>
+                <field name="daily_amount"/>
+                <field name="weekly_amount"/>
+                <field name="monthly_amount"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Payment Plan: Search View -->
+    <record id="view_payment_plan_search" model="ir.ui.view">
+        <field name="name">payment.plan.search</field>
+        <field name="model">payment.plan</field>
+        <field name="arch" type="xml">
+            <search string="Search Payment Plans">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="plan_duration"/>
+                <filter name="active_only" string="Active Plans" domain="[('active', '=', True)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_product" string="Product" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_by_duration" string="Duration" context="{'group_by': 'plan_duration'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Payment Plan: Window Action -->
+    <record id="action_payment_plan" model="ir.actions.act_window">
+        <field name="name">Payment Plans</field>
+        <field name="res_model">payment.plan</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_payment_plan_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first payment plan
+            </p>
+            <p>
+                Define fixed payment amounts for each product and plan duration.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item: Under "Pick Now, Pay Later" root menu -->
+    <menuitem
+        id="menu_payment_plan"
+        name="Payment Plans"
+        parent="menu_repayment_root"
+        action="action_payment_plan"
+        sequence="2"
+    />
+
+</odoo>
