@@ -94,6 +94,17 @@
                             <field name="customer_name" readonly="state in ['cancel', 'paid']" options="{'no_open': True}" />
                             <field name="gps_location"  readonly="state in ['cancel', 'paid']"/>
                             <field name="start_date"  readonly="state in ['cancel', 'paid']"/>
+                        </group>
+                        <group>
+                            <field name="phone_no" />
+                            <field name="plan_duration"/>
+                            <!-- <field name="plan_id" domain="[('active', '=', True), ('plan_duration', '=', plan_duration)]" options="{'no_create': True}" readonly="1" force_save="1"/> -->
+                            <field name="end_date" />
+                        </group>
+                    </group>
+
+                    <group string="Select Product to pupulate this section" >
+                        <group>
                             <field name="selling_price"  readonly="state in ['cancel', 'paid']"/>
                             <field name="deposit" />
                             <field name="outstanding_loan" invisible="1"/>
@@ -101,16 +112,14 @@
                             <field name="created_by"/>
                         </group>
                         <group>
-                            <field name="phone_no" />
-                            <field name="plan_duration"/>
-                            <!-- <field name="plan_id" domain="[('active', '=', True), ('plan_duration', '=', plan_duration)]" options="{'no_create': True}" readonly="1" force_save="1"/> -->
-                            <field name="end_date" />
                             <field name="repayment_frequency" />
                             <field name="expected_to_pay"/>
                             <field name="total_paid" readonly="1" no-open="1" />
                             <field name="sales_commission" readonly="1" />
                         </group>
                     </group>
+
+                    
 
                     <hr/>
 

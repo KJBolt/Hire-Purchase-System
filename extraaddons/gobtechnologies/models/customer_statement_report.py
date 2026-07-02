@@ -95,8 +95,6 @@ class RepaymentItemLine(models.Model):
     #     if self.repayment_id.selling_price != 0 and self.price != 0:
     #         if self.price > self.repayment_id.selling_price:
     #             raise UserError("Price of the product(s) cannot exceed the selling price")
-            
-
 
 
 class RepaymentPaymentLine(models.Model):
@@ -453,18 +451,20 @@ class Repayment(models.Model):
             ], limit=1)
             record.mobile_money_statement_filename = attachment.name if attachment else False
 
-    @api.onchange('plan_duration')
+    @api.onchange('plan_duration', 'product_lines')
     def _onchange_plan_duration(self):
         """When plan duration is selected, search payment.plan by duration and populate fields."""
-        if not self.plan_duration:
+        if not self.plan_duration or not self.product_lines:
             self.plan_id = False
             self.selling_price = 0.0
             self.deposit = 0.0
             self.end_date = False
             return
 
+        product_id = self.product_lines[:1].product_id
         plan = self.env['payment.plan'].search([
             ('plan_duration', '=', self.plan_duration),
+            ('product_id', '=', product_id.id),
             ('active', '=', True),
         ], limit=1)
 
@@ -670,12 +670,7 @@ class Repayment(models.Model):
                         "File size must be less than 10MB!"
                     )
 
-    # Ensure products lines are not empty
-    @api.constrains('product_lines')
-    def _check_product_lines(self):
-        for record in self:
-            if not record.product_lines:
-                raise ValidationError('Please specify the products in the Invoice Details tab.')
+
 
     @api.depends('penalty_ids.penalty_amount')
     def _compute_total_penalties(self):
@@ -693,6 +688,17 @@ class Repayment(models.Model):
             else:
                 record.outstanding_loan_status = record.outstanding_loan
 
+
+    @api.onchange('product_lines')
+    def _check_product_lines(self):
+        if len(self.product_lines) > 1:
+            self.product_lines = self.product_lines[:1]
+            return {
+                'warning': {
+                    'title': "Only One Product Allowed",
+                    'message': "Only one product record is allowed."
+                }
+            }
 
     # Ensure the selling price, deposit and expected to pay is not zero
     @api.constrains('selling_price', 'deposit', 'start_date', 'end_date', 'repayment_frequency')
@@ -975,6 +981,12 @@ class Repayment(models.Model):
     def create(self, vals):
         if vals.get('unique_id', _('New')) == _('New'):
             vals['unique_id'] = self.env['ir.sequence'].next_by_code('repayment.sequence') or _('New')
+
+        phone_no = vals.get('phone_no')
+        if phone_no:
+            existing = self.env['repayment'].search([('phone_no', '=', phone_no)], limit=1)
+            if existing:
+                raise ValidationError(_('Phone number %s already linked to a record in the database.') % phone_no)
         
         # vals['state'] = 'progress'
         res = super(Repayment, self).create(vals)
