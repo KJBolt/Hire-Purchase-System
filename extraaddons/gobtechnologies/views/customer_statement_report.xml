@@ -185,18 +185,12 @@
                                 <group name="others_header">
                                     <group name="others_details">
                                         <field name="guarantor_name" readonly="state in ['cancel', 'paid']" options="{'no_open': True}"/>
-                                        <field name="penalty" readonly="state in ['cancel', 'paid']"/>
                                     </group>
                                     <group name="others_details">
                                         <div class="o_td_label">
                                             <label for="guarantor_contact" string="Guarantor's Contact"/>
                                         </div>
                                         <field name="guarantor_contact" nolabel="1" readonly="state in ['cancel', 'paid']"/>
-
-                                        <div class="o_td_label">
-                                            <label for="discount" string="Discount"/>
-                                        </div>
-                                        <field name="discount" readonly="state in ['cancel', 'paid']" nolabel="1"/>
                                     </group>
                                 </group>
                             </sheet>
@@ -370,8 +364,6 @@
                 <field name="outstanding_loan" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0"/>
                 <field name="state" widget='badge' decoration-warning="state == 'progress'" decoration-success="state == 'paid'"/>
                 <field name="phone_no" optional="Hidden"/>
-                <field name="penalty" optional="Hidden"/>
-                <field name="discount" optional="Hidden"/>
                 <field name="percentage_paid" optional="Hidden"/>
                 <field name="paid_to_momo" optional="Hidden"/>
                 <field name="guarantor_name" optional="Hidden"/>

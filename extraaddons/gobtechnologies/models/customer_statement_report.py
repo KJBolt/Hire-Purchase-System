@@ -1908,7 +1908,7 @@ class Repayment(models.Model):
                         overdue_message = (
                             f"Dear {repayment.customer_name.name}, "
                             f"your payment of GHS {repayment.expected_to_pay} was due yesterday. "
-                            f"Kindly dial *713*7678# to pay now to avoid any penalties. "
+                            f"Kindly make payment to avoid any penalties. "
                             f"Thank you for choosing Sarfosco Phones."
                         )
                         

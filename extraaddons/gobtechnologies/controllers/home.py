@@ -5,4 +5,4 @@ from odoo.http import request
 class Home(http.Controller):
     @http.route('/', type='http', auth="public", website=True)
     def home(self, **kw):
-        return request.redirect('/customer/portal')
+        return request.render('gobtechnologies.Home')
