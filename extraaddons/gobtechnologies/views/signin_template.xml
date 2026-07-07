@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="signup" inherit_id="web.login">
+        <xpath expr="//label[@class='col-form-label']" position="before">
+            <img src="/gobtechnologies/static/src/img/logo.png" style="width:80px; height:80px;" alt="Logo" />
+        </xpath>
+    </template>
+</odoo>
