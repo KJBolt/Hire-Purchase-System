@@ -105,7 +105,7 @@
 
                     <group string="Select Product to pupulate this section" >
                         <group>
-                            <field name="selling_price"  readonly="state in ['cancel', 'paid']"/>
+                            <field name="selling_price" readonly="1" force_save="1"/>
                             <field name="deposit" />
                             <field name="outstanding_loan" invisible="1"/>
                             <field name="outstanding_loan_status" readonly="1" no-open="1" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0" />
@@ -145,7 +145,6 @@
                                             <field name="repayment_id" invisible="1" column_invisible="1"/>
                                             <field name="product_id"/>
                                             <field name="quantity"/>
-                                            <field name="price"/>
                                             <field name="lot_id" domain="[('product_id', '=', product_id)]"/>
                                         </tree>
                                     </field>
@@ -328,7 +327,6 @@
                     <field name="repayment_id" invisible="1"/>
                     <field name="product_id"/>
                     <field name="quantity"/>
-                    <field name="price"/>
                     <field name="lot_id"/>
                 </group>
             </form>

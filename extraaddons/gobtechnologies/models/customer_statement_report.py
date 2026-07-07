@@ -50,7 +50,7 @@ class RepaymentItemLine(models.Model):
     repayment_id = fields.Many2one('repayment', string='Repayment', ondelete='cascade', required=False)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
-    price = fields.Float(string='Price', required=True)
+    price = fields.Float(string='Price', required=False)
     lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
         domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered')]")
 
@@ -454,7 +454,14 @@ class Repayment(models.Model):
     @api.onchange('plan_duration', 'product_lines')
     def _onchange_plan_duration(self):
         """When plan duration is selected, search payment.plan by duration and populate fields."""
-        if not self.plan_duration or not self.product_lines:
+        if not self.plan_duration:
+            self.plan_id = False
+            self.selling_price = 0.0
+            self.deposit = 0.0
+            self.end_date = False
+            return
+
+        if not self.product_lines:
             self.plan_id = False
             self.selling_price = 0.0
             self.deposit = 0.0
@@ -519,14 +526,23 @@ class Repayment(models.Model):
     @api.depends('plan_id', 'plan_duration', 'repayment_frequency')
     def _compute_expected_to_pay(self):
         for record in self:
-            if record.plan_id and record.repayment_frequency:
-                freq = record.repayment_frequency
-                if freq == '1':
-                    record.expected_to_pay = record.plan_id.daily_amount
-                elif freq == '7':
-                    record.expected_to_pay = record.plan_id.weekly_amount
-                elif freq == '30':
-                    record.expected_to_pay = record.plan_id.monthly_amount
+            if record.plan_duration and record.repayment_frequency and record.product_lines:
+                plan = record.plan_id
+                if not plan:
+                    plan = self.env['payment.plan'].search([
+                        ('plan_duration', '=', record.plan_duration),
+                        ('active', '=', True),
+                    ], limit=1)
+                if plan:
+                    freq = record.repayment_frequency
+                    if freq == '1':
+                        record.expected_to_pay = plan.daily_amount
+                    elif freq == '7':
+                        record.expected_to_pay = plan.weekly_amount
+                    elif freq == '30':
+                        record.expected_to_pay = plan.monthly_amount
+                    else:
+                        record.expected_to_pay = 0.0
                 else:
                     record.expected_to_pay = 0.0
             else:
@@ -997,9 +1013,9 @@ class Repayment(models.Model):
         is_import = self.env.context.get('import_file', False)
 
         # Check if Product lines price is greater than selling price BEFORE any side effects
-        total_price = sum(item.price for item in res.product_lines)
-        if total_price > res.selling_price:
-            raise UserError("The total price of items should match the selling price specified ")
+        # total_price = sum(item.price for item in res.product_lines)
+        # if total_price > res.selling_price:
+        #     raise UserError("The total price of items should match the selling price specified ")
         
         # Only send SMS if this is not an import operation
         if not is_import:
@@ -1096,11 +1112,11 @@ class Repayment(models.Model):
                 vals['state'] = 'progress'
         
         # Check if Product lines price is greater than selling price
-        total_price = sum(item.price for item in self.product_lines)
-        if total_price > self.selling_price:
-            raise UserError("The total price of items should match the selling price specified ")
-        elif total_price < self.selling_price:
-            raise UserError("The total price of items should match the selling price specified ")
+        # total_price = sum(item.price for item in self.product_lines)
+        # if total_price > self.selling_price:
+        #     raise UserError("The total price of items should match the selling price specified ")
+        # elif total_price < self.selling_price:
+        #     raise UserError("The total price of items should match the selling price specified ")
 
         # Call the edit oppo lock helper function
         self._edit_oppo_lock()
