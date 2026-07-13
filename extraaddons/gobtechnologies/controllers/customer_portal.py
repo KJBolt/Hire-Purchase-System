@@ -265,7 +265,7 @@ class CustomerPortalController(http.Controller):
             phone = '233' + phone[1:]
 
         customer_name = repayment.customer_name.name if repayment.customer_name else 'Customer'
-        client_ref = f"customer_portal_{phone}_{repayment.id}"
+        client_ref = f"customer_portal_{phone}_{repayment.unique_id}"
 
         payload = {
             'CustomerName': customer_name,
@@ -275,7 +275,7 @@ class CustomerPortalController(http.Controller):
             'Amount': round(float(amount), 2),
             'PrimaryCallbackUrl': str(hubtel_receive_money_webhook),
             'Description': client_ref,
-            'ClientReference': str(repayment.id),
+            'ClientReference': str(repayment.unique_id),
         }
 
         _logger.info(f'Payload => {payload}')
