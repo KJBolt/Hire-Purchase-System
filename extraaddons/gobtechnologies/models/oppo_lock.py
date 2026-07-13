@@ -213,6 +213,7 @@ class OppoLock(models.Model):
                 record.write({'status': '-1'})
                 raise UserError(_('Failed to get device status from Oppo API: %s') % str(e))
 
+
     def _calculate_days_from_payment(self, payment_amount, expected_to_pay, repayment_frequency):
         """Calculate number of days from payment amount based on repayment frequency"""
         if repayment_frequency == '0':  # Cash
@@ -238,9 +239,17 @@ class OppoLock(models.Model):
             if not expected_to_pay:
                 raise UserError(_('Expected to pay amount is not set on the repayment record.'))
             
-            # Calculate days from payment
-            days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
+            # Check if this is the first payment (payment_lines is empty)
+            is_first_payment = len(record.repayment_id.payment_lines) == 0
+
+            # If no payment lines exist yet, use 1 day (24 hours grace period)
+            if is_first_payment:
+                days = 1
+            else:
+                # Calculate days from payment for subsequent payments
+                days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
             
+            # Get oppo credentials
             oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
             carrier_code = oppo_credentials.get('carrier_code')
             
@@ -272,6 +281,7 @@ class OppoLock(models.Model):
                 "sevenDayContent": str(record.seven_day_content) or "Your device is locked. Please pay to unlock.",
             }
 
+            # Generate X-Sign
             try:
                 x_sign = record._generate_x_sign(request_body)
                 record.x_sign = x_sign
@@ -310,6 +320,8 @@ class OppoLock(models.Model):
                         'last_prepaid_edit_days': days,
                         'prepaid_edit_count': record.prepaid_edit_count + 1,
                     })
+                    # Refresh device status from Oppo
+                    record.action_get_device_status()
                     record.repayment_id.message_post(
                         body=f'Prepaid edit successful: Device will remain unlocked for {days} day(s). Payment amount: GHS {payment_amount}',
                         message_type='comment',

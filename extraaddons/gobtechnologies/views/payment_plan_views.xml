@@ -98,6 +98,7 @@
         parent="menu_repayment_root"
         action="action_payment_plan"
         sequence="2"
+        groups="gobtechnologies.group_supervisor"
     />
 
 </odoo>

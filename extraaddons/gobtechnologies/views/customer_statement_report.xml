@@ -246,7 +246,7 @@
                         </page>
 
                         <!-- Payment Tab -->
-                        <page string="Payments" name="Repayment History">
+                        <page string="Payments" name="Repayment History" groups="gobtechnologies.group_supervisor">
                             <field name="payment_lines" readonly="state in ['paid']">
                                 <tree editable="bottom">
                                     <field name="repayment_id" invisible="1" force_save="1" column_invisible="True"/>
@@ -276,7 +276,7 @@
                         </page>
 
                         <!-- Payment Compliance Overview Tab -->
-                        <page string="Payment Compliance Overview" name="payment_compliance">
+                        <page string="Payment Compliance Overview" name="payment_compliance" groups="gobtechnologies.group_supervisor">
                             <field name="payment_lines" readonly="1" domain="[('is_payment_insufficient', '=', True)]">
                                 <tree default_order="create_date desc">
                                     <field name="payment_date"/>
@@ -325,6 +325,7 @@
             <form string="Create Products">
                 <group>
                     <field name="repayment_id" invisible="1"/>
+                    <field name="user_warehouse_id" invisible="1"/>
                     <field name="product_id"/>
                     <field name="quantity"/>
                     <field name="lot_id"/>

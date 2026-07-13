@@ -50,9 +50,11 @@ class RepaymentItemLine(models.Model):
     repayment_id = fields.Many2one('repayment', string='Repayment', ondelete='cascade', required=False)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     quantity = fields.Float(string='Quantity', default=1, required=True)
+    user_warehouse_id = fields.Many2one('stock.warehouse', default=lambda self: self.env.user.property_warehouse_id)
     price = fields.Float(string='Price', required=False)
     lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
-        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered')]")
+        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered'), ('warehouse_id', '=', user_warehouse_id), '|', ('expiration_date', '=', False), ('expiration_date', '>=', context_today())]")
+       
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
@@ -63,6 +65,7 @@ class RepaymentItemLine(models.Model):
         else:
             self.lot_id = False
             self.price = 0.0
+        
 
     @api.onchange('lot_id')
     def _check_serial_availability(self):
@@ -107,7 +110,7 @@ class RepaymentPaymentLine(models.Model):
         ('cash', 'Cash'),
         ('momo', 'Mobile Money'),
         ('cheque', 'Cheque'),
-        ('bank', 'Bank Transfer')
+        ('bank', 'Bank Transfer'),
     ], string='Mode of Payment', required=False)
     payment_amount = fields.Float(string='Payment Amount', required=False)
     receipt_no = fields.Char(string='Receipt Number')
@@ -191,11 +194,12 @@ class RepaymentPaymentLine(models.Model):
             _logger.error(f"Error sending payment SMS: {str(e)}")
         
         # Trigger Oppo push notification if deposit is not 0
-        if repayment.deposit and repayment.deposit > 0:
-            try:
-                repayment.action_oppo_trigger_push()
-            except Exception as e:
-                _logger.warning(f"Failed to send Oppo trigger push on payment: {str(e)}")
+        if not self.env.context.get('skip_oppo_edit'):
+            if repayment.deposit and repayment.deposit > 0:
+                try:
+                    repayment.action_oppo_trigger_push()
+                except Exception as e:
+                    _logger.warning(f"Failed to send Oppo trigger push on payment: {str(e)}")
         
 
         # Trigger Oppo prepaid edit API call when payment is received
@@ -277,7 +281,7 @@ class RepaymentPaymentLine(models.Model):
 
                     else:
                         # Create new payment record for previous date
-                        self.env['repayment.payment.line'].create({
+                        self.env['repayment.payment.line'].with_context(skip_oppo_edit=True).create({
                             'payment_date': previous_payment_date,
                             'payment_amount': amount_to_previous,
                             'repayment_id': self.repayment_id.id,
@@ -715,6 +719,28 @@ class Repayment(models.Model):
                     'message': "Only one product record is allowed."
                 }
             }
+    
+    @api.onchange('product_lines')
+    def _check_expired_serial_numbers(self):
+        """Check that selected serial numbers (IMEIs) are not expired."""
+        from datetime import date
+        
+        for record in self:
+            if record.product_lines:
+                for product_line in record.product_lines:
+                    if product_line.lot_id:
+                        for lot in product_line.lot_id:
+                            if lot.expiration_date:
+                                # Convert datetime to date for comparison
+                                exp_date = lot.expiration_date.date() if hasattr(lot.expiration_date, 'date') else lot.expiration_date
+                                # Check if expiration date is in the past
+                                if exp_date < date.today():
+                                    return {
+                                        'warning': {
+                                            'title': "Expired IMEI",
+                                            'message': f"The IMEI has expired and cannot be sold. Imei Number '{lot.name}' expired on {lot.expiration_date}."
+                                        }
+                                    }
 
     # Ensure the selling price, deposit and expected to pay is not zero
     @api.constrains('selling_price', 'deposit', 'start_date', 'end_date', 'repayment_frequency')
@@ -735,7 +761,7 @@ class Repayment(models.Model):
             if record.repayment_frequency == '0':
                 raise ValidationError('Repayment frequency cannot be Cash when computing expected to pay')
 
-
+    
 
     # Compute the repayment amount
     @api.depends('payment_lines.payment_amount', 'expected_to_pay', 'state')
@@ -1005,7 +1031,7 @@ class Repayment(models.Model):
                 raise ValidationError(_('Phone number %s already linked to a record in the database.') % phone_no)
         
         # vals['state'] = 'progress'
-        res = super(Repayment, self).create(vals)
+        res = super(Repayment, self.with_context(skip_oppo_edit=True)).create(vals)
 
         # res.fetch_invoicing_api(vals)
         
@@ -1057,16 +1083,20 @@ class Repayment(models.Model):
                 'imei_list': json.dumps(imeis) if imeis else json.dumps([]),
                 'device_uid': imeis[0] if imeis else '',
             }
-            self.env['oppo.lock'].create(oppo_lock_vals)
+            oppo_lock = self.env['oppo.lock'].create(oppo_lock_vals)
             _logger.info(f"Oppo lock record created for repayment {res.unique_id}")
 
-
-             # Trigger Oppo push notification if deposit is not 0
+            # Call action_edit_prepaid if deposit is paid
             if res.deposit and res.deposit > 0:
                 try:
-                    res.action_oppo_trigger_push()
+                    oppo_lock.action_edit_prepaid(res.deposit, res.repayment_frequency)
                 except Exception as e:
-                    _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
+                    _logger.warning(f"Failed to call action_edit_prepaid on repayment creation: {str(e)}")
+
+                # try:
+                #     res.action_oppo_trigger_push()
+                # except Exception as e:
+                #     _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
         except Exception as e:
             _logger.warning(f"Failed to create oppo lock record: {str(e)}")
 
@@ -1257,6 +1287,8 @@ class Repayment(models.Model):
             
             # Generate x-sign
             x_sign = record._generate_oppo_x_sign(request_body)
+
+            _logger.info(f"Generated x-sign: {x_sign} for repayment {record.unique_id}")
             
             # Call Oppo API
             headers = {

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Tree View -->
+        <record id="view_sales_agent_imei_capture_tree" model="ir.ui.view">
+            <field name="name">sales.agent.imei.capture.tree</field>
+            <field name="model">sales.agent.imei.capture</field>
+            <field name="arch" type="xml">
+                <tree string="IMEI Capture Records">
+                    <field name="name"/>
+                    <field name="agent_id"/>
+                    <field name="warehouse_id"/>
+                    <field name="capture_date"/>
+                    <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-info="state == 'submitted'"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form View -->
+        <record id="view_sales_agent_imei_capture_form" model="ir.ui.view">
+            <field name="name">sales.agent.imei.capture.form</field>
+            <field name="model">sales.agent.imei.capture</field>
+            <field name="arch" type="xml">
+                <form string="IMEI Capture">
+                    <header>
+                        <button name="action_submit" string="Submit" type="object"
+                                invisible="state != 'draft'" class="btn-primary"/>
+                        <button name="action_approve" string="Approve" type="object"
+                                invisible="state != 'submitted'" class="btn-primary"
+                                groups="gobtechnologies.group_supervisor,gobtechnologies.group_general_manager"/>
+                        <field name="state" widget="statusbar"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="agent_id" />
+                                <field name="warehouse_id" options="{'no_open': True}"/>
+                            </group>
+                            <group>
+                                <field name="capture_date"/>
+                                <field name="agent_photo" widget="image" options="{'size': [80, 80]}"/>
+                            </group>
+                        </group>
+
+                        <group>
+                            <field name="notes"/>
+                        </group>
+                        <field name="imei_ids" nolabel="1">
+                            <tree>
+                                <field name="name"/>
+                                <field name="product_id"/>
+                                <field name="expiration_date"/>
+                                <field name="delivery_status" widget='badge' decoration-success="delivery_status == 'delivered'" decoration-warning="delivery_status == 'not_delivered'"/>
+                            </tree>
+                        </field>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+
+        <!-- Search View -->
+        <record id="view_sales_agent_imei_capture_search" model="ir.ui.view">
+            <field name="name">sales.agent.imei.capture.search</field>
+            <field name="model">sales.agent.imei.capture</field>
+            <field name="arch" type="xml">
+                <search string="IMEI Capture Search">
+                    <field name="name"/>
+                    <field name="agent_id"/>
+                    <field name="warehouse_id"/>
+                    <field name="state"/>
+                    <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                    <filter name="submitted" string="Submitted" domain="[('state', '=', 'submitted')]"/>
+                    <separator/>
+                    <group>
+                        <filter name="agent" string="Agent" domain="[]" context="{'group_by': 'agent_id'}"/>
+                        <filter name="warehouse" string="Warehouse" domain="[]" context="{'group_by': 'warehouse_id'}"/>
+                        <filter name="state_group" string="Status" domain="[]" context="{'group_by': 'state'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_sales_agent_imei_capture" model="ir.actions.act_window">
+            <field name="name">IMEI Capture</field>
+            <field name="res_model">sales.agent.imei.capture</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Upload expired phone imeis to management
+                </p>
+            </field>
+        </record>
+        
+    </data>
+</odoo>

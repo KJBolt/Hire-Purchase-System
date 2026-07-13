@@ -10,5 +10,7 @@ from . import res_partner
 from . import oppo_lock
 from . import customer_portal
 from . import payment_plan
+from . import sales_agent_imei_capture
+from . import stock_lot_inherit
 
 # from . import settings_inherit

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Field is ALWAYS visible with no toggle option at all
+        (removes "optional" entirely so users can't hide it from the
+        column selector).
+    -->
+    <record id="view_picking_form_lot_ids_always_visible" model="ir.ui.view">
+        <field name="name">stock.picking.form.lot.ids.always.visible</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='move_ids_without_package']//field[@name='lot_ids']"
+                   position="attributes">
+                <attribute name="optional"></attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

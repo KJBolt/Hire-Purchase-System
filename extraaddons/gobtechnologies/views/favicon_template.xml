@@ -2,7 +2,7 @@
 <odoo>
     <template id="layout" inherit_id="web.layout" name="Favicon">
         <xpath expr="//link[@rel='shortcut icon']" position="replace">
-            <link rel="shortcut icon" href="/gobtechnologies/static/description/splitpay.png" type="image/png"/>
+            <link rel="shortcut icon" href="/gobtechnologies/static/description/sarfosco.png" type="image/png"/>
         </xpath>
     </template>
 </odoo>

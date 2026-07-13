@@ -5,25 +5,109 @@
         <field name="active">False</field>
     </record>
 
+
     <!-- Hide Dashboard Menu Item -->
     <record id="spreadsheet_dashboard.spreadsheet_dashboard_menu_root" model="ir.ui.menu">
         <field name="active">False</field>
     </record>
 
+
     <!-- Hide Link Tracker Menu Item -->
-    <!-- <record id="utm.menu_link_tracker_root" model="ir.ui.menu">
+    <record id="utm.menu_link_tracker_root" model="ir.ui.menu">
         <field name="active">False</field>
-    </record> -->
+    </record>
     
+
     <!-- Show Contacts Menu Item -->
     <record id="contacts.menu_contacts" model="ir.ui.menu">
         <field name="active">True</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_repayment_sales'),
+                ref('gobtechnologies.group_repayment_agent'),
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+
+            ])]"
+        />
     </record>
+
+
+    <!-- Show Sales Menu Item -->
+    <record id="sale.sale_menu_root" model="ir.ui.menu">
+        <field name="active">True</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_repayment_sales'),
+                ref('gobtechnologies.group_repayment_agent'),
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+
+            ])]"
+        />
+    </record>
+
+
+    <!-- Show Invoicing Menu Item -->
+    <record id="account.menu_finance" model="ir.ui.menu">
+        <field name="active">True</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_repayment_sales'),
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+
+            ])]"
+        />
+    </record>
+
+
+    <!-- Show Inventory Menu Item -->
+    <record id="stock.menu_stock_root" model="ir.ui.menu">
+        <field name="active">True</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+
+            ])]"
+        />
+    </record>
+
+
+    <!-- Show Purchase Menu Item -->
+    <record id="purchase.menu_purchase_root" model="ir.ui.menu">
+        <field name="active">True</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+            ])]"
+        />
+    </record>
+
+
+
 
     <!-- Hide Apps for all users except Administrators (System) -->
     <record id="base.menu_management" model="ir.ui.menu">
         <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
     </record>
+
 
     <!-- Nuovo Pay Menu Item -->
     <!-- Client Actions -->
@@ -53,6 +137,13 @@
         <field name="target">new</field>
     </record>
 
+    <record id="action_users" model="ir.actions.act_window">
+        <field name="name">Users</field>
+        <field name="res_model">res.users</field>
+        <field name="view_mode">tree,form</field>
+        <field name="target">current</field>
+    </record>
+
     <!-- <menuitem 
         id="menu_nuovo_pay" 
         name="Lock Device"
@@ -65,6 +156,14 @@
         name="Oppo Lock"
         parent="menu_repayment_root"
         action="action_oppo_lock"
+        groups="gobtechnologies.group_supervisor"
+    />
+
+    <menuitem 
+        id="menu_imei_capture" 
+        name="IMEI Capture"
+        action="gobtechnologies.action_sales_agent_imei_capture"
+        sequence="13"
     />
 
 
@@ -102,12 +201,37 @@
     
 
     <!-- Dashboard Menu Items -->
-    <menuitem 
-        id="menu_dashboard" 
-        name="Dashboard"
-        action="action_dashboard"
-        sequence="10"
-    />
+    <record id="menu_dashboard" model="ir.ui.menu">
+        <field name="name">Dashboard</field>
+        <field name="action" ref="action_dashboard"/>
+        <field name="sequence">10</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_repayment_sales'),
+                ref('gobtechnologies.group_repayment_agent'),
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager')
+            ])]"
+        />
+    </record>
+
+    <!-- Show Users Menu Item -->
+    <record id="menu_users" model="ir.ui.menu">
+        <field name="name">Users</field>
+        <field name="action" ref="action_users"/>
+        <field name="sequence">11</field>
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_internal_auditor'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager'),
+            ])]"
+        />
+    </record>
 
     <menuitem 
         id="menu_user_management" 

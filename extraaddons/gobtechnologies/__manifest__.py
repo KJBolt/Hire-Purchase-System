@@ -1,5 +1,5 @@
 {
-    'name': 'Hire Purchase System',
+    'name': 'Sarfosco Phones',
     'version': '1.1',
     'sequence': 1,
     'module_type': 'official',
@@ -15,13 +15,16 @@
         'stock',
         'mail',
         'sale_management',
-        'website'
+        'website',
+        'purchase'
     ],
     'data': [
-        # 'security/groups.xml',
+        'security/groups.xml',
         'security/ir.model.access.csv',
+        'security/ir_rule.xml',
         'views/customer_statement_report.xml',
         'views/payment_plan_views.xml',
+        'views/sales_agent_imei_capture_views.xml',
         'views/modify_menuitems.xml',
         'views/login_template.xml',
         'views/hubtel_webhook.xml',
@@ -39,6 +42,7 @@
         'views/res_partner.xml',
         'views/oppo_lock_views.xml',
         'views/stock_lot_inherit.xml',
+        'views/stock_picking.xml',
         # 'views/signin_template.xml',
         # 'views/settings_inherit.xml'
     ],

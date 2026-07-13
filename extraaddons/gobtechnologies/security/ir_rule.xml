@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Record Rule: Users can only see their own repayment records -->
+        <record id="repayment_rule_user_own" model="ir.rule">
+            <field name="name">Repayment: User Own Records</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="domain_force">[('create_uid', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Record Rule: Supervisors and above can see all repayment records -->
+        <record id="repayment_rule_supervisor_all" model="ir.rule">
+            <field name="name">Repayment: Supervisor All Records</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_supervisor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Record Rule: Sales agents can only see their own IMEI capture records -->
+        <record id="imei_capture_rule_agent_own" model="ir.rule">
+            <field name="name">IMEI Capture: Agent Own Records</field>
+            <field name="model_id" ref="model_sales_agent_imei_capture"/>
+            <field name="domain_force">[('agent_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_repayment_agent'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Record Rule: Supervisors and above can see all IMEI capture records -->
+        <record id="imei_capture_rule_supervisor_all" model="ir.rule">
+            <field name="name">IMEI Capture: Supervisor All Records</field>
+            <field name="model_id" ref="model_sales_agent_imei_capture"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_supervisor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+    </data>
+</odoo>
