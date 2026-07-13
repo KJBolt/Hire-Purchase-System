@@ -141,6 +141,7 @@
         <field name="name">Users</field>
         <field name="res_model">res.users</field>
         <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'tree', 'view_id': ref('gobtechnologies.view_users_tree_inherit')}), (0, 0, {'view_mode': 'form', 'view_id': ref('gobtechnologies.view_users_form_inherit')})]"/>
         <field name="target">current</field>
     </record>
 
