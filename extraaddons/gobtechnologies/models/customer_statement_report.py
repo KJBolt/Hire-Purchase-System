@@ -738,7 +738,7 @@ class Repayment(models.Model):
                                     return {
                                         'warning': {
                                             'title': "Expired IMEI",
-                                            'message': f"The IMEI has expired and cannot be sold. Imei Number '{lot.name}' expired on {lot.expiration_date}."
+                                            'message': f"The IMEI has exceeded the sales deadline and cannot be sold. Contact Admin to reinstigate. Imei Number '{lot.name}' expired on {lot.expiration_date}."
                                         }
                                     }
 
