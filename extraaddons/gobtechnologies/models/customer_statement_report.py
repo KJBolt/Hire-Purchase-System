@@ -512,10 +512,12 @@ class Repayment(models.Model):
     def _onchange_repayment_frequency(self):
         """When repayment frequency changes, update expected_to_pay from the plan."""
         if self.plan_duration and self.repayment_frequency:
-            plan = self.env['payment.plan'].search([
-                ('plan_duration', '=', self.plan_duration),
-                ('active', '=', True),
-            ], limit=1)
+            plan = self.plan_id
+            if not plan:
+                plan = self.env['payment.plan'].search([
+                    ('plan_duration', '=', self.plan_duration),
+                    ('active', '=', True),
+                ], limit=1)
             if plan:
                 freq = self.repayment_frequency
                 if freq == '1':
@@ -1558,7 +1560,7 @@ class Repayment(models.Model):
             current_payment_amount = current_payment.payment_amount
 
             # Calculate next repayment date based on payment amount
-            if current_payment_amount >= record.expected_to_pay:
+            if record.expected_to_pay > 0 and current_payment_amount >= record.expected_to_pay:
                 full_payments = int(current_payment_amount // record.expected_to_pay)
                 if freq == 1:
                     record.repayment_date = current_payment_date + timedelta(days=full_payments)
@@ -1567,7 +1569,7 @@ class Repayment(models.Model):
                 elif freq == 30:
                     record.repayment_date = current_payment_date + relativedelta(months=full_payments)
             else:
-                # If payment is insufficient, keep current repayment date
+                # If payment is insufficient or expected_to_pay is 0, keep current repayment date
                 record.repayment_date = current_payment_date
 
 
