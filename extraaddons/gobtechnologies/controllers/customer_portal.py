@@ -301,6 +301,28 @@ class CustomerPortalController(http.Controller):
 
         if response.status_code in (200, 201):
             data = response.json()
+            response_code = data.get('ResponseCode') or data.get('Data', {}).get('ResponseCode')
+            if response_code not in ('0000', '0001'):
+                error_message = data.get('Message') or data.get('Description') or data.get('Data', {}).get('Description') or 'Payment failed'
+                
+                # Check actual transaction status with Hubtel status check API
+                _logger.info("Initial payment failed, checking transaction status with client_reference: %s", client_ref)
+                status_data = self._check_hubtel_transaction_status(str(repayment.unique_id), collection_account)
+                
+                if status_data:
+                    # Transaction actually succeeded despite initial failure response
+                    _logger.info("Status check confirmed successful transaction")
+                    self._create_payment_line_from_status(status_data, repayment, portal)
+                    return {
+                        'success': True,
+                        'message': 'Payment confirmed. Your payment has been successfully processed.',
+                        'transaction_id': status_data.get('Data', {}).get('TransactionId') or status_data.get('TransactionId', ''),
+                    }
+                
+                return {
+                    'success': False,
+                    'message': error_message,
+                }
             return {
                 'success': True,
                 'message': 'Payment prompt sent to your phone. Please approve the transaction on your mobile money wallet.',
@@ -319,6 +341,72 @@ class CustomerPortalController(http.Controller):
         except Exception:
             error_msg = f"Error {response.status_code}: {response.text}"
         return {'success': False, 'message': error_msg}
+
+    def _create_payment_line_from_status(self, status_data, repayment, portal):
+        """Create payment line from successful status check data."""
+        data = status_data.get('Data', {}) or status_data
+        
+        transaction_id = data.get('TransactionId') or data.get('TransactionID', '')
+        amount = data.get('Amount') or data.get('AmountPaid', 0.0)
+        receipt_no = transaction_id or data.get('ExternalTransactionId') or data.get('OrderId', '')
+        
+        # Check if payment line already exists
+        existing = request.env['repayment.payment.line'].sudo().search([
+            ('repayment_id', '=', repayment.id),
+            ('transaction_ref', '=', transaction_id),
+        ], limit=1) if transaction_id else False
+        
+        if existing:
+            _logger.info("Payment line already exists for transaction %s", transaction_id)
+            return
+        
+        # Create payment line
+        repayment.payment_lines.create({
+            'payment_date': fields.Date.today(),
+            'payment_mode': 'momo',
+            'payment_amount': amount,
+            'repayment_id': repayment.id,
+            'receipt_no': receipt_no,
+            'transaction_ref': transaction_id,
+        })
+        
+        _logger.info("Created payment line for transaction %s with amount %s", transaction_id, amount)
+
+    # Method to check transaction status api
+    def _check_hubtel_transaction_status(self, client_reference, collection_account):
+        """Check transaction status using Hubtel Transaction Status Check API."""
+        settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
+        token = settings.get('hubtel_token')
+        
+        if not token:
+            _logger.error("Hubtel token not configured for status check")
+            return None
+        
+        url = f"https://api-txnstatus.hubtel.com/transactions/{collection_account}/status"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {token}',
+        }
+        params = {
+            'clientReference': client_reference,
+        }
+        
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            _logger.info("Hubtel status check response: %s - %s", response.status_code, response.text)
+            
+            if response.status_code in (200, 201):
+                data = response.json()
+                response_code = data.get('ResponseCode')
+                status = data.get('Status', '').lower()
+                
+                if response_code in ('0000', '0001') or status in ('Success', 'Paid'):
+                    _logger.info("Transaction status check successful for client reference: %s", client_reference)
+                    return data
+            return None
+        except Exception as e:
+            _logger.error("Error checking Hubtel transaction status: %s", str(e))
+            return None
 
     @http.route('/customer/receipt/<int:payment_line_id>', type='http', auth='public', website=True, sitemap=False)
     def download_receipt(self, payment_line_id):
