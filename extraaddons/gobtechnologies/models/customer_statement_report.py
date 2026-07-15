@@ -192,7 +192,7 @@ class RepaymentPaymentLine(models.Model):
             if is_first_payment:
                 sms_message = f"Dear {customer_name}, thank you for your deposit payment of GHS {payment_amount}. Your outstanding balance is GHS {outstanding_balance}."
             else:
-            sms_message = f"Dear {customer_name}, thank you for your payment of GHS {payment_amount}. Your outstanding balance is GHS {outstanding_balance}."
+                sms_message = f"Dear {customer_name}, thank you for your payment of GHS {payment_amount}. Your outstanding balance is GHS {outstanding_balance}."
             
             # Send SMS if phone number exists
             if repayment.phone_no:
