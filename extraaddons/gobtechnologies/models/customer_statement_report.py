@@ -511,13 +511,13 @@ class Repayment(models.Model):
     @api.onchange('repayment_frequency')
     def _onchange_repayment_frequency(self):
         """When repayment frequency changes, update expected_to_pay from the plan."""
-        if self.plan_duration and self.repayment_frequency:
-            plan = self.plan_id
-            if not plan:
-                plan = self.env['payment.plan'].search([
-                    ('plan_duration', '=', self.plan_duration),
-                    ('active', '=', True),
-                ], limit=1)
+        if self.plan_duration and self.repayment_frequency and self.product_lines:
+            product_id = self.product_lines[:1].product_id
+            plan = self.env['payment.plan'].search([
+                ('plan_duration', '=', self.plan_duration),
+                ('product_id', '=', product_id.id),
+                ('active', '=', True),
+            ], limit=1)
             if plan:
                 freq = self.repayment_frequency
                 if freq == '1':
@@ -533,12 +533,12 @@ class Repayment(models.Model):
     def _compute_expected_to_pay(self):
         for record in self:
             if record.plan_duration and record.repayment_frequency and record.product_lines:
-                plan = record.plan_id
-                if not plan:
-                    plan = self.env['payment.plan'].search([
-                        ('plan_duration', '=', record.plan_duration),
-                        ('active', '=', True),
-                    ], limit=1)
+                product_id = record.product_lines[:1].product_id
+                plan = self.env['payment.plan'].search([
+                    ('plan_duration', '=', record.plan_duration),
+                    ('product_id', '=', product_id.id),
+                    ('active', '=', True),
+                ], limit=1)
                 if plan:
                     freq = record.repayment_frequency
                     if freq == '1':
