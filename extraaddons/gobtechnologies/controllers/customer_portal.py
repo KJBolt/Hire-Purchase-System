@@ -332,6 +332,7 @@ class CustomerPortalController(http.Controller):
                 }
             return {
                 'success': True,
+                'show_success_page': True,
                 'message': 'Payment prompt sent to your phone. Please approve the transaction on your mobile money wallet.',
                 'transaction_id': data.get('Data', {}).get('TransactionId') or data.get('id', ''),
             }
