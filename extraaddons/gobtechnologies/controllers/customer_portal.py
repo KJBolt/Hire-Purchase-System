@@ -217,10 +217,11 @@ class CustomerPortalController(http.Controller):
         try:
             result = self._initiate_hubtel_payment(portal, repayment, amount)
             if result.get('success'):
-                return request.render('gobtechnologies.customer_dashboard_template', self._dashboard_values(
-                    portal,
-                    success_message=result.get('message', 'Payment prompt sent to your phone.'),
-                ))
+                return request.render('gobtechnologies.payment_success_template', {
+                    'message': result.get('message', 'Payment prompt sent to your phone.'),
+                    'transaction_id': result.get('transaction_id', ''),
+                    'amount': amount,
+                })
             return request.render('gobtechnologies.customer_dashboard_template', self._dashboard_values(
                 portal,
                 error_message=result.get('message', 'Failed to initiate payment.'),

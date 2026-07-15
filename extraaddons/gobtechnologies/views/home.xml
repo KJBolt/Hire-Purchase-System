@@ -1222,4 +1222,135 @@
             </div>
         </t>
     </template>
+
+    <template name="payment_success_template" id="payment_success_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <style>
+                    .payment-success-container {
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: linear-gradient(135deg, #f5f7f3 0%, #fafcf8 100%);
+                        padding: 2rem;
+                    }
+                    .payment-success-card {
+                        background: white;
+                        border-radius: 20px;
+                        padding: 3rem;
+                        text-align: center;
+                        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                        max-width: 500px;
+                        width: 100%;
+                    }
+                    .success-icon {
+                        width: 100px;
+                        height: 100px;
+                        background: linear-gradient(135deg, #2d5016, #4a8c2a);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 2rem;
+                        animation: pulse 2s ease-in-out infinite;
+                    }
+                    .success-icon i {
+                        font-size: 3rem;
+                        color: white;
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                    .success-title {
+                        font-size: 2rem;
+                        font-weight: 700;
+                        color: #1a3a1a;
+                        margin-bottom: 1rem;
+                    }
+                    .success-message {
+                        font-size: 1.1rem;
+                        color: #4a5568;
+                        margin-bottom: 2rem;
+                        line-height: 1.6;
+                    }
+                    .success-details {
+                        background: #f5f7f3;
+                        border-radius: 12px;
+                        padding: 1.5rem;
+                        margin-bottom: 2rem;
+                        text-align: left;
+                    }
+                    .success-detail-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 0.5rem 0;
+                        border-bottom: 1px solid rgba(0,0,0,0.05);
+                    }
+                    .success-detail-row:last-child {
+                        border-bottom: none;
+                    }
+                    .success-detail-label {
+                        color: #718096;
+                        font-size: 0.9rem;
+                    }
+                    .success-detail-value {
+                        color: #1a1a2e;
+                        font-weight: 600;
+                        font-size: 0.9rem;
+                    }
+                    .back-to-dashboard-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 1rem 2rem;
+                        background: linear-gradient(135deg, #2d5016, #4a8c2a);
+                        color: white;
+                        border-radius: 12px;
+                        text-decoration: none;
+                        font-weight: 600;
+                        font-size: 1rem;
+                        transition: transform 200ms ease, box-shadow 200ms ease;
+                        box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
+                    }
+                    .back-to-dashboard-btn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 25px rgba(45, 80, 22, 0.4);
+                        color: white;
+                    }
+                </style>
+            </t>
+
+            <div class="payment-success-container">
+                <div class="payment-success-card">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h1 class="success-title">Payment Successful!</h1>
+                    <p class="success-message" t-esc="message or 'Your payment has been successfully processed.'" />
+                    
+                    <div class="success-details" t-if="transaction_id">
+                        <div class="success-detail-row">
+                            <span class="success-detail-label">Transaction ID</span>
+                            <span class="success-detail-value" t-esc="transaction_id" />
+                        </div>
+                        <div class="success-detail-row" t-if="amount">
+                            <span class="success-detail-label">Amount</span>
+                            <span class="success-detail-value">GHS <t t-esc="amount" /></span>
+                        </div>
+                    </div>
+                    
+                    <a href="/customer/dashboard" class="back-to-dashboard-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
 </odoo>
