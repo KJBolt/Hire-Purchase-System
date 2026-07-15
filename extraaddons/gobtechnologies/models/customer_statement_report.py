@@ -111,6 +111,7 @@ class RepaymentPaymentLine(models.Model):
         ('momo', 'Mobile Money'),
         ('cheque', 'Cheque'),
         ('bank', 'Bank Transfer'),
+        ('deposit', 'Deposit'),
     ], string='Mode of Payment', required=False)
     payment_amount = fields.Float(string='Payment Amount', required=False)
     receipt_no = fields.Char(string='Receipt Number')
@@ -137,7 +138,7 @@ class RepaymentPaymentLine(models.Model):
     @api.depends('payment_amount', 'repayment_id.expected_to_pay')
     def _compute_is_payment_insufficient(self):
         for record in self:
-            record.is_payment_insufficient = record.payment_amount < record.repayment_id.expected_to_pay
+                record.is_payment_insufficient = record.payment_amount < record.repayment_id.expected_to_pay
 
     # Compute payment status
     @api.depends('payment_amount', 'repayment_id.expected_to_pay')
@@ -156,6 +157,13 @@ class RepaymentPaymentLine(models.Model):
 
     @api.model
     def create(self, vals):
+        # Set payment_mode to 'deposit' for first payment line
+        if vals.get('repayment_id'):
+            repayment = self.env['repayment'].browse(vals.get('repayment_id'))
+            existing_payments = self.search([('repayment_id', '=', vals.get('repayment_id'))])
+            if not existing_payments:
+                vals['payment_mode'] = 'deposit'
+        
         res = super(RepaymentPaymentLine, self).create(vals)
         # Check and update state after payment
         repayment = res.repayment_id
@@ -176,7 +184,14 @@ class RepaymentPaymentLine(models.Model):
             outstanding_balance = repayment.outstanding_loan
             payment_amount = vals.get('payment_amount', 0)
             
+            # Check if this is the first payment (deposit)
+            existing_payments = self.search([('repayment_id', '=', repayment.id)])
+            is_first_payment = len(existing_payments) == 1 and existing_payments[0].id == res.id
+            
             # Prepare SMS message
+            if is_first_payment:
+                sms_message = f"Dear {customer_name}, thank you for your deposit payment of GHS {payment_amount}. Your outstanding balance is GHS {outstanding_balance}."
+            else:
             sms_message = f"Dear {customer_name}, thank you for your payment of GHS {payment_amount}. Your outstanding balance is GHS {outstanding_balance}."
             
             # Send SMS if phone number exists
@@ -222,6 +237,12 @@ class RepaymentPaymentLine(models.Model):
         
 
     def write(self, vals):
+        # Set payment_mode to 'deposit' for first payment line if not already set
+        # if 'payment_mode' not in vals and self.repayment_id:
+        #     existing_payments = self.search([('repayment_id', '=', self.repayment_id.id)])
+        #     if len(existing_payments) == 1 and existing_payments[0].id == self.id:
+        #         vals['payment_mode'] = 'deposit'
+        
         res = super(RepaymentPaymentLine, self).write(vals)
         # Check and update state after payment
         repayment = self.repayment_id
@@ -414,6 +435,7 @@ class Repayment(models.Model):
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
     customer_ghana_card_back = fields.Binary(string='Customer Ghana Card Back', attachment=True, help="Upload Back Image", required=True)
+    customer_image = fields.Binary(string='Customer Image', attachment=True, help="Upload Customer Image", required=True)
     guarantor_ghana_card_front = fields.Binary(string='Guarantor Ghana Card Front', attachment=True, help="Upload Front Image", required=False)
     guarantor_ghana_card_back = fields.Binary(string='Guarantor Ghana Card Back', attachment=True, help="Upload Back Image", required=False)
     mobile_money_statement = fields.Binary(string='Mobile Money Statement', attachment=True, help="Upload Statement", required=False)
@@ -493,9 +515,9 @@ class Repayment(models.Model):
             from datetime import timedelta
             self.end_date = self.start_date + timedelta(days=int(self.plan_duration))
 
-    @api.onchange('start_date')
+    @api.onchange('start_date', 'plan_duration')
     def _onchange_start_date(self):
-        """When start_date changes, recompute end_date if plan_duration is set."""
+        """When start_date or plan_duration changes, recompute end_date if both are set."""
         if self.start_date and self.plan_duration:
             from datetime import timedelta
             self.end_date = self.start_date + timedelta(days=int(self.plan_duration))
@@ -1088,17 +1110,6 @@ class Repayment(models.Model):
             oppo_lock = self.env['oppo.lock'].create(oppo_lock_vals)
             _logger.info(f"Oppo lock record created for repayment {res.unique_id}")
 
-            # Call action_edit_prepaid if deposit is paid
-            if res.deposit and res.deposit > 0:
-                try:
-                    oppo_lock.action_edit_prepaid(res.deposit, res.repayment_frequency)
-                except Exception as e:
-                    _logger.warning(f"Failed to call action_edit_prepaid on repayment creation: {str(e)}")
-
-                # try:
-                #     res.action_oppo_trigger_push()
-                # except Exception as e:
-                #     _logger.warning(f"Failed to send Oppo trigger push on repayment creation: {str(e)}")
         except Exception as e:
             _logger.warning(f"Failed to create oppo lock record: {str(e)}")
 
