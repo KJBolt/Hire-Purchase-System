@@ -1410,13 +1410,11 @@ class Repayment(models.Model):
 
 
     # Computes the total paid
-    @api.depends('deposit', 'repayment', 'selling_price', 'expected_to_pay')
+    @api.depends('payment_lines.payment_amount')
     def _compute_total_paid(self):
         for record in self:
-            if record.deposit and record.repayment:
-                record.total_paid = record.deposit + record.repayment
-            elif not record.repayment and record.deposit:
-                record.total_paid = record.deposit
+            if record.payment_lines:
+                record.total_paid = sum(record.payment_lines.mapped('payment_amount'))
             else:
                 record.total_paid = 0.0
 
@@ -1426,10 +1424,9 @@ class Repayment(models.Model):
         for record in self:
             if record.selling_price and record.total_paid:
                 record.outstanding_loan = record.selling_price - record.total_paid
-            elif record.selling_price and record.deposit and not record.total_paid:
-                record.outstanding_loan = record.selling_price - record.deposit
             else:
                 record.total_paid = 0.0
+                record.outstanding_loan = record.selling_price
 
 
     # computes the percentage paid

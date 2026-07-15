@@ -273,8 +273,8 @@
                                 <field name="repayment" nolabel="1" readonly="1"/>
 
                                 <!-- Deposit Total -->
-                                <label for="deposit"/>
-                                <field name="deposit" nolabel="1" readonly="1"/>
+                                <!-- <label for="deposit"/>
+                                <field name="deposit" nolabel="1" readonly="1"/> -->
 
                                 <!-- Total Paid -->
                                 <div class="oe_subtotal_footer_separator oe_inline o_td_label">
