@@ -239,12 +239,22 @@ class OppoLock(models.Model):
             if not expected_to_pay:
                 raise UserError(_('Expected to pay amount is not set on the repayment record.'))
             
-            # Check if this is the first payment (payment_lines is empty)
-            is_first_payment = len(record.repayment_id.payment_lines) == 0
+            # Check if this is the first payment (first payment mode is Deposit)
+            is_first_payment = (
+                record.repayment_id.payment_lines and 
+                record.repayment_id.payment_lines[0].payment_mode == 'deposit'
+            )
 
-            # If no payment lines exist yet, use 1 day (24 hours grace period)
+            # If first payment is deposit, set days based on repayment frequency
             if is_first_payment:
-                days = 1
+                if repayment_frequency == '1':  # Daily
+                    days = 1
+                elif repayment_frequency == '7':  # Weekly
+                    days = 7
+                elif repayment_frequency == '30':  # Monthly
+                    days = 30
+                else:
+                    days = 1  # Default to 1 day for other cases
             else:
                 # Calculate days from payment for subsequent payments
                 days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)

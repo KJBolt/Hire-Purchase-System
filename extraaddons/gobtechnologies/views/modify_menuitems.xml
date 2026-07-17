@@ -229,6 +229,7 @@
             eval="[(6, 0, [
                 ref('gobtechnologies.group_internal_auditor'),
                 ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_sales_administrator'),
                 ref('gobtechnologies.group_general_manager'),
             ])]"
         />

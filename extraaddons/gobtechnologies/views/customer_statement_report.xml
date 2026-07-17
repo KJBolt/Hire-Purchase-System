@@ -289,9 +289,10 @@
                             <field name="payment_lines" readonly="1" domain="[('is_payment_insufficient', '=', True)]">
                                 <tree default_order="create_date desc">
                                     <field name="payment_date"/>
+                                    <field name="description"/>
                                     <field name="expected_amount"/>
                                     <field name="payment_amount" string="Amount Paid"/>
-                                    <field name="payment_status" 
+                                    <field name="payment_status"
                                         decoration-danger="payment_status == 'Underpaid'"
                                         decoration-success="payment_status == 'Fully Paid'"
                                         decoration-info="payment_status == 'Overpaid'"

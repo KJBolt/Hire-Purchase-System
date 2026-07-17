@@ -130,24 +130,51 @@ class RepaymentPaymentLine(models.Model):
     # This field is needed for underpayment expected to pay field
     expected_amount = fields.Float(
         string='Expected Amount',
-        related='repayment_id.expected_to_pay',
+        compute='_compute_expected_amount',
         store=True
     )
 
+    description = fields.Selection([
+        ('deposit', 'Deposit'),
+        ('repayment', 'Repayment'),
+    ], string='Description', compute='_compute_description', store=True)
+
+    # Compute description based on payment mode and first payment line
+    @api.depends('repayment_id.payment_lines', 'payment_mode')
+    def _compute_description(self):
+        for record in self:
+            if record.repayment_id.payment_lines and record.repayment_id.payment_lines[0] == record and record.payment_mode == 'deposit':
+                record.description = 'deposit'
+            else:
+                record.description = 'repayment'
+
+    # Compute expected amount based on payment mode and first payment line
+    @api.depends('repayment_id.expected_to_pay', 'repayment_id.deposit', 'repayment_id.payment_lines')
+    def _compute_expected_amount(self):
+        for record in self:
+            if record.repayment_id.payment_lines and record.repayment_id.payment_lines[0] == record and record.payment_mode == 'deposit':
+                record.expected_amount = record.repayment_id.deposit
+            else:
+                record.expected_amount = record.repayment_id.expected_to_pay
+
     # Check if payment is insufficient and change the payment amount color to red
-    @api.depends('payment_amount', 'repayment_id.expected_to_pay')
+    @api.depends('payment_amount', 'repayment_id.expected_to_pay', 'repayment_id.deposit', 'repayment_id.payment_lines')
     def _compute_is_payment_insufficient(self):
         for record in self:
+            # Check if this is the first payment and its mode is deposit
+            if record.repayment_id.payment_lines and record.repayment_id.payment_lines[0] == record and record.payment_mode == 'deposit':
+                record.is_payment_insufficient = record.payment_amount < record.repayment_id.deposit
+            else:
                 record.is_payment_insufficient = record.payment_amount < record.repayment_id.expected_to_pay
 
     # Compute payment status
-    @api.depends('payment_amount', 'repayment_id.expected_to_pay')
+    @api.depends('payment_amount', 'expected_amount')
     def _compute_payment_status(self):
         for record in self:
-            if record.payment_amount > record.repayment_id.expected_to_pay:
+            if record.payment_amount > record.expected_amount:
                 record.payment_status = 'Overpaid'
                 record.is_payment_insufficient = False
-            elif record.payment_amount < record.repayment_id.expected_to_pay:
+            elif record.payment_amount < record.expected_amount:
                 record.payment_status = 'Underpaid'
                 record.is_payment_insufficient = True
             else:
