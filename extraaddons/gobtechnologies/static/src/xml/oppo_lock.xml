@@ -1,7 +1,6 @@
 <templates xml:space="preserve">
     <t t-name="gobtechnologies.oppo_lock" owl="1">
         <div class="o_oppo_lock_dashboard">
-
             <!-- Header -->
             <div class="olod-header">
                 <div class="olod-header-left">
@@ -268,7 +267,6 @@
                 background: #fff;
                 border: 1px solid #e8eaed;
                 border-radius: 14px;
-                overflow: hidden;
             }
             .olod-table-header {
                 display: flex; align-items: center; justify-content: space-between;
@@ -301,7 +299,7 @@
             .olod-search-input:focus { border-color: #2e7d32; background: #fff; }
 
             /* ── Table ── */
-            .olod-table-wrap { overflow-x: auto; }
+            .olod-table-wrap { overflow-x: auto; height: 330px; overflow-y: auto; }
             .olod-table { width: 100%; border-collapse: collapse; }
             .olod-th {
                 padding: 11px 16px;
