@@ -48,5 +48,17 @@
             <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
+
+        <!-- Record Rule: Customer Care can see all repayment records -->
+        <record id="repayment_rule_customer_care_all" model="ir.rule">
+            <field name="name">Repayment: Customer Care All Records</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_customer_care'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
     </data>
 </odoo>
