@@ -9,5 +9,9 @@ access_sales_agent_imei_capture_user,sales.agent.imei.capture.user,model_sales_a
 access_sales_agent_imei_capture_manager,sales.agent.imei.capture.manager,model_sales_agent_imei_capture,gobtechnologies.group_supervisor,1,1,1,1
 
 
+access_res_users_supervisor,res.users.supervisor,model_res_users,gobtechnologies.group_supervisor,1,1,1,1
+access_res_users_general_manager,res.users.general_manager,model_res_users,gobtechnologies.group_general_manager,1,1,1,1
+
+
 
 
