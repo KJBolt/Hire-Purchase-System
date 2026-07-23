@@ -10,6 +10,8 @@ access_sales_agent_imei_capture_manager,sales.agent.imei.capture.manager,model_s
 
 
 access_res_users_supervisor,res.users.supervisor,model_res_users,gobtechnologies.group_supervisor,1,1,1,1
+access_res_users_sales_administrator,res.users.sales_administrator,model_res_users,gobtechnologies.group_sales_administrator,1,1,1,1
+access_res_users_sales_manager,res.users.sales_manager,model_res_users,gobtechnologies.group_repayment_sales,1,1,1,1
 access_res_users_general_manager,res.users.general_manager,model_res_users,gobtechnologies.group_general_manager,1,1,1,1
 
 

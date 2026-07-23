@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, exceptions
 
 class SettingsInherit(models.Model):
     _inherit = 'res.users'
@@ -9,5 +9,5 @@ class SettingsInherit(models.Model):
         # check if email field in contacts is not empty before saving
         user_id = self.env['res.users'].search([('id', '=', res.id)])
         if not user_id.email:
-            raise UserError('Email field is required')
+            raise exceptions.UserError('Email field is required')
         return res
