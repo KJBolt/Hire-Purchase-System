@@ -239,11 +239,8 @@ class OppoLock(models.Model):
             if not expected_to_pay:
                 raise UserError(_('Expected to pay amount is not set on the repayment record.'))
             
-            # Check if this is the first payment (first payment mode is Deposit)
-            is_first_payment = (
-                record.repayment_id.payment_lines and 
-                record.repayment_id.payment_lines[0].payment_mode == 'deposit'
-            )
+            # Check if this is the first payment (only one payment line exists)
+            is_first_payment = len(record.repayment_id.payment_lines) == 1
 
             # If first payment is deposit, set days based on repayment frequency
             if is_first_payment:
