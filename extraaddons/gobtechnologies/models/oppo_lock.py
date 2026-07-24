@@ -225,7 +225,7 @@ class OppoLock(models.Model):
         base_days = payment_amount / expected_to_pay
         frequency_days = int(repayment_frequency)
         
-        return math.ceil(base_days * frequency_days)
+        return int(base_days * frequency_days)
 
 
 
@@ -240,32 +240,36 @@ class OppoLock(models.Model):
             if not expected_to_pay:
                 raise UserError(_('Expected to pay amount is not set on the repayment record.'))
             
-            # Check if this is the first payment (only one payment line exists)
-            is_first_payment = len(record.repayment_id.payment_lines) == 1
-
-            # If first payment is deposit, set days based on repayment frequency
-            if is_first_payment:
-                if repayment_frequency == '1':  # Daily
-                    days = 1
-                elif repayment_frequency == '7':  # Weekly
-                    days = 7
-                elif repayment_frequency == '30':  # Monthly
-                    days = 30
-                else:
-                    days = 1  # Default to 1 day for other cases
+            # Lock device immediately if payment_amount is 0 (grace period lock)
+            if payment_amount == 0:
+                days = 0
             else:
-                # Calculate days from payment for subsequent payments
-                days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
+                # Check if this is the first payment (only one payment line exists)
+                is_first_payment = len(record.repayment_id.payment_lines) == 1
 
-                # Skip API call if payment is less than expected
-                if payment_amount < expected_to_pay:
-                    _logger.info(f"Prepaid edit skipped: payment {payment_amount} is less than expected {expected_to_pay}")
-                    record.repayment_id.message_post(
-                        body=f'Payment GHS {payment_amount} is less than expected GHS {expected_to_pay}. Pay the full amount to unlock the device.',
-                        message_type='comment',
-                        subtype_xmlid='mail.mt_note'
-                    )
-                    return False
+                # If first payment is deposit, set days based on repayment frequency
+                if is_first_payment:
+                    if repayment_frequency == '1':  # Daily
+                        days = 1
+                    elif repayment_frequency == '7':  # Weekly
+                        days = 7
+                    elif repayment_frequency == '30':  # Monthly
+                        days = 30
+                    else:
+                        days = 1  # Default to 1 day for other cases
+                else:
+                    # Calculate days from payment for subsequent payments
+                    days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
+
+                    # Skip API call if payment is less than expected
+                    if payment_amount < expected_to_pay:
+                        _logger.info(f"Prepaid edit skipped: payment {payment_amount} is less than expected {expected_to_pay}")
+                        record.repayment_id.message_post(
+                            body=f'Payment GHS {payment_amount} is less than expected GHS {expected_to_pay}. Pay the full amount to unlock the device.',
+                            message_type='comment',
+                            subtype_xmlid='mail.mt_note'
+                        )
+                        return False
             
             # Get oppo credentials
             oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
