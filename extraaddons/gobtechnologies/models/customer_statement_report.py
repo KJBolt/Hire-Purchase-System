@@ -245,19 +245,24 @@ class RepaymentPaymentLine(models.Model):
         
 
         # Trigger Oppo prepaid edit API call when payment is received
-        try:
-            _logger.info("Triggering Oppo prepaid edit API call after payment")
-            oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
-            if oppo_lock:
-                payment_amount = vals.get('payment_amount', 0)
-                repayment_frequency = repayment.repayment_frequency
-                oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
-                _logger.info(f"Prepaid edit API called for repayment {repayment.unique_id} with payment amount {payment_amount}")
-            else:
-                _logger.info(f"No Oppo lock record found for repayment {repayment.unique_id}, skipping prepaid edit")
-        except Exception as e:
-            _logger.error(f"Failed to call prepaid edit API on payment: {str(e)}")
-            # Don't block the payment if prepaid edit fails
+        if not self.env.context.get('skip_oppo_edit'):
+            try:
+                _logger.info("Triggering Oppo prepaid edit API call after payment")
+                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+                if oppo_lock:
+                    payment_amount = vals.get('payment_amount', 0)
+                    repayment_frequency = repayment.repayment_frequency
+                    oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
+                    _logger.info(f"Prepaid edit API called for repayment {repayment.unique_id} with payment amount {payment_amount}")
+                else:
+                    _logger.info(f"No Oppo lock record found for repayment {repayment.unique_id}, skipping prepaid edit")
+            except Exception as e:
+                _logger.error(f"Failed to call prepaid edit API on payment: {str(e)}")
+                repayment.message_post(
+                    body=f'Warning: Prepaid edit API call failed after payment. Device lock may not be updated: {str(e)}',
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note'
+                )
         
         res.testpayment(vals)
         return res
@@ -407,7 +412,7 @@ class Repayment(models.Model):
         ('1', 'Daily'),
         ('7', 'Weekly'),
         ('30', 'Monthly'),
-        ('0', 'Cash')
+        # ('0', 'Cash')
     ], string='Repayment Frequency', default='1', required=True)
     repayment_date = fields.Date(
         string='Repayment Date',
