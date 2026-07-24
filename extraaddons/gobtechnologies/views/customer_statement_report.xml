@@ -145,7 +145,7 @@
                                             <field name="repayment_id" invisible="1" column_invisible="1"/>
                                             <field name="product_id"/>
                                             <field name="quantity"/>
-                                            <field name="lot_id" domain="[('product_id', '=', product_id)]"/>
+                                            <field name="lot_id" domain="[('product_id', '=', product_id)]" options="{'no_create': True}" context="{'no_create': True}"/>
                                         </tree>
                                     </field>
                                 </group>
