@@ -217,9 +217,7 @@ class OppoLock(models.Model):
 
     def _calculate_days_from_payment(self, payment_amount, expected_to_pay, repayment_frequency):
         """Calculate number of days from payment amount based on repayment frequency"""
-        if repayment_frequency == '0':  # Cash
-            return 0
-        elif expected_to_pay == 0:
+        if expected_to_pay == 0:
             return 0
         
         base_days = payment_amount / expected_to_pay
@@ -270,6 +268,8 @@ class OppoLock(models.Model):
                             subtype_xmlid='mail.mt_note'
                         )
                         return False
+
+
             
             # Get oppo credentials
             oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()

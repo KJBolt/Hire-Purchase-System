@@ -412,7 +412,7 @@ class Repayment(models.Model):
         ('1', 'Daily'),
         ('7', 'Weekly'),
         ('30', 'Monthly'),
-        ('0', 'Cash')
+        # ('0', 'Cash')
     ], string='Repayment Frequency', default='1', required=True)
     repayment_date = fields.Date(
         string='Repayment Date',
