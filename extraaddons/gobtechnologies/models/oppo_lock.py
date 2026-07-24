@@ -5,6 +5,7 @@ import json
 import logging
 import time
 import datetime
+import math
 
 _logger = logging.getLogger(__name__)
 
@@ -224,7 +225,7 @@ class OppoLock(models.Model):
         base_days = payment_amount / expected_to_pay
         frequency_days = int(repayment_frequency)
         
-        return int(base_days * frequency_days)
+        return math.ceil(base_days * frequency_days)
 
 
 
@@ -255,6 +256,16 @@ class OppoLock(models.Model):
             else:
                 # Calculate days from payment for subsequent payments
                 days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
+
+                # Skip API call if payment is less than expected
+                if payment_amount < expected_to_pay:
+                    _logger.info(f"Prepaid edit skipped: payment {payment_amount} is less than expected {expected_to_pay}")
+                    record.repayment_id.message_post(
+                        body=f'Payment GHS {payment_amount} is less than expected GHS {expected_to_pay}. Pay the full amount to unlock the device.',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                    return False
             
             # Get oppo credentials
             oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
