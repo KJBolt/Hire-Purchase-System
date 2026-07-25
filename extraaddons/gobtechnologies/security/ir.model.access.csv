@@ -13,6 +13,9 @@ access_res_users_supervisor,res.users.supervisor,model_res_users,gobtechnologies
 access_res_users_sales_administrator,res.users.sales_administrator,model_res_users,gobtechnologies.group_sales_administrator,1,1,1,1
 access_res_users_sales_manager,res.users.sales_manager,model_res_users,gobtechnologies.group_repayment_sales,1,1,1,1
 access_res_users_general_manager,res.users.general_manager,model_res_users,gobtechnologies.group_general_manager,1,1,1,1
+access_res_users_internal_auditor,res.users.internal_auditor,model_res_users,gobtechnologies.group_internal_auditor,1,0,0,0
+access_res_users_sales_agent,res.users.sales_agent,model_res_users,gobtechnologies.group_repayment_agent,0,0,0,0
+access_res_users_customer_care,res.users.customer_care,model_res_users,gobtechnologies.group_customer_care,0,0,0,0
 
 
 

@@ -34,6 +34,11 @@ class StockLot(models.Model):
         ('delivered', 'Delivered')
     ], string='Delivery Status', compute='_compute_delivery_status', store=True, readonly=True)
 
+    is_expired = fields.Selection([
+        ('expired', 'Expired'),
+        ('not_expired', 'Not Expired')
+    ], string='Is Expired', compute='_compute_is_expired')
+
     @api.depends('delivery_ids', 'delivery_ids.state')
     def _compute_delivery_status(self):
         for lot in self:
@@ -41,6 +46,17 @@ class StockLot(models.Model):
                 lot.delivery_status = 'delivered'
             else:
                 lot.delivery_status = 'not_delivered'
+
+    @api.depends('expiration_date')
+    def _compute_is_expired(self):
+        from datetime import date
+        today = date.today()
+        for lot in self:
+            if lot.expiration_date:
+                exp_date = lot.expiration_date.date() if hasattr(lot.expiration_date, 'date') else lot.expiration_date
+                lot.is_expired = 'expired' if exp_date < today else 'not_expired'
+            else:
+                lot.is_expired = 'not_expired'
 
 
 class RepaymentItemLine(models.Model):
@@ -53,7 +69,7 @@ class RepaymentItemLine(models.Model):
     user_warehouse_id = fields.Many2one('stock.warehouse', default=lambda self: self.env.user.property_warehouse_id)
     price = fields.Float(string='Price', required=False)
     lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
-        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered'), ('warehouse_id', '=', user_warehouse_id), '|', ('expiration_date', '=', False), ('expiration_date', '>=', context_today())]")
+        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered'), ('warehouse_id', '=', user_warehouse_id)]")
        
 
     @api.onchange('product_id')
@@ -69,7 +85,8 @@ class RepaymentItemLine(models.Model):
 
     @api.onchange('lot_id')
     def _check_serial_availability(self):
-        """Ensure selected serial number is not already delivered."""
+        """Ensure selected serial number is not already delivered or expired."""
+        from datetime import date
         for record in self:
             if record.lot_id:
                 delivered = record.lot_id.filtered(lambda l: l.delivery_status == 'delivered')
@@ -79,6 +96,16 @@ class RepaymentItemLine(models.Model):
                         'warning': {
                             'title': "Delivered Lot",
                             'message': "Serial Number/IMEI '%s' has already been delivered and cannot be selected." % delivered[0].name
+                        }
+                    }
+                today = date.today()
+                expired = record.lot_id.filtered(lambda l: l.expiration_date and (l.expiration_date.date() if hasattr(l.expiration_date, 'date') else l.expiration_date) < today)
+                if expired:
+                    record.lot_id = record.lot_id - expired
+                    return {
+                        'warning': {
+                            'title': "Expired IMEI",
+                            'message': "The IMEI has exceeded the sales deadline and cannot be sold. Contact Admin to reinstigate. IMEI Number '%s' expired on %s." % (expired[0].name, expired[0].expiration_date)
                         }
                     }
 
