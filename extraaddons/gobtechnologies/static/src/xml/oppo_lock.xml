@@ -90,7 +90,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <t t-foreach="state.filteredDevices" t-as="device" t-key="device.id">
+                            <t t-foreach="paginatedDevices" t-as="device" t-key="device.id">
 
                                 <!-- Confirm Delete Row -->
                                 <tr t-if="state.confirmDeleteId === device.id" class="olod-confirm-row">
@@ -172,6 +172,26 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="olod-pagination" t-if="state.filteredDevices.length > 0">
+                    <div class="olod-pagination-info">
+                        Showing <t t-esc="((state.currentPage - 1) * state.pageSize) + 1"/>-<t t-esc="Math.min(state.currentPage * state.pageSize, state.filteredDevices.length)"/> of <t t-esc="state.filteredDevices.length"/>
+                    </div>
+                    <div class="olod-pagination-controls">
+                        <button class="olod-btn olod-btn-ghost olod-btn-sm" t-on-click="() => this.prevPage()" t-att-disabled="state.currentPage === 1">
+                            <i class="fa fa-chevron-left"/> Prev
+                        </button>
+                        <t t-foreach="pageNumbers" t-as="page" t-key="page">
+                            <button class="olod-btn olod-btn-sm" t-attf-class="olod-btn-#{page === state.currentPage ? 'primary' : 'ghost'}" t-on-click="() => this.goToPage(page)">
+                                <t t-esc="page"/>
+                            </button>
+                        </t>
+                        <button class="olod-btn olod-btn-ghost olod-btn-sm" t-on-click="() => this.nextPage()" t-att-disabled="state.currentPage === totalPages">
+                            Next <i class="fa fa-chevron-right"/>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -299,7 +319,7 @@
             .olod-search-input:focus { border-color: #2e7d32; background: #fff; }
 
             /* ── Table ── */
-            .olod-table-wrap { overflow-x: auto; height: 330px; overflow-y: auto; }
+            .olod-table-wrap { overflow-x: auto; }
             .olod-table { width: 100%; border-collapse: collapse; }
             .olod-th {
                 padding: 11px 16px;
@@ -382,6 +402,32 @@
             .olod-empty-icon { font-size: 36px; color: #d0d5dd; display: block; margin-bottom: 12px; }
             .olod-empty-text { color: #aab0bb; font-size: 14px; margin: 0; }
             .olod-na { color: #d0d5dd; }
+
+            /* ── Pagination ── */
+            .olod-pagination {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 24px;
+                border-top: 1px solid #f0f2f5;
+            }
+            .olod-pagination-info {
+                font-size: 13px;
+                color: #8f9aab;
+            }
+            .olod-pagination-controls {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .olod-pagination-controls .olod-btn {
+                min-width: 32px;
+                justify-content: center;
+            }
+            .olod-pagination-controls .olod-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
         </style>
     </t>
 </templates>
