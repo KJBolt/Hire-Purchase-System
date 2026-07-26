@@ -15,7 +15,6 @@
                 <xpath expr="//field[@name='name']" position="after">
                     <field name="delivery_status" readonly="1" widget="badge" decoration-success="delivery_status == 'delivered'" decoration-warning="delivery_status == 'not_delivered'"/>
                     <field name="is_expired" readonly="1" widget="badge" decoration-danger="is_expired == 'expired'" decoration-success="is_expired == 'not_expired'"/>
-                    <field name="expiration_date" readonly="1"/>
                     <field name="warehouse_id" readonly="1"/>
                 </xpath>
             </field>
