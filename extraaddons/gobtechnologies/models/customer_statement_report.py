@@ -291,6 +291,24 @@ class RepaymentPaymentLine(models.Model):
                     subtype_xmlid='mail.mt_note'
                 )
         
+        # Update lock_deadline on the repayment record
+        try:
+            payment_amount = vals.get('payment_amount', 0)
+            if payment_amount > 0 and repayment.expected_to_pay:
+                existing_count = len(self.search([('repayment_id', '=', repayment.id)]))
+                frequency = repayment.repayment_frequency
+                if existing_count <= 1:
+                    frequency_days = int(frequency)
+                else:
+                    base_days = payment_amount / repayment.expected_to_pay
+                    frequency_days = int(frequency)
+                    frequency_days = int(base_days * frequency_days)
+                if frequency_days > 0:
+                    deadline = datetime.datetime.now() + datetime.timedelta(days=frequency_days)
+                    repayment.sudo().write({'lock_deadline': deadline})
+        except Exception as e:
+            _logger.error(f"Failed to update lock_deadline: {str(e)}")
+
         res.testpayment(vals)
         return res
         
@@ -488,6 +506,8 @@ class Repayment(models.Model):
         ('overdue', 'Overdue'),
         ('insufficient', 'Insufficient Payment')
     ], string='Payment Status', compute='_compute_payment_status', store=True)
+    lock_deadline = fields.Datetime(string='Lock Deadline', readonly=True,
+        help='When the device will be locked if no further payment is received')
     penalty_ids = fields.One2many('repayment.penalty', 'repayment_id', string='Penalties')
     total_penalties = fields.Float(string='Total Penalties', compute='_compute_total_penalties', store=True)
 

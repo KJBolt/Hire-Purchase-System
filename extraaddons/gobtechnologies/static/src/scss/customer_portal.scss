@@ -592,6 +592,53 @@
     text-overflow: ellipsis;
 }
 
+/* ========== STAT CARD DANGER VARIANT ========== */
+
+.stat-card-danger .stat-card-icon {
+    background: linear-gradient(135deg, var(--portal-danger-light), #fecaca);
+    color: var(--portal-danger);
+}
+
+.stat-card-danger:hover {
+    border-color: #fca5a5;
+}
+
+/* Timer urgency states */
+.stat-card-warning.timer-warning {
+    border-color: var(--portal-warning);
+}
+
+.stat-card-warning.timer-warning .stat-card-icon {
+    background: linear-gradient(135deg, var(--portal-warning-light), #fde68a);
+    color: var(--portal-warning);
+    animation: timer-pulse-icon 2s ease-in-out infinite;
+}
+
+.stat-card-danger.timer-urgent {
+    border-color: var(--portal-danger);
+    animation: timer-pulse-border 2s ease-in-out infinite;
+}
+
+.stat-card-danger.timer-urgent .stat-card-icon {
+    background: linear-gradient(135deg, var(--portal-danger-light), #fecaca);
+    color: var(--portal-danger);
+    animation: timer-pulse-icon 2s ease-in-out infinite;
+}
+
+#timerDisplay.timer-expired {
+    color: var(--portal-danger) !important;
+}
+
+@keyframes timer-pulse-border {
+    0%, 100% { border-color: var(--portal-danger); }
+    50% { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+}
+
+@keyframes timer-pulse-icon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
 /* ========== DASHBOARD CARDS ========== */
 
 .dash-card {
