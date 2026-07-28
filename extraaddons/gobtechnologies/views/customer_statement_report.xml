@@ -56,6 +56,8 @@
             <form string="Repayment" >
                 <header>
                     <field name="invoice_id" invisible="1"/>
+                    <field name="has_deposit_payment" invisible="1"/>
+                    <field name="is_edit_mode" invisible="1"/>
                     <button 
                         name="action_initiate_delivery" id="action_approve"
                         string="Initiate Delivery" class="btn-primary" type="object"
@@ -74,6 +76,22 @@
                     <button name="action_cancel" type="object" string="Cancel" 
                         invisible="state in ['draft', 'progress']" 
                     />
+                    <button 
+                        name="action_enable_editing" 
+                        string="Edit Records" 
+                        class="btn-secondary" 
+                        type="object"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor"
+                        invisible="not has_deposit_payment or is_edit_mode"
+                    />
+                    <button 
+                        name="action_disable_editing" 
+                        string="Lock Records" 
+                        class="btn-secondary" 
+                        type="object"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor"
+                        invisible="not has_deposit_payment or not is_edit_mode"
+                    />
                     <field name="state" widget="statusbar" statusbar_visible="draft,progress,paid"/>
                 </header>
 
@@ -91,29 +109,29 @@
                     </div>
                     <group string="Customer Information" >
                         <group>
-                            <field name="customer_name" readonly="state in ['cancel', 'paid']" options="{'no_open': True}" />
-                            <field name="gps_location"  readonly="state in ['cancel', 'paid']"/>
-                            <field name="start_date"  readonly="state in ['cancel', 'paid']"/>
+                            <field name="customer_name" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)" options="{'no_open': True}" />
+                            <field name="gps_location"  readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)"/>
+                            <field name="start_date"  readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)"/>
                         </group>
                         <group>
-                            <field name="phone_no" />
-                            <field name="plan_duration"/>
+                            <field name="phone_no" readonly="has_deposit_payment and not is_edit_mode"/>
+                            <field name="plan_duration" readonly="has_deposit_payment and not is_edit_mode"/>
                             <!-- <field name="plan_id" domain="[('active', '=', True), ('plan_duration', '=', plan_duration)]" options="{'no_create': True}" readonly="1" force_save="1"/> -->
-                            <field name="end_date" />
+                            <field name="end_date" readonly="has_deposit_payment and not is_edit_mode"/>
                         </group>
                     </group>
 
                     <group string="Select Product to pupulate this section" >
                         <group>
                             <field name="selling_price" readonly="1" force_save="1"/>
-                            <field name="deposit" />
+                            <field name="deposit" readonly="has_deposit_payment and not is_edit_mode"/>
                             <field name="outstanding_loan" invisible="1"/>
                             <field name="outstanding_loan_status" readonly="1" no-open="1" decoration-danger="outstanding_loan &lt; 0" decoration-success="outstanding_loan == 0" />
-                            <field name="created_by"/>
+                            <field name="created_by" readonly="has_deposit_payment and not is_edit_mode"/>
                         </group>
                         <group>
-                            <field name="repayment_frequency" />
-                            <field name="expected_to_pay"/>
+                            <field name="repayment_frequency" readonly="has_deposit_payment and not is_edit_mode"/>
+                            <field name="expected_to_pay" readonly="has_deposit_payment and not is_edit_mode"/>
                             <field name="total_paid" readonly="1" no-open="1" />
                             <field name="sales_commission" readonly="1" />
                         </group>
@@ -140,7 +158,7 @@
                                 </group> -->
 
                                 <group string="Add products">
-                                    <field name="product_lines" readonly="state in ['cancel', 'paid']">
+                                    <field name="product_lines" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)">
                                         <tree>
                                             <field name="repayment_id" invisible="1" column_invisible="1"/>
                                             <field name="product_id" options="{'no_create': True, 'no_create_edit': True}"/>
@@ -172,24 +190,24 @@
                                         <div class="o_td_label">
                                             <label for="repayment_frequency" string="Repayment Frequency"/>
                                         </div>
-                                        <field name="repayment_frequency" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+                                        <field name="repayment_frequency" nolabel="1" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)"/>
 
                                         <div class="o_td_label">
                                             <label for="head_of_gob_contact" string="Management/Agent Contact"/>
                                         </div>
-                                        <field name="head_of_gob_contact" readonly="state in ['cancel', 'paid']" nolabel="1"/>
+                                        <field name="head_of_gob_contact" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)" nolabel="1"/>
                                     </group>
                                 </group>
 
                                 <group name="others_header">
                                     <group name="others_details">
-                                        <field name="guarantor_name" readonly="state in ['cancel', 'paid']" options="{'no_open': True}"/>
+                                        <field name="guarantor_name" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)" options="{'no_open': True}"/>
                                     </group>
                                     <group name="others_details">
                                         <div class="o_td_label">
                                             <label for="guarantor_contact" string="Guarantor's Contact"/>
                                         </div>
-                                        <field name="guarantor_contact" nolabel="1" readonly="state in ['cancel', 'paid']"/>
+                                        <field name="guarantor_contact" nolabel="1" readonly="state in ['cancel', 'paid'] or (has_deposit_payment and not is_edit_mode)"/>
                                     </group>
                                 </group>
                             </sheet>

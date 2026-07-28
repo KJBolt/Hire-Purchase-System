@@ -501,6 +501,19 @@ class Repayment(models.Model):
         help='When the device will be locked if no further payment is received')
     penalty_ids = fields.One2many('repayment.penalty', 'repayment_id', string='Penalties')
     total_penalties = fields.Float(string='Total Penalties', compute='_compute_total_penalties', store=True)
+    
+    # Field edit control fields
+    has_deposit_payment = fields.Boolean(
+        string='Has Deposit Payment',
+        compute='_compute_has_deposit_payment',
+        store=True,
+        help='Indicates if a deposit payment has been made for this repayment'
+    )
+    is_edit_mode = fields.Boolean(
+        string='Edit Mode',
+        default=False,
+        help='When enabled, allows editing of fields even after deposit payment (only for authorized users)'
+    )
 
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
@@ -790,6 +803,35 @@ class Repayment(models.Model):
     def _compute_total_penalties(self):
         for record in self:
             record.total_penalties = sum(record.penalty_ids.mapped('penalty_amount'))
+
+    @api.depends('payment_lines.payment_mode')
+    def _compute_has_deposit_payment(self):
+        for record in self:
+            record.has_deposit_payment = any(
+                line.payment_mode == 'deposit' for line in record.payment_lines
+            )
+
+    def _can_edit_repayment(self):
+        """Check if current user can edit repayment (General Manager, Sales Administrator, or Supervisor)."""
+        self.ensure_one()
+        is_gm = self.user_has_groups('gobtechnologies.group_general_manager')
+        is_sales_admin = self.user_has_groups('gobtechnologies.group_sales_administrator')
+        is_supervisor = self.user_has_groups('gobtechnologies.group_supervisor')
+        return is_gm or is_sales_admin or is_supervisor
+
+    def action_enable_editing(self):
+        """Enable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        for record in self:
+            if not record._can_edit_repayment():
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+            record.is_edit_mode = True
+
+    def action_disable_editing(self):
+        """Disable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        for record in self:
+            if not record._can_edit_repayment():
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+            record.is_edit_mode = False
 
     # Outstanding loan status 
     @api.depends('outstanding_loan')
