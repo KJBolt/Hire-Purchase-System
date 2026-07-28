@@ -86,6 +86,49 @@
         />
     </record>
 
+    <!-- Restrict Inventory Overview Menu to System Admin only -->
+    <record id="stock.stock_picking_type_menu" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    
+    <!-- Restrict Inventory Configuration Menu to System Admin only -->
+    <record id="stock.menu_stock_config_settings" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    
+    <!-- Restrict Inventory Adjustments Menu to System Admin only -->
+    <record id="stock.menu_stock_adjustments" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    
+    <!-- Restrict Inventory Procurement Menu to System Admin only -->
+    <record id="stock.menu_stock_procurement" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <!-- Restrict Inventory Procurement Menu to System Admin only -->
+    <record id="stock.menu_procurement_compute" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <!-- Restrict Inventory Deliveries Menu to System Admin only -->
+    <record id="stock.out_picking" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <!-- Restrict Inventory Internal Menu to System Admin only -->
+    <record id="stock.int_picking" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <!-- Restrict Inventory Product Product Menu to System Admin only -->
+    <record id="stock.menu_product_variant_config_stock" model="ir.ui.menu">
+        <field 
+            name="groups_id" 
+            eval="[(6, 0, [
+                ref('gobtechnologies.group_sales_administrator'),
+                ref('gobtechnologies.group_supervisor'),
+                ref('gobtechnologies.group_general_manager')
+            ])]"
+        />
+    </record>
+
 
     <!-- Show Purchase Menu Item -->
     <record id="purchase.menu_purchase_root" model="ir.ui.menu">
@@ -105,6 +148,11 @@
 
     <!-- Hide Apps for all users except Administrators (System) -->
     <record id="base.menu_management" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    
+    <!-- Hide settings for all users except Administrators (System) -->
+    <record id="base.menu_administration" model="ir.ui.menu">
         <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
     </record>
 

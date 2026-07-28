@@ -1,6 +1,6 @@
 /** @odoo-module **/
 import {registry} from "@web/core/registry";
-import {Component, useState, onWillStart} from "@odoo/owl";
+import {Component, useState, onWillStart, useMemo} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
 
 
@@ -20,6 +20,8 @@ export class OppoLock extends Component{
             errorCount: 0,
             searchQuery: "",
             confirmDeleteId: null,
+            currentPage: 1,
+            pageSize: 5,
         });
 
         onWillStart(async() => {
@@ -27,18 +29,60 @@ export class OppoLock extends Component{
         })
     }
 
+    get totalPages() {
+        return Math.max(1, Math.ceil(this.state.filteredDevices.length / this.state.pageSize));
+    }
+
+    get paginatedDevices() {
+        const start = (this.state.currentPage - 1) * this.state.pageSize;
+        return this.state.filteredDevices.slice(start, start + this.state.pageSize);
+    }
+
+    get pageNumbers() {
+        const total = this.totalPages;
+        const current = this.state.currentPage;
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, current - Math.floor(maxVisible / 2));
+        let end = Math.min(total, start + maxVisible - 1);
+        if (end - start < maxVisible - 1) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        return pages;
+    }
+
+    goToPage(page) {
+        if (page >= 1 && page <= this.totalPages) {
+            this.state.currentPage = page;
+        }
+    }
+
+    nextPage() {
+        if (this.state.currentPage < this.totalPages) {
+            this.state.currentPage++;
+        }
+    }
+
+    prevPage() {
+        if (this.state.currentPage > 1) {
+            this.state.currentPage--;
+        }
+    }
+
     async fetchDevices() {
         const devices = await this.orm.searchRead("oppo.lock", [], [
             "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response"
         ]);
         this.state.devices = devices;
-        await this.fetchDeviceStatuses();
+        this.state.currentPage = 1;
         this.filterDevices();
-        this.updateCounts();
+        await this.fetchDeviceStatuses();
     }
 
     async fetchDeviceStatuses() {
-        // Status code to description mapping
         const statusMap = {
             '-1': 'Error',
             '0': 'Normal',
@@ -56,35 +100,38 @@ export class OppoLock extends Component{
             '13': 'Deleted',
             '14': 'CK Unlock',
         };
-        // Fetch status from Oppo API for each device
-        for (const device of this.state.devices) {
+
+        const devicesToFetch = this.paginatedDevices;
+        const fetchPromises = devicesToFetch.map(async (device) => {
             try {
                 const result = await this.orm.call("oppo.lock", "action_get_device_status", [[device.id]]);
-                // Update the device status in the state
                 const deviceIndex = this.state.devices.findIndex(d => d.id === device.id);
                 if (deviceIndex !== -1) {
                     this.state.devices[deviceIndex].status = statusMap[result.status] || result.status;
                     this.state.devices[deviceIndex].api_status = result.api_status;
                     this.state.devices[deviceIndex].info = result.info;
                 }
+                const filteredIndex = this.state.filteredDevices.findIndex(d => d.id === device.id);
+                if (filteredIndex !== -1) {
+                    this.state.filteredDevices[filteredIndex].status = statusMap[result.status] || result.status;
+                    this.state.filteredDevices[filteredIndex].api_status = result.api_status;
+                    this.state.filteredDevices[filteredIndex].info = result.info;
+                }
             } catch (error) {
                 console.error(`Failed to fetch status for device ${device.id}:`, error);
-                // Keep existing status if API call fails
             }
-        }
+        });
 
-        // Update counts after fetching all statuses
+        await Promise.all(fetchPromises);
         this.updateCounts();
     }
 
-    // Update device counts based on status
     updateCounts() {
-        // Count based on new status descriptions
         this.state.lockedCount = this.state.devices.filter(d => d.status === 'Locked').length;
-        this.state.unlockedCount = this.state.devices.filter(d => 
+        this.state.unlockedCount = this.state.devices.filter(d =>
             ['Normal', 'Completed', 'Released PhoneLOCK', 'Released SIMLOCK', 'Deleted', 'CK Unlock'].includes(d.status)
         ).length;
-        this.state.pendingCount = this.state.devices.filter(d => 
+        this.state.pendingCount = this.state.devices.filter(d =>
             ['Locking', 'Completing', 'Unlocking', 'Activating', 'Releasing PhoneLOCK', 'Releasing SIMLOCK', 'Deleting'].includes(d.status)
         ).length;
         this.state.errorCount = this.state.devices.filter(d => d.status === 'Error').length;
@@ -92,7 +139,7 @@ export class OppoLock extends Component{
 
     filterDevices() {
         if (!this.state.searchQuery) {
-            this.state.filteredDevices = this.state.devices;
+            this.state.filteredDevices = [...this.state.devices];
         } else {
             const query = this.state.searchQuery.toLowerCase();
             this.state.filteredDevices = this.state.devices.filter(d =>
@@ -102,6 +149,7 @@ export class OppoLock extends Component{
                 (d.repayment_id && d.repayment_id[1].toLowerCase().includes(query))
             );
         }
+        this.state.currentPage = 1;
     }
 
     onSearchInput(ev) {
@@ -111,7 +159,6 @@ export class OppoLock extends Component{
 
 
     async refreshDeviceStatus(device) {
-        // Status code to description mapping
         const statusMap = {
             '-1': 'Error',
             '0': 'Normal',
@@ -138,7 +185,12 @@ export class OppoLock extends Component{
                 this.state.devices[deviceIndex].api_status = result.api_status;
                 this.state.devices[deviceIndex].info = result.info;
             }
-            this.filterDevices();
+            const filteredIndex = this.state.filteredDevices.findIndex(d => d.id === device.id);
+            if (filteredIndex !== -1) {
+                this.state.filteredDevices[filteredIndex].status = statusMap[result.status] || result.status;
+                this.state.filteredDevices[filteredIndex].api_status = result.api_status;
+                this.state.filteredDevices[filteredIndex].info = result.info;
+            }
             this.updateCounts();
             this.notification.add(`Device status refreshed`, { type: 'success' });
         } catch (error) {

@@ -34,6 +34,11 @@ class StockLot(models.Model):
         ('delivered', 'Delivered')
     ], string='Delivery Status', compute='_compute_delivery_status', store=True, readonly=True)
 
+    is_expired = fields.Selection([
+        ('expired', 'Expired'),
+        ('not_expired', 'Not Expired')
+    ], string='Is Expired', compute='_compute_is_expired')
+
     @api.depends('delivery_ids', 'delivery_ids.state')
     def _compute_delivery_status(self):
         for lot in self:
@@ -41,6 +46,17 @@ class StockLot(models.Model):
                 lot.delivery_status = 'delivered'
             else:
                 lot.delivery_status = 'not_delivered'
+
+    @api.depends('expiration_date')
+    def _compute_is_expired(self):
+        from datetime import date
+        today = date.today()
+        for lot in self:
+            if lot.expiration_date:
+                exp_date = lot.expiration_date.date() if hasattr(lot.expiration_date, 'date') else lot.expiration_date
+                lot.is_expired = 'expired' if exp_date < today else 'not_expired'
+            else:
+                lot.is_expired = 'not_expired'
 
 
 class RepaymentItemLine(models.Model):
@@ -53,7 +69,7 @@ class RepaymentItemLine(models.Model):
     user_warehouse_id = fields.Many2one('stock.warehouse', default=lambda self: self.env.user.property_warehouse_id)
     price = fields.Float(string='Price', required=False)
     lot_id = fields.Many2many('stock.lot', string='Serial Number/IMEI',
-        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered'), ('warehouse_id', '=', user_warehouse_id), '|', ('expiration_date', '=', False), ('expiration_date', '>=', context_today())]")
+        domain="[('product_id', '=', product_id), ('delivery_status', '!=', 'delivered'), ('warehouse_id', '=', user_warehouse_id)]")
        
 
     @api.onchange('product_id')
@@ -69,7 +85,8 @@ class RepaymentItemLine(models.Model):
 
     @api.onchange('lot_id')
     def _check_serial_availability(self):
-        """Ensure selected serial number is not already delivered."""
+        """Ensure selected serial number is not already delivered or expired."""
+        from datetime import date
         for record in self:
             if record.lot_id:
                 delivered = record.lot_id.filtered(lambda l: l.delivery_status == 'delivered')
@@ -79,6 +96,16 @@ class RepaymentItemLine(models.Model):
                         'warning': {
                             'title': "Delivered Lot",
                             'message': "Serial Number/IMEI '%s' has already been delivered and cannot be selected." % delivered[0].name
+                        }
+                    }
+                today = date.today()
+                expired = record.lot_id.filtered(lambda l: l.expiration_date and (l.expiration_date.date() if hasattr(l.expiration_date, 'date') else l.expiration_date) < today)
+                if expired:
+                    record.lot_id = record.lot_id - expired
+                    return {
+                        'warning': {
+                            'title': "Expired IMEI",
+                            'message': "The IMEI has exceeded the sales deadline and cannot be sold. Contact Admin to reinstigate. IMEI Number '%s' expired on %s." % (expired[0].name, expired[0].expiration_date)
                         }
                     }
 
@@ -245,6 +272,7 @@ class RepaymentPaymentLine(models.Model):
         
 
         # Trigger Oppo prepaid edit API call when payment is received
+        prepaid_edit_result = None
         if not self.env.context.get('skip_oppo_edit'):
             try:
                 _logger.info("Triggering Oppo prepaid edit API call after payment")
@@ -252,7 +280,7 @@ class RepaymentPaymentLine(models.Model):
                 if oppo_lock:
                     payment_amount = vals.get('payment_amount', 0)
                     repayment_frequency = repayment.repayment_frequency
-                    oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
+                    prepaid_edit_result = oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
                     _logger.info(f"Prepaid edit API called for repayment {repayment.unique_id} with payment amount {payment_amount}")
                 else:
                     _logger.info(f"No Oppo lock record found for repayment {repayment.unique_id}, skipping prepaid edit")
@@ -263,7 +291,15 @@ class RepaymentPaymentLine(models.Model):
                     message_type='comment',
                     subtype_xmlid='mail.mt_note'
                 )
-        
+
+        # Update lock_deadline on the repayment record using the deadline from Oppo API
+        try:
+            if prepaid_edit_result and prepaid_edit_result.get('success') and prepaid_edit_result.get('deadline'):
+                repayment.sudo().write({'lock_deadline': prepaid_edit_result['deadline']})
+                _logger.info(f"lock_deadline synced with Oppo API deadline for repayment {repayment.unique_id}")
+        except Exception as e:
+            _logger.error(f"Failed to update lock_deadline: {str(e)}")
+
         res.testpayment(vals)
         return res
         
@@ -461,8 +497,23 @@ class Repayment(models.Model):
         ('overdue', 'Overdue'),
         ('insufficient', 'Insufficient Payment')
     ], string='Payment Status', compute='_compute_payment_status', store=True)
+    lock_deadline = fields.Datetime(string='Lock Deadline', readonly=True,
+        help='When the device will be locked if no further payment is received')
     penalty_ids = fields.One2many('repayment.penalty', 'repayment_id', string='Penalties')
     total_penalties = fields.Float(string='Total Penalties', compute='_compute_total_penalties', store=True)
+    
+    # Field edit control fields
+    has_deposit_payment = fields.Boolean(
+        string='Has Deposit Payment',
+        compute='_compute_has_deposit_payment',
+        store=True,
+        help='Indicates if a deposit payment has been made for this repayment'
+    )
+    is_edit_mode = fields.Boolean(
+        string='Edit Mode',
+        default=False,
+        help='When enabled, allows editing of fields even after deposit payment (only for authorized users)'
+    )
 
     # Relevant documents fields
     customer_ghana_card_front = fields.Binary(string='Customer Ghana Card Front', attachment=True, help="Upload Front Image", required=True)
@@ -499,7 +550,8 @@ class Repayment(models.Model):
             result.append((rec.id, name))
         return result
 
-    # Compute mobile money statement filename    @api.depends('mobile_money_statement')
+    # Compute mobile money statement filename    
+    @api.depends('mobile_money_statement')
     def _compute_mobile_money_statement_filename(self):
         for record in self:
             attachment = self.env['ir.attachment'].search([
@@ -752,6 +804,35 @@ class Repayment(models.Model):
     def _compute_total_penalties(self):
         for record in self:
             record.total_penalties = sum(record.penalty_ids.mapped('penalty_amount'))
+
+    @api.depends('payment_lines.payment_mode')
+    def _compute_has_deposit_payment(self):
+        for record in self:
+            record.has_deposit_payment = any(
+                line.payment_mode == 'deposit' for line in record.payment_lines
+            )
+
+    def _can_edit_repayment(self):
+        """Check if current user can edit repayment (General Manager, Sales Administrator, or Supervisor)."""
+        self.ensure_one()
+        is_gm = self.user_has_groups('gobtechnologies.group_general_manager')
+        is_sales_admin = self.user_has_groups('gobtechnologies.group_sales_administrator')
+        is_supervisor = self.user_has_groups('gobtechnologies.group_supervisor')
+        return is_gm or is_sales_admin or is_supervisor
+
+    def action_enable_editing(self):
+        """Enable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        for record in self:
+            if not record._can_edit_repayment():
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+            record.is_edit_mode = True
+
+    def action_disable_editing(self):
+        """Disable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        for record in self:
+            if not record._can_edit_repayment():
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+            record.is_edit_mode = False
 
     # Outstanding loan status 
     @api.depends('outstanding_loan')
@@ -1244,60 +1325,38 @@ class Repayment(models.Model):
             _logger.error(f"Error calling signature server: {e}")
             raise UserError(_('Failed to connect to signature server: %s') % str(e))
 
-    # Check 24-hour grace period for Oppo device lock
+    # Check grace period for Oppo device lock
     def _check_grace_period_lock(self):
-        """Cron job method to check for repayments that need to be locked after 24-hour grace period"""
+        """Cron job method to check for repayments that need to be locked after grace period expires.
         
-        # Calculate the cutoff time (24 hours ago)
-        cutoff_time = fields.Datetime.now() - timedelta(hours=24)
+        Uses lock_deadline (set when payment is made) to determine when to lock,
+        keeping the lock in sync with the actual payment time and Oppo unlock window.
+        """
+        now = fields.Datetime.now()
         
-        # Search for repayments with deposit but no payment after 24 hours
+        # Repayments with deposit that have a lock_deadline that has passed (exclude paid repayments)
         repayments_to_lock = self.search([
             ('deposit', '>', 0),
-            ('create_date', '<=', cutoff_time),
+            ('lock_deadline', '<=', now),
+            ('lock_deadline', '!=', False),
+            ('state', '!=', 'paid'),
         ])
         
         for repayment in repayments_to_lock:
-            # Check if there are any payment lines
-            if not repayment.payment_lines:
-                _logger.info(f"Checking grace period lock for repayment {repayment.unique_id}")
-                # No payments at all - lock the device
-                try:
-                    oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
-                    if oppo_lock:
-                        # Call prepaid edit with 0 days to lock immediately
-                        oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
-                        _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (no payments)")
-                        repayment.message_post(
-                            body=f'24-hour grace period expired. Device locked via prepaid edit (no payments received).',
-                            message_type='comment',
-                            subtype_xmlid='mail.mt_note'
-                        )
-                except Exception as e:
-                    _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
-            else:
-                # Check if the latest payment is more than 24 hours old
-                _logger.info(f"Checking grace period for payment more tha 24hrs {repayment.unique_id} (has payments)")
-                latest_payment = repayment.payment_lines.sorted(key=lambda x: x.payment_date, reverse=True)[:1]
-                if latest_payment:
-                    latest_payment_date = latest_payment.payment_date
-                    if latest_payment_date:
-                        # Convert payment_date (Date) to Datetime for comparison
-                        latest_payment_datetime = fields.Datetime.to_datetime(latest_payment_date)
-                        if latest_payment_datetime < cutoff_time:
-                            try:
-                                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
-                                if oppo_lock:
-                                    # Call prepaid edit with 0 days to lock immediately
-                                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
-                                    _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (payment expired)")
-                                    repayment.message_post(
-                                        body=f'24-hour grace period expired since last payment. Device locked via prepaid edit.',
-                                        message_type='comment',
-                                        subtype_xmlid='mail.mt_note'
-                                    )
-                            except Exception as e:
-                                _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
+            try:
+                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+                if oppo_lock and oppo_lock.status != '1':
+                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
+                    _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (lock_deadline {repayment.lock_deadline} expired)")
+                    repayment.message_post(
+                        body=f'Grace period expired (lock deadline was {repayment.lock_deadline}). Device locked via prepaid edit.',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                elif oppo_lock and oppo_lock.status == '1':
+                    _logger.info(f"Device already locked for repayment {repayment.unique_id}, skipping duplicate lock")
+            except Exception as e:
+                _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
 
     # Trigger the push message
     def action_oppo_trigger_push(self):

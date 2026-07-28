@@ -75,6 +75,7 @@ class CustomerPortalController(http.Controller):
             'outstanding_balance': f"{repayment.outstanding_loan:,.2f}" if repayment else '0.00',
             'payment_lines': payment_lines_data,
             'current_year': fields.Date.today().year,
+            'lock_deadline': repayment.lock_deadline.strftime('%Y-%m-%dT%H:%M:%S') if repayment and repayment.lock_deadline else '',
             'error_message': '',
             'success_message': '',
         }

@@ -1029,6 +1029,46 @@
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var timerEl = document.getElementById('lockTimer');
+                        if (!timerEl) return;
+                        var deadlineStr = timerEl.getAttribute('data-deadline');
+                        if (!deadlineStr) return;
+                        var display = document.getElementById('timerDisplay');
+                        if (!display) return;
+                        var deadline = new Date(deadlineStr);
+                        if (isNaN(deadline.getTime())) return;
+                        function updateTimer() {
+                            var diff = deadline.getTime() - Date.now();
+                            if (diff &lt;= 0) {
+                                display.textContent = 'Device Locked';
+                                display.classList.add('timer-expired');
+                                timerEl.classList.add('timer-urgent');
+                                clearInterval(interval);
+                                return;
+                            }
+                            var totalSeconds = Math.floor(diff / 1000);
+                            var h = Math.floor(totalSeconds / 3600);
+                            var m = Math.floor((totalSeconds % 3600) / 60);
+                            var s = totalSeconds % 60;
+                            display.textContent = String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
+                            if (h &lt; 24) {
+                                display.classList.add('timer-urgent');
+                                display.classList.remove('timer-warning');
+                                timerEl.classList.add('timer-urgent');
+                                timerEl.classList.remove('timer-warning');
+                            } else if (h &lt; 72) {
+                                display.classList.add('timer-warning');
+                                display.classList.remove('timer-urgent');
+                                timerEl.classList.add('timer-warning');
+                                timerEl.classList.remove('timer-urgent');
+                            }
+                        }
+                        updateTimer();
+                        var interval = setInterval(updateTimer, 1000);
+                    });
+                </script>
             </t>
 
             <div class="dash-wrap">
@@ -1098,7 +1138,7 @@
                         </div>
 
                         <div class="row g-3 mb-4">
-                            <div class="col-md-4">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-primary">
                                     <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
                                     <div class="stat-card-body">
@@ -1107,7 +1147,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-success">
                                     <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
                                     <div class="stat-card-body">
@@ -1116,7 +1156,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-warning">
                                     <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
                                     <div class="stat-card-body">
@@ -1125,7 +1165,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <t t-if="lock_deadline">
+                                <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+                                    <div class="stat-card stat-card-danger" id="lockTimer" t-att-data-deadline="lock_deadline">
+                                        <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
+                                        <div class="stat-card-body">
+                                            <div class="stat-card-label">Device Locks In</div>
+                                            <div class="stat-card-value" id="timerDisplay">--h --m --s</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
                         </div>
+
+                       
 
                         <div class="dash-card mb-4">
                             <div class="dash-card-header">
