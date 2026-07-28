@@ -267,7 +267,7 @@ class OppoLock(models.Model):
                             message_type='comment',
                             subtype_xmlid='mail.mt_note'
                         )
-                        return False
+                        return {'success': False, 'deadline': None}
 
 
             
@@ -284,7 +284,9 @@ class OppoLock(models.Model):
             except json.JSONDecodeError:
                 imei_list = []
 
-            _logger.info(f'Expire time => {str(int((datetime.datetime.now() + datetime.timedelta(days=days)).timestamp() * 1000))}')
+            # Calculate deadline once to sync with lock_deadline (use fields.Datetime.now for UTC consistency)
+            deadline = fields.Datetime.now() + datetime.timedelta(days=days)
+            _logger.info(f'Expire time => {str(int(deadline.timestamp() * 1000))}')
 
             if not imei_list:
                 raise UserError(_('IMEI list is required for prepaid edit.'))
@@ -293,7 +295,7 @@ class OppoLock(models.Model):
             request_body = {
                 "imeiList": imei_list,
                 "deviceUid": record.device_uid or (imei_list[0] if imei_list else ""),
-                "expiredTime": str(int((datetime.datetime.now() + datetime.timedelta(days=days)).timestamp() * 1000)),
+                "expiredTime": str(int(deadline.timestamp() * 1000)),
                 "displayType": int(record.display_type),
                 "oneDayTitle": str(record.one_day_title) or "Payment Required",
                 "oneDayContent": str(record.one_day_content) or "Your plan expires soon. Please pay to continue.",
@@ -350,7 +352,7 @@ class OppoLock(models.Model):
                         subtype_xmlid='mail.mt_note'
                     )
                     _logger.info(f"Prepaid edit successful for repayment {record.repayment_id.unique_id}")
-                    return True
+                    return {'success': True, 'deadline': deadline}
                 else:
                     record.write({'status': '-1'})
                     record.repayment_id.message_post(
@@ -358,8 +360,9 @@ class OppoLock(models.Model):
                         message_type='comment',
                         subtype_xmlid='mail.mt_note'
                     )
-                
-                
+                    return {'success': False, 'deadline': None}
+
+
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Error calling Oppo prepaid/edit API: {e}")
                 record.repayment_id.message_post(
@@ -367,3 +370,4 @@ class OppoLock(models.Model):
                     message_type='comment',
                     subtype_xmlid='mail.mt_note'
                 )
+                return {'success': False, 'deadline': None}

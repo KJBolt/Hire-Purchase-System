@@ -1138,7 +1138,7 @@
                         </div>
 
                         <div class="row g-3 mb-4">
-                            <div class="col-md-3 col-sm-6 col-12">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-primary">
                                     <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
                                     <div class="stat-card-body">
@@ -1147,7 +1147,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-success">
                                     <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
                                     <div class="stat-card-body">
@@ -1156,7 +1156,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12">
+                            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                 <div class="stat-card stat-card-warning">
                                     <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
                                     <div class="stat-card-body">
@@ -1166,7 +1166,7 @@
                                 </div>
                             </div>
                             <t t-if="lock_deadline">
-                                <div class="col-md-3 col-sm-6 col-12">
+                                <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="stat-card stat-card-danger" id="lockTimer" t-att-data-deadline="lock_deadline">
                                         <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
                                         <div class="stat-card-body">

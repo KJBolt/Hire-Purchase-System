@@ -272,6 +272,7 @@ class RepaymentPaymentLine(models.Model):
         
 
         # Trigger Oppo prepaid edit API call when payment is received
+        prepaid_edit_result = None
         if not self.env.context.get('skip_oppo_edit'):
             try:
                 _logger.info("Triggering Oppo prepaid edit API call after payment")
@@ -279,7 +280,7 @@ class RepaymentPaymentLine(models.Model):
                 if oppo_lock:
                     payment_amount = vals.get('payment_amount', 0)
                     repayment_frequency = repayment.repayment_frequency
-                    oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
+                    prepaid_edit_result = oppo_lock.action_edit_prepaid(payment_amount, repayment_frequency)
                     _logger.info(f"Prepaid edit API called for repayment {repayment.unique_id} with payment amount {payment_amount}")
                 else:
                     _logger.info(f"No Oppo lock record found for repayment {repayment.unique_id}, skipping prepaid edit")
@@ -290,22 +291,12 @@ class RepaymentPaymentLine(models.Model):
                     message_type='comment',
                     subtype_xmlid='mail.mt_note'
                 )
-        
-        # Update lock_deadline on the repayment record
+
+        # Update lock_deadline on the repayment record using the deadline from Oppo API
         try:
-            payment_amount = vals.get('payment_amount', 0)
-            if payment_amount > 0 and repayment.expected_to_pay:
-                existing_count = len(self.search([('repayment_id', '=', repayment.id)]))
-                frequency = repayment.repayment_frequency
-                if existing_count <= 1:
-                    frequency_days = int(frequency)
-                else:
-                    base_days = payment_amount / repayment.expected_to_pay
-                    frequency_days = int(frequency)
-                    frequency_days = int(base_days * frequency_days)
-                if frequency_days > 0:
-                    deadline = datetime.datetime.now() + datetime.timedelta(days=frequency_days)
-                    repayment.sudo().write({'lock_deadline': deadline})
+            if prepaid_edit_result and prepaid_edit_result.get('success') and prepaid_edit_result.get('deadline'):
+                repayment.sudo().write({'lock_deadline': prepaid_edit_result['deadline']})
+                _logger.info(f"lock_deadline synced with Oppo API deadline for repayment {repayment.unique_id}")
         except Exception as e:
             _logger.error(f"Failed to update lock_deadline: {str(e)}")
 
@@ -1291,60 +1282,38 @@ class Repayment(models.Model):
             _logger.error(f"Error calling signature server: {e}")
             raise UserError(_('Failed to connect to signature server: %s') % str(e))
 
-    # Check 24-hour grace period for Oppo device lock
+    # Check grace period for Oppo device lock
     def _check_grace_period_lock(self):
-        """Cron job method to check for repayments that need to be locked after 24-hour grace period"""
+        """Cron job method to check for repayments that need to be locked after grace period expires.
         
-        # Calculate the cutoff time (24 hours ago)
-        cutoff_time = fields.Datetime.now() - timedelta(hours=24)
+        Uses lock_deadline (set when payment is made) to determine when to lock,
+        keeping the lock in sync with the actual payment time and Oppo unlock window.
+        """
+        now = fields.Datetime.now()
         
-        # Search for repayments with deposit but no payment after 24 hours
+        # Repayments with deposit that have a lock_deadline that has passed (exclude paid repayments)
         repayments_to_lock = self.search([
             ('deposit', '>', 0),
-            ('create_date', '<=', cutoff_time),
+            ('lock_deadline', '<=', now),
+            ('lock_deadline', '!=', False),
+            ('state', '!=', 'paid'),
         ])
         
         for repayment in repayments_to_lock:
-            # Check if there are any payment lines
-            if not repayment.payment_lines:
-                _logger.info(f"Checking grace period lock for repayment {repayment.unique_id}")
-                # No payments at all - lock the device
-                try:
-                    oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
-                    if oppo_lock:
-                        # Call prepaid edit with 0 days to lock immediately
-                        oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
-                        _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (no payments)")
-                        repayment.message_post(
-                            body=f'24-hour grace period expired. Device locked via prepaid edit (no payments received).',
-                            message_type='comment',
-                            subtype_xmlid='mail.mt_note'
-                        )
-                except Exception as e:
-                    _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
-            else:
-                # Check if the latest payment is more than 24 hours old
-                _logger.info(f"Checking grace period for payment more tha 24hrs {repayment.unique_id} (has payments)")
-                latest_payment = repayment.payment_lines.sorted(key=lambda x: x.payment_date, reverse=True)[:1]
-                if latest_payment:
-                    latest_payment_date = latest_payment.payment_date
-                    if latest_payment_date:
-                        # Convert payment_date (Date) to Datetime for comparison
-                        latest_payment_datetime = fields.Datetime.to_datetime(latest_payment_date)
-                        if latest_payment_datetime < cutoff_time:
-                            try:
-                                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
-                                if oppo_lock:
-                                    # Call prepaid edit with 0 days to lock immediately
-                                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
-                                    _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (payment expired)")
-                                    repayment.message_post(
-                                        body=f'24-hour grace period expired since last payment. Device locked via prepaid edit.',
-                                        message_type='comment',
-                                        subtype_xmlid='mail.mt_note'
-                                    )
-                            except Exception as e:
-                                _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
+            try:
+                oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+                if oppo_lock and oppo_lock.status != '1':
+                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
+                    _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (lock_deadline {repayment.lock_deadline} expired)")
+                    repayment.message_post(
+                        body=f'Grace period expired (lock deadline was {repayment.lock_deadline}). Device locked via prepaid edit.',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                elif oppo_lock and oppo_lock.status == '1':
+                    _logger.info(f"Device already locked for repayment {repayment.unique_id}, skipping duplicate lock")
+            except Exception as e:
+                _logger.error(f"Failed to lock device for repayment {repayment.unique_id} after grace period: {str(e)}")
 
     # Trigger the push message
     def action_oppo_trigger_push(self):
