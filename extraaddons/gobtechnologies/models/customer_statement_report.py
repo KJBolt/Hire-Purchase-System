@@ -550,7 +550,8 @@ class Repayment(models.Model):
             result.append((rec.id, name))
         return result
 
-    # Compute mobile money statement filename    @api.depends('mobile_money_statement')
+    # Compute mobile money statement filename    
+    @api.depends('mobile_money_statement')
     def _compute_mobile_money_statement_filename(self):
         for record in self:
             attachment = self.env['ir.attachment'].search([
