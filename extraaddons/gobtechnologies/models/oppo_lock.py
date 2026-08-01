@@ -284,8 +284,21 @@ class OppoLock(models.Model):
             except json.JSONDecodeError:
                 imei_list = []
 
-            # Calculate deadline once to sync with lock_deadline (use fields.Datetime.now for UTC consistency)
-            deadline = fields.Datetime.now() + datetime.timedelta(days=days)
+            # Calculate deadline: if the device is still unlocked (existing lock_deadline is in the
+            # future), ADD the new days on top of the remaining window instead of resetting from now.
+            now = fields.Datetime.now()
+            remaining = record.repayment_id.lock_deadline
+
+            if payment_amount != 0 and remaining and remaining > now:
+                # Phone still unlocked -> extend the existing deadline by the new days
+                # (preserves leftover days, hours, minutes and seconds from the previous payment)
+                deadline = remaining + datetime.timedelta(days=days)
+                _logger.info(f"Extending existing deadline {remaining} by {days} day(s) -> {deadline}")
+            else:
+                # First payment, phone already locked/expired, or lock command (payment_amount == 0)
+                # -> always start counting from now
+                deadline = now + datetime.timedelta(days=days)
+
             _logger.info(f'Expire time => {str(int(deadline.timestamp() * 1000))}')
 
             if not imei_list:
@@ -343,6 +356,8 @@ class OppoLock(models.Model):
                         'last_prepaid_edit_date': fields.Datetime.now(),
                         'last_prepaid_edit_days': days,
                         'prepaid_edit_count': record.prepaid_edit_count + 1,
+                        # Store the actual device expiry (ms) as sent to Oppo, as source of truth
+                        'expired_time': str(int(deadline.timestamp() * 1000)),
                     })
                     # Refresh device status from Oppo
                     record.action_get_device_status()
