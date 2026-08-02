@@ -1364,12 +1364,15 @@
                     }
                     .success-detail-label {
                         color: #718096;
-                        font-size: 0.9rem;
+                        font-size: 0.8rem;
+                        margin-bottom: 0.25rem;
                     }
                     .success-detail-value {
                         color: #1a1a2e;
                         font-weight: 600;
-                        font-size: 0.9rem;
+                        font-size: 0.95rem;
+                        word-break: break-all;
+                        overflow-wrap: break-word;
                     }
                     .back-to-dashboard-btn {
                         display: inline-flex;
