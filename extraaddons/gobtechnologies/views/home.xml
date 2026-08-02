@@ -1135,6 +1135,16 @@
                                     <span class="info-value"><t t-esc="repayment.state" /></span>
                                 </div>
                             </div>
+                            <div class="info-divider"></div>
+                            <div class="info-item">
+                                <div class="info-icon info-icon-status">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div>
+                                    <span class="info-label">Expected to Pay</span>
+                                    <span class="info-value">GHS <t t-esc="repayment.expected_to_pay" /></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-4">
