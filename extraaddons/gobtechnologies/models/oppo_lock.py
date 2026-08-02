@@ -361,6 +361,18 @@ class OppoLock(models.Model):
                     })
                     # Refresh device status from Oppo
                     record.action_get_device_status()
+
+
+                    # Calculate total remaining days for the message
+                    total_days = days
+                    if remaining and remaining > now:
+                        remaining_days = (remaining - now).days
+                        total_days = remaining_days + days
+                        message = f'Prepaid edit successful: Previous remaining {remaining_days} day(s) + {days} day(s) added. Total unlocked for {total_days} day(s). Payment amount: GHS {payment_amount}'
+                    else:
+                        message = f'Prepaid edit successful: Device will remain unlocked for {days} day(s). Payment amount: GHS {payment_amount}'
+
+                        
                     record.repayment_id.message_post(
                         body=f'Prepaid edit successful: Device will remain unlocked for {days} day(s). Payment amount: GHS {payment_amount}',
                         message_type='comment',
