@@ -1049,16 +1049,17 @@
                                 return;
                             }
                             var totalSeconds = Math.floor(diff / 1000);
-                            var h = Math.floor(totalSeconds / 3600);
+                            var d = Math.floor(totalSeconds / 86400);
+                            var h = Math.floor((totalSeconds % 86400) / 3600);
                             var m = Math.floor((totalSeconds % 3600) / 60);
                             var s = totalSeconds % 60;
-                            display.textContent = String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
-                            if (h &lt; 24) {
+                            display.textContent = String(d).padStart(2,'0') + 'd ' + String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
+                            if (d &lt; 1) {
                                 display.classList.add('timer-urgent');
                                 display.classList.remove('timer-warning');
                                 timerEl.classList.add('timer-urgent');
                                 timerEl.classList.remove('timer-warning');
-                            } else if (h &lt; 72) {
+                            } else if (d &lt; 3) {
                                 display.classList.add('timer-warning');
                                 display.classList.remove('timer-urgent');
                                 timerEl.classList.add('timer-warning');
@@ -1181,7 +1182,7 @@
                                         <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
                                         <div class="stat-card-body">
                                             <div class="stat-card-label">Device Locks In</div>
-                                            <div class="stat-card-value" id="timerDisplay">--h --m --s</div>
+                                            <div class="stat-card-value" id="timerDisplay">--d --h --m --s</div>
                                         </div>
                                     </div>
                                 </div>
