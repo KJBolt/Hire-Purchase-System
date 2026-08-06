@@ -944,6 +944,31 @@
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <script>
+                    function handleFormSubmit(btn) {
+                        if (btn.disabled) return false;
+                        btn.disabled = true;
+                        var originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Please wait...';
+                        btn.setAttribute('data-original', originalHTML);
+                        setTimeout(function() {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHTML;
+                            }
+                        }, 15000);
+                        return true;
+                    }
+                    window.addEventListener('pageshow', function() {
+                        document.querySelectorAll('.btn-primary-custom, .btn-secondary-custom').forEach(function(btn) {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                var orig = btn.getAttribute('data-original');
+                                if (orig) btn.innerHTML = orig;
+                            }
+                        });
+                    });
+                </script>
             </t>
 
             <div class="portal-page">
@@ -972,7 +997,7 @@
                         </t>
 
                         <t t-if="not show_otp_form">
-                            <form action="/customer/request-otp" method="post" class="portal-form">
+                            <form action="/customer/request-otp" method="post" class="portal-form" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <div class="input-group-custom">
                                     <i class="fas fa-phone-alt input-icon"></i>
@@ -986,10 +1011,14 @@
                                     <i class="fas fa-shield-alt me-1"></i>We'll send a 6-digit code to your phone
                                 </div>
                             </form>
+                            <div class="portal-divider"><span>or</span></div>
+                            <a href="/customer/login" class="btn-secondary-custom w-100 d-block text-center" style="text-decoration:none;">
+                                <i class="fas fa-lock me-2"></i>Login with Password
+                            </a>
                         </t>
 
                         <t t-if="show_otp_form">
-                            <form action="/customer/verify-otp" method="post" class="portal-form">
+                            <form action="/customer/verify-otp" method="post" class="portal-form" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="phone_no" t-att-value="phone_no"/>
                                 <p class="otp-instruction">
@@ -1005,7 +1034,7 @@
                                     <i class="fas fa-check-circle me-2"></i>Verify &amp; Sign In
                                 </button>
                             </form>
-                            <form action="/customer/request-otp" method="post" class="portal-form mt-2">
+                            <form action="/customer/request-otp" method="post" class="portal-form mt-2" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="phone_no" t-att-value="phone_no"/>
                                 <button type="submit" class="btn-secondary-custom w-100">
@@ -1176,7 +1205,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <t t-if="lock_deadline">
+                            <t t-if="lock_deadline and repayment.state != 'paid'">
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="stat-card stat-card-danger" id="lockTimer" t-att-data-deadline="lock_deadline">
                                         <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
@@ -1420,6 +1449,425 @@
                         <i class="fas fa-arrow-left"></i>
                         Back to Dashboard
                     </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+
+    <!-- ==================== EMAIL PASSWORD LOGIN TEMPLATE ==================== -->
+    <template name="customer_login_template" id="customer_login_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <style>
+                    .password-toggle {
+                        position: absolute;
+                        right: 12px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        background: none;
+                        border: none;
+                        color: #718096;
+                        cursor: pointer;
+                        padding: 4px 8px;
+                        font-size: 1rem;
+                        transition: color 200ms ease;
+                        z-index: 2;
+                    }
+                    .password-toggle:hover {
+                        color: #4a5568;
+                    }
+                    .input-group-custom {
+                        position: relative;
+                    }
+                    .resend-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin: -0.5rem 0 1rem;
+                    }
+                    .countdown-text {
+                        font-size: 0.85rem;
+                        color: #718096;
+                    }
+                    .resend-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        padding: 6px 14px;
+                        border: 1.5px solid #374151;
+                        border-radius: 6px;
+                        background: #fff;
+                        color: #374151;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 200ms ease;
+                    }
+                    .resend-btn:hover:not(.disabled) {
+                        background: #374151;
+                        color: #fff;
+                    }
+                    .resend-btn.disabled {
+                        color: #a0aec0;
+                        border-color: #e2e8f0;
+                        cursor: not-allowed;
+                        background: #f7fafc;
+                    }
+                    .resend-form {
+                        display: none;
+                    }
+                </style>
+                <script>
+                    function togglePassword(inputId, btn) {
+                        var input = document.getElementById(inputId);
+                        var icon = btn.querySelector('i');
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            input.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    }
+                    function handleFormSubmit(btn) {
+                        if (btn.disabled) return false;
+                        btn.disabled = true;
+                        var originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Please wait...';
+                        btn.setAttribute('data-original', originalHTML);
+                        setTimeout(function() {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHTML;
+                            }
+                        }, 15000);
+                        return true;
+                    }
+                    window.addEventListener('pageshow', function() {
+                        document.querySelectorAll('.btn-primary-custom, .btn-secondary-custom').forEach(function(btn) {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                var orig = btn.getAttribute('data-original');
+                                if (orig) btn.innerHTML = orig;
+                            }
+                        });
+                    });
+                </script>
+            </t>
+
+            <div class="portal-page">
+                <div class="portal-bg-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-inner">
+                        <div class="portal-logo">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h1 class="portal-title">Welcome Back</h1>
+                        <p class="portal-subtitle">Sign in with your phone number and password</p>
+
+                        <t t-if="error_message">
+                            <div class="alert-custom alert-error">
+                                <i class="fas fa-exclamation-circle me-2"></i><t t-esc="error_message" />
+                            </div>
+                        </t>
+                        <t t-if="success_message">
+                            <div class="alert-custom alert-success">
+                                <i class="fas fa-check-circle me-2"></i><t t-esc="success_message" />
+                            </div>
+                        </t>
+
+                        <form action="/customer/login-submit" method="post" class="portal-form" autocomplete="off" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="input-group-custom">
+                                <i class="fas fa-phone-alt input-icon"></i>
+                                <input type="tel" name="login_phone_no" class="form-input" placeholder=" " required="required" autocomplete="new-phone" t-att-value="login_phone_no or ''" />
+                                <label class="input-label">Phone Number</label>
+                            </div>
+                            <div class="input-group-custom">
+                                <i class="fas fa-key input-icon"></i>
+                                <input type="password" id="login_password" name="login_password" class="form-input" placeholder=" " required="required" autocomplete="new-password" />
+                                <label class="input-label">Password</label>
+                                <button type="button" class="password-toggle" onclick="togglePassword('login_password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <button type="submit" class="btn-primary-custom w-100">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </button>
+                        </form>
+
+                        <div class="portal-links-row">
+                            <a href="/customer/forgot-password" class="btn-link-custom">
+                                <i class="fas fa-question-circle me-1"></i>Forgot Password?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ==================== FORGOT PASSWORD TEMPLATE ==================== -->
+    <template name="customer_forgot_password_template" id="customer_forgot_password_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <script>
+                    function handleFormSubmit(btn) {
+                        if (btn.disabled) return false;
+                        btn.disabled = true;
+                        var originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Please wait...';
+                        btn.setAttribute('data-original', originalHTML);
+                        setTimeout(function() {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHTML;
+                            }
+                        }, 15000);
+                        return true;
+                    }
+                    window.addEventListener('pageshow', function() {
+                        document.querySelectorAll('.btn-primary-custom, .btn-secondary-custom').forEach(function(btn) {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                var orig = btn.getAttribute('data-original');
+                                if (orig) btn.innerHTML = orig;
+                            }
+                        });
+                    });
+                </script>
+            </t>
+
+            <div class="portal-page">
+                <div class="portal-bg-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-inner">
+                        <div class="portal-logo">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <h1 class="portal-title">Forgot Password</h1>
+                        <p class="portal-subtitle">Enter your phone number to receive a reset code</p>
+
+                        <t t-if="error_message">
+                            <div class="alert-custom alert-error">
+                                <i class="fas fa-exclamation-circle me-2"></i><t t-esc="error_message" />
+                            </div>
+                        </t>
+                        <t t-if="success_message">
+                            <div class="alert-custom alert-success">
+                                <i class="fas fa-check-circle me-2"></i><t t-esc="success_message" />
+                            </div>
+                        </t>
+
+                        <form action="/customer/forgot-password-submit" method="post" class="portal-form" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="input-group-custom">
+                                <i class="fas fa-phone-alt input-icon"></i>
+                                <input type="tel" name="phone_no" class="form-input" placeholder=" " required="required" autocomplete="tel" t-att-value="phone_no or ''" />
+                                <label class="input-label">Phone Number</label>
+                            </div>
+                            <button type="submit" class="btn-primary-custom w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Send Reset Code
+                            </button>
+                        </form>
+
+                        <div class="portal-links-row">
+                            <a href="/customer/login" class="btn-link-custom">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ==================== RESET PASSWORD TEMPLATE ==================== -->
+    <template name="customer_reset_password_template" id="customer_reset_password_template">
+        <t t-call="website.layout">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+                <style>
+                    .password-toggle {
+                        position: absolute;
+                        right: 12px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        background: none;
+                        border: none;
+                        color: #718096;
+                        cursor: pointer;
+                        padding: 4px 8px;
+                        font-size: 1rem;
+                        transition: color 200ms ease;
+                        z-index: 2;
+                    }
+                    .password-toggle:hover {
+                        color: #4a5568;
+                    }
+                </style>
+                <script>
+                    function togglePassword(inputId, btn) {
+                        var input = document.getElementById(inputId);
+                        var icon = btn.querySelector('i');
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            input.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    }
+                    function handleFormSubmit(btn) {
+                        if (btn.disabled) return false;
+                        btn.disabled = true;
+                        var originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Please wait...';
+                        btn.setAttribute('data-original', originalHTML);
+                        setTimeout(function() {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHTML;
+                            }
+                        }, 15000);
+                        return true;
+                    }
+                    window.addEventListener('pageshow', function() {
+                        document.querySelectorAll('.btn-primary-custom, .btn-secondary-custom').forEach(function(btn) {
+                            if (btn.disabled) {
+                                btn.disabled = false;
+                                var orig = btn.getAttribute('data-original');
+                                if (orig) btn.innerHTML = orig;
+                            }
+                        });
+                    });
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var countdown = 60;
+                        var resendBtn = document.getElementById('resendBtn');
+                        var countdownEl = document.getElementById('countdown');
+                        var countdownInterval;
+
+                        function startCountdown() {
+                            countdown = 60;
+                            resendBtn.classList.add('disabled');
+                            resendBtn.style.pointerEvents = 'none';
+                            resendBtn.style.opacity = '0.5';
+                            countdownEl.textContent = 'Resend in ' + countdown + 's';
+
+                            countdownInterval = setInterval(function() {
+                                countdown--;
+                                if (countdown &lt;= 0) {
+                                    clearInterval(countdownInterval);
+                                    resendBtn.classList.remove('disabled');
+                                    resendBtn.style.pointerEvents = 'auto';
+                                    resendBtn.style.opacity = '1';
+                                    countdownEl.textContent = '';
+                                } else {
+                                    countdownEl.textContent = 'Resend in ' + countdown + 's';
+                                }
+                            }, 1000);
+                        }
+
+                        startCountdown();
+                    });
+                </script>
+            </t>
+
+            <div class="portal-page">
+                <div class="portal-bg-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-inner">
+                        <div class="portal-logo">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h1 class="portal-title">Reset Password</h1>
+                        <p class="portal-subtitle">Enter the reset code and your new password</p>
+
+                        <t t-if="error_message">
+                            <div class="alert-custom alert-error">
+                                <i class="fas fa-exclamation-circle me-2"></i><t t-esc="error_message" />
+                            </div>
+                        </t>
+                        <t t-if="success_message">
+                            <div class="alert-custom alert-success">
+                                <i class="fas fa-check-circle me-2"></i><t t-esc="success_message" />
+                            </div>
+                        </t>
+
+                        <form action="/customer/reset-password-submit" method="post" class="portal-form" onsubmit="return handleFormSubmit(this.querySelector('button[type=submit]'))">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="phone_no" t-att-value="phone_no"/>
+                            <div class="input-group-custom">
+                                <i class="fas fa-key input-icon"></i>
+                                <input type="text" name="reset_token" class="form-input" placeholder=" " required="required" autocomplete="one-time-code" />
+                                <label class="input-label">Reset</label>
+                            </div>
+                            <div class="resend-row">
+                                <span id="countdown" class="countdown-text">Resend in 60s</span>
+                                <span id="resendBtn" class="resend-btn disabled" onclick="document.getElementById('resendForm').submit();" style="pointer-events:none;opacity:0.5; color:blue; cursor:pointer;">
+                                     Resend Code
+                                </span>
+                            </div>
+                            <div class="input-group-custom">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="reset_new_password" name="new_password" class="form-input" placeholder=" " required="required" autocomplete="new-password" minlength="6" />
+                                <label class="input-label">New Password</label>
+                                <button type="button" class="password-toggle" onclick="togglePassword('reset_new_password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="input-group-custom">
+                                <i class="fas fa-check-double input-icon"></i>
+                                <input type="password" id="reset_confirm_password" name="confirm_password" class="form-input" placeholder=" " required="required" autocomplete="new-password" minlength="6" />
+                                <label class="input-label">Confirm Password</label>
+                                <button type="button" class="password-toggle" onclick="togglePassword('reset_confirm_password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <button type="submit" class="btn-primary-custom w-100">
+                                <i class="fas fa-check-circle me-2"></i>Reset Password
+                            </button>
+                        </form>
+                        <form id="resendForm" action="/customer/resend-reset-code" method="post" class="resend-form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="phone_no" t-att-value="phone_no"/>
+                        </form>
+
+                        <div class="portal-links-row">
+                            <a href="/customer/login" class="btn-link-custom">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Login
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </t>
