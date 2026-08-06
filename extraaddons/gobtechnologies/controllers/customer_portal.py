@@ -579,10 +579,16 @@ class CustomerPortalController(http.Controller):
         try:
             portal = request.env['customer.portal'].sudo().search([('phone_no', '=', phone_no)], limit=1)
             if not portal:
-                return request.render('gobtechnologies.customer_login_template', self._portal_values(
-                    error_message='No account found for this phone number.',
-                    login_phone_no=phone_no,
-                ))
+                # Check repayment model if no portal record exists
+                repayment = request.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+                if not repayment:
+                    return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                        error_message='No account found for this phone number.',
+                        login_phone_no=phone_no,
+                    ))
+                # Create portal record and link repayment
+                portal = request.env['customer.portal'].sudo().find_or_create(phone_no)
+                portal.link_repayment(repayment)
             # Check if repayment record exists
             if not portal.repayment_id:
                 repayment = request.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
@@ -733,9 +739,9 @@ class CustomerPortalController(http.Controller):
                 error_message='Please enter a new password.',
                 phone_no=phone_no,
             ))
-        if len(new_password) < 6:
+        if len(new_password) < 8:
             return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
-                error_message='Password must be at least 6 characters.',
+                error_message='Password must be at least 8 characters.',
                 phone_no=phone_no,
             ))
         if new_password != confirm_password:

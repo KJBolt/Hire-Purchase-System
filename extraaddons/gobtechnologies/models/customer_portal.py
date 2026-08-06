@@ -2,7 +2,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-import random
+import secrets
 import string
 from datetime import timedelta
 
@@ -28,7 +28,7 @@ class CustomerPortal(models.Model):
     ]
 
     def _generate_otp_code(self):
-        return ''.join(random.choices(string.digits, k=6))
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
 
     def generate_and_send_otp(self):
         self.ensure_one()
@@ -97,7 +97,11 @@ class CustomerPortal(models.Model):
         self.ensure_one()
         if len(new_password) < 8:
             return {'success': False, 'message': 'Password must be at least 8 characters.'}
-        self.write({'password': generate_password_hash(new_password)})
+        self.write({
+            'password': generate_password_hash(new_password),
+            'session_token': False,
+            'otp_verified': False,
+        })
         return {'success': True, 'message': 'Password changed successfully.'}
 
     def find_or_create(self, phone_no):
