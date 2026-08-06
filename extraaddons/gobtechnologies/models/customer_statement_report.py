@@ -300,7 +300,7 @@ class RepaymentPaymentLine(models.Model):
         except Exception as e:
             _logger.error(f"Failed to update lock_deadline: {str(e)}")
 
-        res.testpayment(vals)
+        # res.testpayment(vals)
         return res
         
 
@@ -325,68 +325,68 @@ class RepaymentPaymentLine(models.Model):
         return res
 
 
-    def testpayment(self, vals):
-        # Get current payment date and amount
-        current_payment_date = fields.Date.from_string(vals.get('payment_date'))
-        current_payment_amount = vals.get('payment_amount')
+    # def testpayment(self, vals):
+    #     # Get current payment date and amount
+    #     current_payment_date = fields.Date.from_string(vals.get('payment_date'))
+    #     current_payment_amount = vals.get('payment_amount')
 
-        if current_payment_date and current_payment_amount:
-            previous_payment_date = current_payment_date - timedelta(days=1)
+    #     if current_payment_date and current_payment_amount:
+    #         previous_payment_date = current_payment_date - timedelta(days=1)
         
-            _logger.info(f"Previous payment date: {previous_payment_date}")
-            _logger.info(f"Current payment amount: {current_payment_amount}")
-            _logger.info(f"Current payment date: {current_payment_date}")
+    #         _logger.info(f"Previous payment date: {previous_payment_date}")
+    #         _logger.info(f"Current payment amount: {current_payment_amount}")
+    #         _logger.info(f"Current payment date: {current_payment_date}")
 
-            # Get all payments for the previous date
-            previous_date_payments = self.repayment_id.payment_lines.filtered(
-                lambda p: p.payment_date == previous_payment_date
-            )
+    #         # Get all payments for the previous date
+    #         previous_date_payments = self.repayment_id.payment_lines.filtered(
+    #             lambda p: p.payment_date == previous_payment_date
+    #         )
             
-            previous_payment_total = sum(previous_date_payments.mapped('payment_amount'))
+    #         previous_payment_total = sum(previous_date_payments.mapped('payment_amount'))
 
-            # Check if previous payment was insufficient
-            if previous_date_payments and previous_payment_total < self.repayment_id.expected_to_pay:
-                shortage = self.repayment_id.expected_to_pay - previous_payment_total
+    #         # Check if previous payment was insufficient
+    #         if previous_date_payments and previous_payment_total < self.repayment_id.expected_to_pay:
+    #             shortage = self.repayment_id.expected_to_pay - previous_payment_total
                 
-                # If current payment can cover the shortage
-                if current_payment_amount >= shortage:
-                    # Amount to be used from current payment
-                    amount_to_previous = shortage
-                    # Remaining amount for current payment
-                    remaining_current = current_payment_amount - shortage
+    #             # If current payment can cover the shortage
+    #             if current_payment_amount >= shortage:
+    #                 # Amount to be used from current payment
+    #                 amount_to_previous = shortage
+    #                 # Remaining amount for current payment
+    #                 remaining_current = current_payment_amount - shortage
                     
-                    if previous_date_payments:
-                        # Update existing previous payment
-                        previous_date_payments[0].write({
-                            'payment_amount': previous_payment_total + amount_to_previous
-                        })
+    #                 if previous_date_payments:
+    #                     # Update existing previous payment
+    #                     previous_date_payments[0].write({
+    #                         'payment_amount': previous_payment_total + amount_to_previous
+    #                     })
                         
-                        # Send SMS to customer
-                        phone_no = self.repayment_id.phone_no
-                        customer_name = self.repayment_id.customer_name.name
-                        sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
+    #                     # Send SMS to customer
+    #                     phone_no = self.repayment_id.phone_no
+    #                     customer_name = self.repayment_id.customer_name.name
+    #                     sms_message = f"Dear {customer_name}, a portion of GHS{current_payment_amount}, has been used to cover the previous payment shortage of GHS{previous_payment_total}. Your outstanding balance is GHS{remaining_current}. "
 
-                        self.repayment_id._send_bulkclix_sms(phone_no, sms_message, customer_name)
+    #                     self.repayment_id._send_bulkclix_sms(phone_no, sms_message, customer_name)
 
-                    else:
-                        # Create new payment record for previous date
-                        self.env['repayment.payment.line'].with_context(skip_oppo_edit=True).create({
-                            'payment_date': previous_payment_date,
-                            'payment_amount': amount_to_previous,
-                            'repayment_id': self.repayment_id.id,
-                            'payment_mode': 'momo'  
-                        })
+    #                 else:
+    #                     # Create new payment record for previous date
+    #                     self.env['repayment.payment.line'].with_context(skip_oppo_edit=True).create({
+    #                         'payment_date': previous_payment_date,
+    #                         'payment_amount': amount_to_previous,
+    #                         'repayment_id': self.repayment_id.id,
+    #                         'payment_mode': 'momo'  
+    #                     })
 
-                    # Update the current payment with remaining amount
-                    self.write({
-                        'payment_amount': remaining_current
-                    })
+    #                 # Update the current payment with remaining amount
+    #                 self.write({
+    #                     'payment_amount': remaining_current
+    #                 })
 
-                    _logger.info(f"Previous payment was insufficient. Added {amount_to_previous} from current payment")
-                    _logger.info(f"Previous payment updated to: {previous_payment_total + amount_to_previous}")
-                    _logger.info(f"Current payment updated to: {remaining_current}")
-                else:
-                    _logger.info("Current payment insufficient to cover previous payment shortage")
+    #                 _logger.info(f"Previous payment was insufficient. Added {amount_to_previous} from current payment")
+    #                 _logger.info(f"Previous payment updated to: {previous_payment_total + amount_to_previous}")
+    #                 _logger.info(f"Current payment updated to: {remaining_current}")
+    #             else:
+    #                 _logger.info("Current payment insufficient to cover previous payment shortage")
 
 
 
