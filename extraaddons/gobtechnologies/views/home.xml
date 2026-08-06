@@ -24,7 +24,7 @@
                             <p class="hp-hero-desc">Get the latest smartphones today and spread your payments over time.</p>
                             <p class="hp-hero-desc-secondary">Easy, fast, and convenient for everyone.</p>
                             <div class="hp-hero-buttons">
-                                <a href="/customer/portal" class="hp-btn-primary">
+                                <a href="/customer/login" class="hp-btn-primary">
                                     <i class="fas fa-sign-in-alt"></i>
                                     Customer Portal
                                 </a>

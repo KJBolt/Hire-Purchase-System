@@ -549,7 +549,7 @@ class CustomerPortalController(http.Controller):
                 })
         request.session.pop('customer_portal_token', None)
         request.session.pop('customer_portal_phone', None)
-        return request.redirect('/customer/portal')
+        return request.redirect('/customer/login')
 
     # ── Password-based login ──────────────────────────────────────────
 
