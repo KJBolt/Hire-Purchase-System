@@ -1,5 +1,6 @@
 from odoo import http, fields
 from odoo.http import request
+from werkzeug.security import generate_password_hash
 import json
 import logging
 import secrets
@@ -106,6 +107,7 @@ class CustomerPortalController(http.Controller):
                     error_message='No hire purchase account found for this phone number.',
                     phone_no=phone_no,
                 ))
+            portal.link_repayment(repayment)
 
             if not portal.generate_and_send_otp():
                 return request.render('gobtechnologies.customer_portal_template', self._portal_values(
@@ -548,3 +550,243 @@ class CustomerPortalController(http.Controller):
         request.session.pop('customer_portal_token', None)
         request.session.pop('customer_portal_phone', None)
         return request.redirect('/customer/portal')
+
+    # ── Password-based login ──────────────────────────────────────────
+
+    @http.route('/customer/login', type='http', auth='public', website=True, sitemap=False)
+    def login_page(self, **kw):
+        portal = self._get_portal_for_session()
+        if portal:
+            return request.redirect('/customer/dashboard')
+        return request.render('gobtechnologies.customer_login_template', self._portal_values())
+
+
+    @http.route('/customer/login-submit', type='http', auth='public', methods=['POST'], website=True, csrf=True)
+    def login_submit(self, **post):
+        phone_no = (post.get('login_phone_no') or '').strip()
+        password = (post.get('login_password') or '').strip()
+
+        if not phone_no or len(phone_no) < 10:
+            return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                error_message='Please enter a valid phone number.',
+                login_phone_no=phone_no,
+            ))
+        if not password:
+            return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                error_message='Please enter your password.',
+                login_phone_no=phone_no,
+            ))
+        try:
+            portal = request.env['customer.portal'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+            if not portal:
+                # Check repayment model if no portal record exists
+                repayment = request.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+                if not repayment:
+                    return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                        error_message='No account found for this phone number.',
+                        login_phone_no=phone_no,
+                    ))
+                # Create portal record and link repayment
+                portal = request.env['customer.portal'].sudo().find_or_create(phone_no)
+                portal.link_repayment(repayment)
+            # Check if repayment record exists
+            if not portal.repayment_id:
+                repayment = request.env['repayment'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+                if not repayment:
+                    return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                        error_message='No hire purchase account found for this phone number.',
+                        login_phone_no=phone_no,
+                    ))
+                portal.link_repayment(repayment)
+            # Auto-set default password for existing records that have none
+            if not portal.is_password_set:
+                portal.write({'password': generate_password_hash(phone_no)})
+            result = portal.verify_password(password)
+            if not result['success']:
+                return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                    error_message=result['message'],
+                    login_phone_no=phone_no,
+                ))
+            token = secrets.token_urlsafe(32)
+            portal.write({
+                'session_token': token,
+                'otp_verified': True,
+                'last_activity': fields.Datetime.now(),
+            })
+            request.session['customer_portal_token'] = token
+            request.session['customer_portal_phone'] = phone_no
+            return request.redirect('/customer/dashboard')
+        except Exception as e:
+            _logger.error("Login error: %s", str(e), exc_info=True)
+            return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                error_message='An error occurred. Please try again.',
+                login_phone_no=phone_no,
+            ))
+
+    # ── Forgot / Reset Password ────────────────────────────────────────
+
+    def _forgot_password_values(self, **extra):
+        values = {
+            'phone_no': '',
+            'error_message': '',
+            'success_message': '',
+        }
+        values.update(extra)
+        return values
+
+    @http.route('/customer/forgot-password', type='http', auth='public', website=True, sitemap=False)
+    def forgot_password_page(self, **kw):
+        return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values())
+
+    @http.route('/customer/forgot-password-submit', type='http', auth='public', methods=['POST'], website=True, csrf=True)
+    def forgot_password_submit(self, **post):
+        phone_no = (post.get('phone_no') or '').strip()
+
+        if not phone_no or len(phone_no) < 10:
+            return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                error_message='Please enter a valid phone number.',
+                phone_no=phone_no,
+            ))
+
+        try:
+            portal = request.env['customer.portal'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+            if not portal:
+                return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                    error_message='No account found for this phone number.',
+                    phone_no=phone_no,
+                ))
+
+            if not portal.generate_and_send_otp():
+                return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                    error_message='Failed to send reset code. Please try again.',
+                    phone_no=phone_no,
+                ))
+
+            # Store phone in session for the reset page
+            request.session['forgot_password_phone'] = phone_no
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                phone_no=phone_no,
+                success_message='Reset code sent successfully. Please check your phone.',
+            ))
+
+        except Exception as e:
+            _logger.error("Forgot password error: %s", str(e), exc_info=True)
+            return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                error_message='An error occurred. Please try again.',
+                phone_no=phone_no,
+            ))
+
+    @http.route('/customer/resend-reset-code', type='http', auth='public', methods=['POST'], website=True, csrf=True)
+    def resend_reset_code(self, **post):
+        phone_no = (post.get('phone_no') or '').strip()
+
+        if not phone_no:
+            return request.redirect('/customer/forgot-password')
+
+        try:
+            portal = request.env['customer.portal'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+            if not portal:
+                return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                    error_message='No account found for this phone number.',
+                    phone_no=phone_no,
+                ))
+
+            if not portal.generate_and_send_otp():
+                return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                    error_message='Failed to send reset code. Please try again.',
+                    phone_no=phone_no,
+                ))
+
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                phone_no=phone_no,
+                success_message='Reset code sent successfully. Please check your phone.',
+            ))
+
+        except Exception as e:
+            _logger.error("Resend reset code error: %s", str(e), exc_info=True)
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='An error occurred. Please try again.',
+                phone_no=phone_no,
+            ))
+
+    @http.route('/customer/reset-password', type='http', auth='public', website=True, sitemap=False)
+    def reset_password_page(self, **kw):
+        phone_no = request.session.get('forgot_password_phone')
+        if not phone_no:
+            return request.redirect('/customer/forgot-password')
+        return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+            phone_no=phone_no,
+        ))
+
+    @http.route('/customer/reset-password-submit', type='http', auth='public', methods=['POST'], website=True, csrf=True)
+    def reset_password_submit(self, **post):
+        phone_no = (post.get('phone_no') or '').strip()
+        reset_token = (post.get('reset_token') or '').strip()
+        new_password = (post.get('new_password') or '').strip()
+        confirm_password = (post.get('confirm_password') or '').strip()
+
+        if not phone_no:
+            return request.redirect('/customer/forgot-password')
+
+        # Validate inputs
+        if not reset_token:
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='Please enter the reset code.',
+                phone_no=phone_no,
+            ))
+        if not new_password:
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='Please enter a new password.',
+                phone_no=phone_no,
+            ))
+        if len(new_password) < 8:
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='Password must be at least 8 characters.',
+                phone_no=phone_no,
+            ))
+        if new_password != confirm_password:
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='Passwords do not match.',
+                phone_no=phone_no,
+            ))
+
+        try:
+            portal = request.env['customer.portal'].sudo().search([('phone_no', '=', phone_no)], limit=1)
+            if not portal:
+                return request.render('gobtechnologies.customer_forgot_password_template', self._forgot_password_values(
+                    error_message='No account found for this phone number.',
+                    phone_no=phone_no,
+                ))
+
+            # Verify OTP
+            result = portal.verify_otp(reset_token)
+            if not result['success']:
+                return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                    error_message=result['message'],
+                    phone_no=phone_no,
+                ))
+
+            # Change password
+            result = portal.change_password(new_password)
+            if not result['success']:
+                return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                    error_message=result['message'],
+                    phone_no=phone_no,
+                ))
+
+            # Clear session data
+            request.session.pop('forgot_password_phone', None)
+
+            # Redirect to login with success message
+            return request.render('gobtechnologies.customer_login_template', self._portal_values(
+                success_message='Password reset successfully. Please sign in with your new password.',
+                login_phone_no=phone_no,
+            ))
+
+        except Exception as e:
+            _logger.error("Reset password error: %s", str(e), exc_info=True)
+            return request.render('gobtechnologies.customer_reset_password_template', self._forgot_password_values(
+                error_message='An error occurred. Please try again.',
+                phone_no=phone_no,
+            ))
+

@@ -99,11 +99,13 @@
     padding: 2.75rem 2.25rem;
 }
 
+
 .portal-logo {
     width: 68px;
     height: 68px;
+    border-radius: 10px;
+    overflow: hidden;
     margin: 0 auto 1.25rem;
-    border-radius: 18px;
     background: linear-gradient(135deg, var(--portal-primary), #818cf8);
     display: flex;
     align-items: center;
@@ -119,10 +121,7 @@
     font-weight: 800;
     margin-bottom: 0.35rem;
     letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--portal-text), var(--portal-primary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: black;
 }
 
 .portal-subtitle {
@@ -157,7 +156,7 @@
     border: 1.5px solid var(--portal-border);
     border-radius: var(--portal-radius-sm);
     font-size: 1rem;
-    background: var(--portal-surface);
+    // background: var(--portal-surface);
     transition: border-color var(--portal-transition), box-shadow var(--portal-transition);
     color: var(--portal-text);
 }
@@ -253,10 +252,10 @@
 
 .btn-secondary-custom {
     width: 100%;
-    border: 1.5px solid var(--portal-border);
     border-radius: var(--portal-radius-sm);
     padding: 0.9rem 1.25rem;
-    background: var(--portal-surface);
+    border-color: var(--portal-primary-light);
+    background: var(--portal-primary-subtle);
     color: var(--portal-text-secondary);
     font-weight: 600;
     font-size: 0.95rem;
@@ -266,8 +265,8 @@
 
 .btn-secondary-custom:hover {
     border-color: var(--portal-primary-light);
-    background: var(--portal-primary-subtle);
-    color: var(--portal-primary);
+    background: #5f60ee;
+    color: white;
 }
 
 .btn-link-custom {
@@ -308,6 +307,41 @@
     background: var(--portal-success-light);
     color: #065f46;
     border: 1px solid #a7f3d0;
+}
+
+/* ========== DIVIDER & LINKS ROW ========== */
+
+.portal-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.25rem 0;
+    color: var(--portal-text-muted);
+    font-size: 0.82rem;
+}
+
+.portal-divider::before,
+.portal-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--portal-border);
+}
+
+.portal-divider span {
+    white-space: nowrap;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.portal-links-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--portal-border);
 }
 
 /* ========== DASHBOARD ========== */
@@ -977,4 +1011,187 @@
         height: 42px;
         font-size: 1rem;
     }
+}
+
+/* ========== PASSWORD TOGGLE ========== */
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 1rem;
+    transition: color 200ms ease;
+    z-index: 2;
+}
+
+.password-toggle:hover {
+    color: #4a5568;
+}
+
+/* ========== RESEND ROW (Reset Password) ========== */
+
+.resend-row {
+    display: flex;
+    justify-content: start;
+    gap: 8px;
+    align-items: center;
+    margin-top: -0.5rem !important;
+    margin-bottom: 0.75rem !important;
+    font-size: 12px;
+}
+
+.countdown-text {
+    font-size: 10px;
+    color: #718096;
+}
+
+.resend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #0077b6;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.resend-btn:hover:not(.disabled) {
+    color: #005f8a;
+}
+
+.resend-btn.disabled {
+    color: #a0aec0;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    background: #f7fafc;
+}
+
+.resend-form {
+    display: none;
+}
+
+/* ========== PAYMENT SUCCESS ========== */
+
+.payment-success-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f7f3 0%, #fafcf8 100%);
+    padding: 2rem;
+}
+
+.payment-success-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+}
+
+.success-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #2d5016, #4a8c2a);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.success-icon i {
+    font-size: 3rem;
+    color: white;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.success-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a3a1a;
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.success-details {
+    background: #f5f7f3;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.success-detail-row {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.success-detail-row:last-child {
+    border-bottom: none;
+}
+
+.success-detail-label {
+    color: #718096;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.success-detail-value {
+    color: #1a1a2e;
+    font-weight: 600;
+    font-size: 0.95rem;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+
+.back-to-dashboard-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #2d5016, #4a8c2a);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
+}
+
+.back-to-dashboard-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(45, 80, 22, 0.4);
+    color: white;
 }
