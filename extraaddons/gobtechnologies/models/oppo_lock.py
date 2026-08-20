@@ -245,16 +245,9 @@ class OppoLock(models.Model):
                 # Check if this is the first payment (only one payment line exists)
                 is_first_payment = len(record.repayment_id.payment_lines) == 1
 
-                # If first payment is deposit, set days based on repayment frequency
+                # If first payment is deposit, always unlock for 1 day
                 if is_first_payment:
-                    if repayment_frequency == '1':  # Daily
-                        days = 1
-                    elif repayment_frequency == '7':  # Weekly
-                        days = 7
-                    elif repayment_frequency == '30':  # Monthly
-                        days = 30
-                    else:
-                        days = 1  # Default to 1 day for other cases
+                    days = 1
                 else:
                     # Calculate days from payment for subsequent payments
                     days = record._calculate_days_from_payment(payment_amount, expected_to_pay, repayment_frequency)
