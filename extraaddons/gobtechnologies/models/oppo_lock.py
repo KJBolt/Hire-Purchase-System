@@ -215,6 +215,67 @@ class OppoLock(models.Model):
                 raise UserError(_('Failed to get device status from Oppo API: %s') % str(e))
 
 
+    def action_complete_device(self):
+        """Complete device lock using Oppo complete API"""
+        for record in self:
+            oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+            carrier_code = oppo_credentials.get('carrier_code')
+
+            if not carrier_code:
+                raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
+
+            # Build request body (deviceUid only, matching the complete API)
+            if not record.device_uid:
+                raise UserError(_('Device UID is required to complete the device.'))
+
+            request_body = {
+                "deviceUid": record.device_uid
+            }
+
+            # Generate x-sign
+            x_sign = record._generate_x_sign(request_body)
+            record.x_sign = x_sign
+
+            # Call Oppo API
+            headers = {
+                'Content-Type': 'application/json',
+                'x-carrier-code': carrier_code,
+                'x-sign': x_sign,
+            }
+
+            try:
+                response = requests.post(
+                    f"{OPPO_API_URL}/complete",
+                    headers=headers,
+                    json=request_body
+                )
+                response.raise_for_status()
+
+                response_data = response.json()
+                _logger.info(f"Oppo complete API response: {response_data}")
+
+                record.api_response = json.dumps(response_data, indent=2)
+
+                if response_data.get('code') == 0:
+                    record.write({'status': '3'})  # Completed
+                    return {
+                        'success': True,
+                        'result': response_data.get('result', ''),
+                        'info': response_data.get('info', ''),
+                    }
+                else:
+                    record.write({'status': '-1'})
+                    return {
+                        'success': False,
+                        'error': response_data.get('errorInfo', response_data.get('message', 'Unknown error')),
+                    }
+
+            except requests.exceptions.RequestException as e:
+                _logger.error(f"Error calling Oppo complete API: {e}")
+                record.write({'status': '-1'})
+                raise UserError(_('Failed to complete device from Oppo API: %s') % str(e))
+
+
     def _calculate_days_from_payment(self, payment_amount, expected_to_pay, repayment_frequency):
         """Calculate number of days from payment amount based on repayment frequency"""
         if expected_to_pay == 0:

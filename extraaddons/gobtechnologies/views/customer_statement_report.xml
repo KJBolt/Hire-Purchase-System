@@ -81,7 +81,7 @@
                         string="Edit Records" 
                         class="btn-secondary" 
                         type="object"
-                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care"
                         invisible="not has_deposit_payment or is_edit_mode"
                     />
                     <button 
@@ -89,7 +89,7 @@
                         string="Lock Records" 
                         class="btn-secondary" 
                         type="object"
-                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care"
                         invisible="not has_deposit_payment or not is_edit_mode"
                     />
                     <field name="state" widget="statusbar" statusbar_visible="draft,progress,paid"/>
@@ -273,7 +273,7 @@
                         </page>
 
                         <!-- Payment Tab -->
-                        <page string="Payments" name="Repayment History" groups="gobtechnologies.group_supervisor">
+                        <page string="Payments" name="Repayment History" groups="gobtechnologies.group_general_manager,gobtechnologies.group_internal_auditor">
                             <field name="payment_lines" readonly="state in ['paid']">
                                 <tree editable="bottom">
                                     <field name="repayment_id" invisible="1" force_save="1" column_invisible="True"/>
@@ -303,7 +303,7 @@
                         </page>
 
                         <!-- Payment Compliance Overview Tab -->
-                        <page string="Payment Compliance Overview" name="payment_compliance" groups="gobtechnologies.group_supervisor">
+                        <page string="Payment Compliance Overview" name="payment_compliance" groups="gobtechnologies.group_general_manager,gobtechnologies.group_internal_auditor">
                             <field name="payment_lines" readonly="1" domain="[('is_payment_insufficient', '=', True)]">
                                 <tree default_order="create_date desc">
                                     <field name="payment_date"/>

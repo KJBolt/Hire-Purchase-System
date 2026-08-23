@@ -813,25 +813,26 @@ class Repayment(models.Model):
             )
 
     def _can_edit_repayment(self):
-        """Check if current user can edit repayment (General Manager, Sales Administrator, or Supervisor)."""
+        """Check if current user can edit repayment (General Manager, Sales Administrator, Supervisor, or Customer Care)."""
         self.ensure_one()
         is_gm = self.user_has_groups('gobtechnologies.group_general_manager')
         is_sales_admin = self.user_has_groups('gobtechnologies.group_sales_administrator')
         is_supervisor = self.user_has_groups('gobtechnologies.group_supervisor')
-        return is_gm or is_sales_admin or is_supervisor
+        is_customer_care = self.user_has_groups('gobtechnologies.group_customer_care')
+        return is_gm or is_sales_admin or is_supervisor or is_customer_care
 
     def action_enable_editing(self):
         """Enable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
         for record in self:
             if not record._can_edit_repayment():
-                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, and Customer Care can edit repayments after deposit payment.'))
             record.is_edit_mode = True
 
     def action_disable_editing(self):
         """Disable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
         for record in self:
             if not record._can_edit_repayment():
-                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, and Supervisor can edit repayments after deposit payment.'))
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, and Customer Care can edit repayments after deposit payment.'))
             record.is_edit_mode = False
 
     # Outstanding loan status 
@@ -1260,6 +1261,18 @@ class Repayment(models.Model):
 
     # update state when record is updated
     def write(self, vals):
+        # Check for duplicate phone number on update
+        if 'phone_no' in vals:
+            phone_no = vals.get('phone_no')
+            if phone_no:
+                for record in self:
+                    existing = self.env['repayment'].search([
+                        ('phone_no', '=', phone_no),
+                        ('id', '!=', record.id),
+                    ], limit=1)
+                    if existing:
+                        raise ValidationError(_('Phone number %s is already linked to another record in the database.') % phone_no)
+
         res = super(Repayment, self).write(vals)
         if 'state' not in vals:  # Only check payment status if state is not being explicitly changed
             if self.total_paid >= self.selling_price:
