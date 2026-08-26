@@ -52,12 +52,12 @@
                     </div>
                 </div>
                 <div class="olod-stat-card">
-                    <div class="olod-stat-icon olod-icon-warning">
-                        <i class="fa fa-hourglass-half fa-lg"/>
+                    <div class="olod-stat-icon olod-icon-success">
+                        <i class="fa fa-check-circle fa-lg"/>
                     </div>
                     <div class="olod-stat-body">
-                        <span class="olod-stat-label">Pending</span>
-                        <span class="olod-stat-value olod-text-warning" t-esc="state.pendingCount"/>
+                        <span class="olod-stat-label">Completed</span>
+                        <span class="olod-stat-value olod-text-success" t-esc="state.completedCount"/>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         <input
                             type="text"
                             class="olod-search-input"
-                            placeholder="Search by name, UID…"
+                            placeholder="Search by name, UID, phone…"
                             t-on-input="onSearchInput"
                         />
                     </div>
@@ -89,6 +89,7 @@
                             <tr>
                                 <th class="olod-th">Device</th>
                                 <th class="olod-th">Customer</th>
+                                <th class="olod-th">Phone Number</th>
                                 <th class="olod-th">Device UID</th>
                                 <th class="olod-th">Status</th>
                                 <th class="olod-th">Last Action</th>
@@ -100,7 +101,7 @@
 
                                 <!-- Confirm Delete Row -->
                                 <tr t-if="state.confirmDeleteId === device.id" class="olod-confirm-row">
-                                    <td colspan="6" class="olod-confirm-cell">
+                                    <td colspan="7" class="olod-confirm-cell">
                                         <div class="olod-confirm-inner">
                                             <i class="fa fa-exclamation-triangle olod-warn-icon"/>
                                             <span>Delete <strong t-esc="device.device_name"/>? This action cannot be undone.</span>
@@ -129,6 +130,9 @@
                                     </td>
                                     <td class="olod-td">
                                         <span class="olod-ref-badge" t-esc="device.repayment_id[1]"/>
+                                    </td>
+                                    <td class="olod-td">
+                                        <span class="olod-ref-badge" t-esc="device.phone_no || '—'"/>
                                     </td>
                                     <td class="olod-td">
                                         <code class="olod-uid" t-esc="device.device_uid"/>
@@ -161,9 +165,9 @@
                                                 title="Edit Device">
                                                 <i class="fa fa-pencil"/> Edit
                                             </button>
-                                            <!-- Complete Button: hidden if already Completed -->
+                                            <!-- Complete Button: hidden if already Completed or repayment not paid -->
                                             <button
-                                                t-if="device.status !== 'Completed'"
+                                                t-if="device.status !== 'Completed' and device.repayment_state === 'paid'"
                                                 class="olod-btn olod-btn-success olod-btn-sm"
                                                 t-att-disabled="state.completingIds.includes(device.id)"
                                                 t-on-click="() => this.completeDevice(device.id)"
@@ -180,7 +184,7 @@
 
                             <!-- Empty State -->
                             <tr t-if="state.filteredDevices.length === 0">
-                                <td colspan="6" class="olod-empty">
+                                <td colspan="7" class="olod-empty">
                                     <i class="fa fa-search olod-empty-icon"/>
                                     <p class="olod-empty-text">No devices match your search.</p>
                                 </td>

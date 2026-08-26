@@ -19,7 +19,7 @@ export class OppoLock extends Component{
             filteredDevices: [],
             lockedCount: 0,
             unlockedCount: 0,
-            pendingCount: 0,
+            completedCount: 0,
             errorCount: 0,
             searchQuery: "",
             confirmDeleteId: null,
@@ -82,7 +82,7 @@ export class OppoLock extends Component{
 
     async fetchDevices() {
         const devices = await this.orm.searchRead("oppo.lock", [], [
-            "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response"
+            "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response", "repayment_state", "phone_no"
         ]);
         this.state.devices = devices;
         this.state.currentPage = 1;
@@ -188,11 +188,9 @@ export class OppoLock extends Component{
     updateCounts() {
         this.state.lockedCount = this.state.devices.filter(d => d.status === 'Locked').length;
         this.state.unlockedCount = this.state.devices.filter(d =>
-            ['Normal', 'Completed', 'Released PhoneLOCK', 'Released SIMLOCK', 'Deleted', 'CK Unlock'].includes(d.status)
+            ['Normal', 'Released PhoneLOCK', 'Released SIMLOCK', 'Deleted', 'CK Unlock'].includes(d.status)
         ).length;
-        this.state.pendingCount = this.state.devices.filter(d =>
-            ['Locking', 'Completing', 'Unlocking', 'Activating', 'Releasing PhoneLOCK', 'Releasing SIMLOCK', 'Deleting'].includes(d.status)
-        ).length;
+        this.state.completedCount = this.state.devices.filter(d => d.status === 'Completed').length;
         this.state.errorCount = this.state.devices.filter(d => d.status === 'Error').length;
     }
 
@@ -205,7 +203,8 @@ export class OppoLock extends Component{
                 (d.device_name && d.device_name.toLowerCase().includes(query)) ||
                 (d.customer_name && d.customer_name.toLowerCase().includes(query)) ||
                 (d.device_uid && d.device_uid.toLowerCase().includes(query)) ||
-                (d.repayment_id && d.repayment_id[1].toLowerCase().includes(query))
+                (d.repayment_id && d.repayment_id[1].toLowerCase().includes(query)) ||
+                (d.phone_no && d.phone_no.toLowerCase().includes(query))
             );
         }
         this.state.currentPage = 1;
@@ -304,7 +303,8 @@ export class OppoLock extends Component{
             }
         } catch (error) {
             console.error(`Failed to complete device ${deviceId}:`, error);
-            this.notification.add(`Failed to complete device: ${error.message}`, { type: 'danger' });
+            const msg = error.data?.message || error.message || 'Unknown error';
+            this.notification.add(`Complete failed: ${msg}`, { type: 'danger' });
         } finally {
             this.state.completingIds = this.state.completingIds.filter(id => id !== deviceId);
         }

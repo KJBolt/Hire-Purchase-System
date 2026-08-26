@@ -72,6 +72,7 @@ class CustomerPortalController(http.Controller):
             'phone_no': portal.phone_no,
             'repayment': repayment,
             'selling_price': f"{repayment.selling_price:,.2f}" if repayment else '0.00',
+            'deposit': f"{repayment.deposit:,.2f}" if repayment else '0.00',
             'total_paid': f"{repayment.total_paid:,.2f}" if repayment else '0.00',
             'outstanding_balance': f"{repayment.outstanding_loan:,.2f}" if repayment else '0.00',
             'payment_lines': payment_lines_data,
@@ -182,7 +183,7 @@ class CustomerPortalController(http.Controller):
     def dashboard(self, **kw):
         portal = self._get_portal_for_session()
         if not portal:
-            return request.redirect('/customer/portal')
+            return request.redirect('/customer/login')
 
         return request.render(
             'gobtechnologies.customer_dashboard_template',
@@ -193,7 +194,7 @@ class CustomerPortalController(http.Controller):
     def initiate_payment(self, **post):
         portal = self._get_portal_for_session()
         if not portal:
-            return request.redirect('/customer/portal')
+            return request.redirect('/customer/login')
 
         amount_raw = post.get('amount', 0)
         try:
@@ -423,7 +424,7 @@ class CustomerPortalController(http.Controller):
     def download_receipt(self, payment_line_id):
         portal = self._get_portal_for_session()
         if not portal:
-            return request.redirect('/customer/portal')
+            return request.redirect('/customer/login')
 
         payment_line = request.env['repayment.payment.line'].sudo().browse(payment_line_id)
         if not payment_line.exists() or payment_line.repayment_id != portal.repayment_id:

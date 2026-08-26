@@ -20,6 +20,8 @@ class OppoLock(models.Model):
     device_name = fields.Char('Device Name/IMEI', required=False)
     customer_name= fields.Char(string="Customer")
     repayment_id = fields.Many2one('repayment', string='Customer', required=True, ondelete='cascade')
+    repayment_state = fields.Selection(related='repayment_id.state', string='Repayment State', store=True)
+    phone_no = fields.Char(related='repayment_id.phone_no', string='Phone Number', store=True)
     imei_list = fields.Text('IMEI List', help='JSON array of IMEIs',required=True)
     device_uid = fields.Char('Device UID', required=False, help='Primary IMEI')
     expired_time = fields.Char('Expired Time (ms)', help='Expiration time in milliseconds')
@@ -218,6 +220,10 @@ class OppoLock(models.Model):
     def action_complete_device(self):
         """Complete device lock using Oppo complete API"""
         for record in self:
+            # Check if the linked repayment record is fully paid
+            if not record.repayment_id or record.repayment_id.state != 'paid':
+                raise UserError(_('This device cannot be completed because the linked repayment record is not fully paid. Please ensure the customer has completed all payments before completing the device.'))
+
             oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
             carrier_code = oppo_credentials.get('carrier_code')
 

@@ -81,7 +81,7 @@
                         string="Edit Records" 
                         class="btn-secondary" 
                         type="object"
-                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care,gobtechnologies.group_internal_auditor"
                         invisible="not has_deposit_payment or is_edit_mode"
                     />
                     <button 
@@ -89,7 +89,7 @@
                         string="Lock Records" 
                         class="btn-secondary" 
                         type="object"
-                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care"
+                        groups="gobtechnologies.group_general_manager,gobtechnologies.group_sales_administrator,gobtechnologies.group_supervisor,gobtechnologies.group_customer_care,gobtechnologies.group_internal_auditor"
                         invisible="not has_deposit_payment or not is_edit_mode"
                     />
                     <field name="state" widget="statusbar" statusbar_visible="draft,progress,paid"/>

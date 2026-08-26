@@ -60,5 +60,17 @@
             <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
+
+        <!-- Record Rule: Internal Auditors can see all repayment records -->
+        <record id="repayment_rule_auditor_all" model="ir.rule">
+            <field name="name">Repayment: Internal Auditor All Records</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_internal_auditor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
     </data>
 </odoo>

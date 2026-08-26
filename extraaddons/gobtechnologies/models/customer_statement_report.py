@@ -813,26 +813,27 @@ class Repayment(models.Model):
             )
 
     def _can_edit_repayment(self):
-        """Check if current user can edit repayment (General Manager, Sales Administrator, Supervisor, or Customer Care)."""
+        """Check if current user can edit repayment (General Manager, Sales Administrator, Supervisor, Customer Care, or Internal Auditor)."""
         self.ensure_one()
         is_gm = self.user_has_groups('gobtechnologies.group_general_manager')
         is_sales_admin = self.user_has_groups('gobtechnologies.group_sales_administrator')
         is_supervisor = self.user_has_groups('gobtechnologies.group_supervisor')
         is_customer_care = self.user_has_groups('gobtechnologies.group_customer_care')
-        return is_gm or is_sales_admin or is_supervisor or is_customer_care
+        is_internal_auditor = self.user_has_groups('gobtechnologies.group_internal_auditor')
+        return is_gm or is_sales_admin or is_supervisor or is_customer_care or is_internal_auditor
 
     def action_enable_editing(self):
-        """Enable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        """Enable edit mode for authorized users (GM, Sales Admin, Supervisor, Customer Care, or Internal Auditor)."""
         for record in self:
             if not record._can_edit_repayment():
-                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, and Customer Care can edit repayments after deposit payment.'))
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, Customer Care, and Internal Auditor can edit repayments after deposit payment.'))
             record.is_edit_mode = True
 
     def action_disable_editing(self):
-        """Disable edit mode for authorized users (GM, Sales Admin, or Supervisor)."""
+        """Disable edit mode for authorized users (GM, Sales Admin, Supervisor, Customer Care, or Internal Auditor)."""
         for record in self:
             if not record._can_edit_repayment():
-                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, and Customer Care can edit repayments after deposit payment.'))
+                raise UserError(_('You do not have permission to edit this repayment. Only General Manager, Sales Administrator, Supervisor, Customer Care, and Internal Auditor can edit repayments after deposit payment.'))
             record.is_edit_mode = False
 
     # Outstanding loan status 
@@ -1193,7 +1194,7 @@ class Repayment(models.Model):
                 _logger.info(f"Phone No, {res.phone_no}")
 
                 # Prepare SMS message
-                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones. Visit {self.get_base_url()}/customer/portal to make payment."
+                sms_message = f"Dear {customer_name}, your account has been successfully created with Sarfosco Phones. Visit {self.get_base_url()}/customer/login to make payment."
 
                 # Send SMS
                 if res.phone_no and res.state == 'draft':

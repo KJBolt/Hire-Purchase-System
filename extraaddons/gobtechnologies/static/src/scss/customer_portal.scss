@@ -594,6 +594,15 @@
     border-color: #6ee7b7;
 }
 
+.stat-card-info .stat-card-icon {
+    background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+    color: #0284c7;
+}
+
+.stat-card-info:hover {
+    border-color: #7dd3fc;
+}
+
 .stat-card-warning .stat-card-icon {
     background: linear-gradient(135deg, var(--portal-warning-light), #fde68a);
     color: var(--portal-warning);
