@@ -7,6 +7,7 @@ access_oppo_lock_manager,access.oppo.lock.manager,model_oppo_lock,base.group_sys
 access_customer_portal_user,customer.portal.user,model_customer_portal,base.group_user,1,1,1,1
 access_sales_agent_imei_capture_user,sales.agent.imei.capture.user,model_sales_agent_imei_capture,gobtechnologies.group_repayment_agent,1,1,1,1
 access_sales_agent_imei_capture_manager,sales.agent.imei.capture.manager,model_sales_agent_imei_capture,gobtechnologies.group_supervisor,1,1,1,1
+access_imei_selfie_wizard,imei.selfie.wizard,model_imei_selfie_wizard,base.group_user,1,1,1,1
 
 
 access_res_users_supervisor,res.users.supervisor,model_res_users,gobtechnologies.group_supervisor,1,1,1,1

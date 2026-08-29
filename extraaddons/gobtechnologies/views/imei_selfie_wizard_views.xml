@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_imei_selfie_wizard_form" model="ir.ui.view">
+        <field name="name">imei.selfie.wizard.form</field>
+        <field name="model">imei.selfie.wizard</field>
+        <field name="arch" type="xml">
+            <form string="IMEI Selfie" class="oe_dialog_form">
+                <field name="imei_selfie" widget="image" nolabel="1"/>
+                <footer>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_imei_selfie_wizard" model="ir.actions.act_window">
+        <field name="name">IMEI Selfie</field>
+        <field name="res_model">imei.selfie.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -42,6 +42,7 @@
         'views/res_partner.xml',
         'views/oppo_lock_views.xml',
         'views/stock_lot_inherit.xml',
+        'views/imei_selfie_wizard_views.xml',
         'views/stock_picking.xml',
         # 'views/signin_template.xml',
         # 'views/settings_inherit.xml'

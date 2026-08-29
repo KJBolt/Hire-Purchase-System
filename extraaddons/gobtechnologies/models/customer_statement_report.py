@@ -1673,8 +1673,10 @@ class Repayment(models.Model):
             current_payment_amount = current_payment.payment_amount
 
             # Calculate next repayment date based on payment amount
-            if record.expected_to_pay > 0 and current_payment_amount >= record.expected_to_pay:
+            if current_payment_amount > 0:
                 full_payments = int(current_payment_amount // record.expected_to_pay)
+                # Ensure at least 1 period ahead so repayment_date never stays on the payment day
+                full_payments = max(full_payments, 1)
                 if freq == 1:
                     record.repayment_date = current_payment_date + timedelta(days=full_payments)
                 elif freq == 7:
@@ -1682,7 +1684,6 @@ class Repayment(models.Model):
                 elif freq == 30:
                     record.repayment_date = current_payment_date + relativedelta(months=full_payments)
             else:
-                # If payment is insufficient or expected_to_pay is 0, keep current repayment date
                 record.repayment_date = current_payment_date
 
 
