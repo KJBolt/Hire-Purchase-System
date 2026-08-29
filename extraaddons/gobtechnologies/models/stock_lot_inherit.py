@@ -12,7 +12,7 @@ class StockLot(models.Model):
         help='Warehouse where this lot is currently located'
     )
 
-    imei_selfie = fields.Image(string='IMEI Selfie', help='Selfie image captured with IMEI')
+    imei_selfie = fields.Image(string='IMEI Photo', help='Selfie image captured with IMEI')
 
     def action_view_imei_selfie(self):
         self.ensure_one()

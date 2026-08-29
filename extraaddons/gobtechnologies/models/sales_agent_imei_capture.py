@@ -21,7 +21,7 @@ class SalesAgentImeiCapture(models.Model):
         readonly=True
     )
     agent_photo = fields.Binary(
-        string='Agent Photo',
+        string='Agent Selfie',
         attachment=True,
         help='Upload a photo of the sales agent',
         required=True
