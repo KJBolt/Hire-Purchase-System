@@ -13,6 +13,18 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
+        <!-- Record Rule: Sales Managers can see records created by their agents -->
+        <record id="repayment_rule_sales_manager_agents" model="ir.rule">
+            <field name="name">Repayment: Sales Manager Agent Records</field>
+            <field name="model_id" ref="model_repayment"/>
+            <field name="domain_force">[('create_uid.sales_manager', '=', user.name)]</field>
+            <field name="groups" eval="[(4, ref('gobtechnologies.group_repayment_sales'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
         <!-- Record Rule: Supervisors and above can see all repayment records -->
         <record id="repayment_rule_supervisor_all" model="ir.rule">
             <field name="name">Repayment: Supervisor All Records</field>

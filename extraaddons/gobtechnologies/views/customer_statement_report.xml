@@ -415,6 +415,13 @@
 
                 <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]"/>
                 <filter name="progress" string="In Progress" domain="[('state', '=', 'progress')]"/>
+                <separator string="Created Date"/>
+                <filter name="filter_today" string="Today" domain="[('create_date', '>=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_yesterday" string="Yesterday" domain="[( 'create_date', '>=', (context_today() + relativedelta(days=-1)).strftime('%Y-%m-%d 00:00:00') ), ('create_date', '&lt;', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_this_week" string="This Week" domain="[('create_date', '>=', (context_today() + relativedelta(weekday=-1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_last_7_days" string="Last 7 Days" domain="[('create_date', '>=', (context_today() + relativedelta(days=-7)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_this_month" string="This Month" domain="[('create_date', '>=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_last_30_days" string="Last 30 Days" domain="[('create_date', '>=', (context_today() + relativedelta(days=-30)).strftime('%Y-%m-%d 00:00:00'))]"/>
                 <group expand="0" string="Group By">
                     <filter name="group_by_duration" string="Plan Duration" context="{'group_by': 'plan_duration'}"/>
                 </group>

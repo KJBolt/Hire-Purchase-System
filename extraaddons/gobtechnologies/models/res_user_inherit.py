@@ -70,7 +70,7 @@ class ResUserInherit(models.Model):
                 'sales_manager': 'sales_manager',
                 'sales_agent': 'sales_agent',
             }
-            field_name = role_field_map.get(user.role)
+            field_name = role_field_map.get(self.env.user.role)
             if field_name:
                 user.write({field_name: self.env.user.name})
                 user.partner_id.write({

@@ -11,7 +11,7 @@
                     <field name="agent_id"/>
                     <field name="warehouse_id"/>
                     <field name="capture_date"/>
-                    <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-info="state == 'submitted'"/>
+                    <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-info="state == 'submitted'" decoration-danger="state == 'rejected'"/>
                 </tree>
             </field>
         </record>
@@ -28,6 +28,9 @@
                         <button name="action_approve" string="Approve" type="object"
                                 invisible="state != 'submitted'" class="btn-primary"
                                 groups="gobtechnologies.group_supervisor,gobtechnologies.group_general_manager"/>
+                        <button name="action_reject" string="Reject" type="object"
+                                invisible="state != 'submitted'" class="btn-danger"
+                                groups="gobtechnologies.group_supervisor,gobtechnologies.group_general_manager"/>
                         <field name="state" widget="statusbar"/>
                     </header>
                     <sheet>
@@ -35,6 +38,14 @@
                             <h1>
                                 <field name="name"/>
                             </h1>
+
+                            <div class="ribbon ribbon-top-right" invisible="state != 'approved'" style="z-index: 10;">
+                                <span class="o_ribbon" style="background-color: #28a745;">APPROVED</span>
+                            </div>
+
+                            <div class="ribbon ribbon-top-right" invisible="state != 'rejected'" style="z-index: 10;">
+                                <span class="o_ribbon" style="background-color: #ce3168;">REJECTED</span>
+                            </div>
                         </div>
                         <group>
                             <group>

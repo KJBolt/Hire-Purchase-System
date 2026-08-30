@@ -20,7 +20,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">OVERALL REPAYMENT</p>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL REPAYMENT</p>
                                     <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
                                         <t t-if="state.loading">Loading...</t>
                                         <t t-else="">₵<t t-esc="formatNumberWithCommas(state.totalRepayment)"/></t>
@@ -33,7 +33,67 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL DEPOSIT</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.totalDeposit)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #fef3c7; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-bank" style="color: #f59e0b; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL DAILY REPAYMENT</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.dailyRepayment)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-calendar" style="color: #10b981; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL DAILY DEPOSIT</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.dailyDeposit)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #dbeafe; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-calendar-plus-o" style="color: #3b82f6; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Row - Total Deposit -->
+            <div class="row mb-4">
                 <div class="col-md-3 mb-2">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
@@ -52,26 +112,28 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-3 mb-2">
-                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES AGENTS</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
-                                        <t t-if="state.loading">Loading...</t>
-                                        <t t-else=""><t t-esc="state.salesAgentsCount"/></t>
-                                    </h3>
-                                </div>
-                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
-                                    <i class="fa fa-users" style="color: #10b981; font-size: 20px;"/>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
+                 <!-- Sales Agent -->
+                 <div class="col-md-3 mb-2">
+                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                         <div class="card-body">
+                             <div class="d-flex justify-content-between align-items-start">
+                                 <div>
+                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES AGENTS</p>
+                                     <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                         <t t-if="state.loading">Loading...</t>
+                                         <t t-else=""><t t-esc="state.salesAgentsCount"/></t>
+                                     </h3>
+                                 </div>
+                                 <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                     <i class="fa fa-users" style="color: #10b981; font-size: 20px;"/>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                <!-- Daily Commission -->
                 <div class="col-md-3 mb-2">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
@@ -90,11 +152,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Monthly Commission -->
+                <div class="col-md-3 mb-2">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">MONTHLY COMMISSION</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.monthlyCommission)"/></t>
+                                    </h3>
+                                </div>
+                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-money" style="color: #10b981; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- KPI Cards Row 2 -->
             <div class="row mb-4">
-                <div class="col-md-3 mb-3">
+                <!-- <div class="col-md-3 mb-3">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -111,7 +193,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
                 
                 <div class="col-md-3 mb-3">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
@@ -151,24 +233,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 mb-2">
-                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">MONTHLY COMMISSION</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
-                                        <t t-if="state.loading">Loading...</t>
-                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.monthlyCommission)"/></t>
-                                    </h3>
-                                </div>
-                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
-                                    <i class="fa fa-money" style="color: #10b981; font-size: 20px;"/>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
 
             <!-- Charts Section -->
@@ -178,10 +243,11 @@
                     <div class="card" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <div class="card-header bg-white" style="border-bottom: 1px solid #e5e7eb; padding: 20px;">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h5 style="margin: 0; font-weight: 600; color: #1a1a2e;">Monthly Sales Performance</h5>
-                                <select class="form-select form-select-sm" style="width: 120px; border-radius: 6px;">
-                                    <option>Last 6 Months</option>
-                                    <option>Last Year</option>
+                                <h5 style="margin: 0; font-weight: 600; color: #1a1a2e;">Sales Performance</h5>
+                                <select class="form-select form-select-sm" style="width: 120px; border-radius: 6px;" t-on-change="onPeriodChange">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected="">Monthly</option>
                                 </select>
                             </div>
                         </div>
@@ -249,8 +315,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <t t-foreach="state.customerInstallments" t-as="installment" t-key="installment.unique_id">
-                                        <tr>
+                                    <t t-foreach="state.customerInstallments" t-as="installment" t-key="installment.id">
+                                        <tr style="cursor: pointer;" t-on-click="() => this.openRecord('repayment', installment.id)">
                                             <td style="padding: 15px 20px; border: none;">
                                                 <div class="d-flex align-items-center">
                                                     <div t-attf-style="width: 32px; height: 32px; background-color: #{installment.status_color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">
@@ -307,8 +373,104 @@
                 </div>
             </div>
 
+            <!-- Agent Payment Performance Table -->
+            <div class="row" style="margin-bottom: 80px;">
+                <div class="col-12">
+                    <div class="card" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <div class="card-header bg-white" style="border-bottom: 1px solid #e5e7eb; padding: 20px;">
+                            <h5 style="margin: 0; font-weight: 600; color: #1a1a2e;">Agent Payment Performance</h5>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div style="overflow-x: auto;">
+                                <table class="table table-hover mb-0">
+                                    <thead style="background-color: #f8f9fa;">
+                                        <tr>
+                                            <th style="padding: 12px 16px;">Sales Manager</th>
+                                            <th style="padding: 12px 16px;">Agent Name</th>
+                                            <th style="padding: 12px 16px; text-align: right;">Total Repayment</th>
+                                            <th style="padding: 12px 16px; text-align: right;">Total Deposit</th>
+                                            <th style="padding: 12px 16px; text-align: center;">Active</th>
+                                            <th style="padding: 12px 16px; text-align: center;">Paid</th>
+                                            <th style="padding: 12px 16px; text-align: right;">Today</th>
+                                            <th style="padding: 12px 16px; text-align: right;">This Week</th>
+                                            <th style="padding: 12px 16px; text-align: right;">This Month</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.agentPerformance" t-as="agent" t-key="agent.agent_name">
+                                            <tr t-attf-class="agent-row" style="cursor: pointer;" t-on-click="() => this.toggleAgent(agent.agent_name)">
+                                                <td style="padding: 12px 16px; font-weight: 500;">
+                                                    <div class="d-flex align-items-center">
+                                                        <i t-attf-class="fa {{state.expandedAgent === agent.agent_name ? 'fa-chevron-down' : 'fa-chevron-right'}}" style="font-size: 12px; color: #6c757d; margin-right: 10px; width: 14px; text-align: center;"/>
+                                                        <span t-esc="agent.sales_manager || '—'"/>
+                                                    </div>
+                                                </td>
+                                                <td style="padding: 12px 16px; font-weight: 500;" t-esc="agent.agent_name"/>
+                                                <td style="padding: 12px 16px; text-align: right;">₵<t t-esc="formatNumberWithCommas(agent.total_repayment)"/></td>
+                                                <td style="padding: 12px 16px; text-align: right;">₵<t t-esc="formatNumberWithCommas(agent.total_deposit)"/></td>
+                                                <td style="padding: 12px 16px; text-align: center;">
+                                                    <span style="background-color: #dbeafe; color: #1d4ed8; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;" t-esc="agent.active_contracts"/>
+                                                </td>
+                                                <td style="padding: 12px 16px; text-align: center;">
+                                                    <span style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;" t-esc="agent.paid_contracts"/>
+                                                </td>
+                                                <td style="padding: 12px 16px; text-align: right;">₵<t t-esc="formatNumberWithCommas(agent.daily_total)"/></td>
+                                                <td style="padding: 12px 16px; text-align: right;">₵<t t-esc="formatNumberWithCommas(agent.weekly_total)"/></td>
+                                                <td style="padding: 12px 16px; text-align: right;">₵<t t-esc="formatNumberWithCommas(agent.monthly_total)"/></td>
+                                            </tr>
+                                            <t t-if="state.expandedAgent === agent.agent_name">
+                                                <t t-foreach="agent.customers" t-as="cust" t-key="cust.id">
+                                                    <tr style="background-color: #f9fafb; cursor: pointer;" t-on-click="() => this.openRecord('repayment', cust.id)">
+                                                        <td style="padding: 10px 16px; font-size: 13px; color: #9ca3af;" t-esc="agent.sales_manager || '—'"/>
+                                                        <td style="padding: 10px 16px 10px 16px; font-size: 13px;">
+                                                            <div class="d-flex align-items-center">
+                                                                <span style="color: #9ca3af; font-size: 11px; margin-right: 8px;" t-esc="cust.reference"/>
+                                                                <span t-esc="cust.customer_name"/>
+                                                            </div>
+                                                        </td>
+                                                        <td style="padding: 10px 16px; text-align: right; font-size: 13px;">₵<t t-esc="formatNumberWithCommas(cust.total_repayment)"/></td>
+                                                        <td style="padding: 10px 16px; text-align: right; font-size: 13px;">₵<t t-esc="formatNumberWithCommas(cust.total_deposit)"/></td>
+                                                        <td style="padding: 10px 16px; text-align: center;">
+                                                            <t t-if="cust.status !== 'Paid'">
+                                                                <span style="background-color: #dbeafe; color: #1d4ed8; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;">1</span>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span style="font-size: 11px; color: #9ca3af;">0</span>
+                                                            </t>
+                                                        </td>
+                                                        <td style="padding: 10px 16px; text-align: center;">
+                                                            <t t-if="cust.status === 'Paid'">
+                                                                <span style="background-color: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;">1</span>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span style="font-size: 11px; color: #9ca3af;">0</span>
+                                                            </t>
+                                                        </td>
+                                                        <td style="padding: 10px 16px; text-align: right; font-size: 13px; color: #9ca3af;" colspan="4">—</td>
+                                                    </tr>
+                                                </t>
+                                                <t t-if="!agent.customers || !agent.customers.length">
+                                                    <tr style="background-color: #f9fafb;">
+                                                        <td colspan="9" style="padding: 12px 16px 12px 44px; font-size: 13px; color: #9ca3af; text-align: center;">No customer records found for this agent</td>
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                        </t>
+                                        <t t-if="!state.agentPerformance.length">
+                                            <tr>
+                                                <td colspan="9" style="text-align: center; color: #6c757d; padding: 20px;">No agent data available</td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stock Aging Report -->
-            <div class="row mb-4">
+            <!-- <div class="row mb-4">
                 <div class="col-12">
                     <div class="card" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <div class="card-header bg-white" style="border-bottom: 1px solid #e5e7eb; padding: 20px;">
@@ -341,10 +503,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Activity Log -->
-            <div class="row" style="margin-bottom: 80px;">
+            <!-- <div class="row" style="margin-bottom: 80px;">
                 <div class="col-12">
                     <div class="card" style="border: none; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <div class="card-header bg-white" style="border-bottom: 1px solid #e5e7eb; padding: 20px;">
@@ -395,7 +557,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
             
         </div>
     </t>

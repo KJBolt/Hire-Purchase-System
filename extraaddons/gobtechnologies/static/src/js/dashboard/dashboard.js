@@ -23,6 +23,9 @@ export class Dashboard extends Component {
         // States for dashboard data
         this.state = useState({
             totalRepayment: 0,
+            totalDeposit: 0,
+            dailyRepayment: 0,
+            dailyDeposit: 0,
             salesManagersCount: 0,
             salesAgentsCount: 0,
             dailyCommission: 0,
@@ -36,18 +39,21 @@ export class Dashboard extends Component {
                 overdue: 0
             },
             customerInstallments: [],
+            agentPerformance: [],
             topAgents: [],
             chartData: {
-                currentYear: [0, 0, 0, 0, 0, 0],
-                previousYear: [0, 0, 0, 0, 0, 0],
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+                currentYear: [],
+                previousYear: [],
+                labels: []
             },
+            chartPeriod: 'monthly',
             stockAgingData: {
                 '0-30': 0,
                 '31-60': 0,
                 '61-90': 0,
                 '90+': 0
             },
+            expandedAgent: null,
             loading: true
         });
         
@@ -57,6 +63,9 @@ export class Dashboard extends Component {
                 // Fetch data on component start
                 await Promise.all([
                     this.fetchTotalRepayment(),
+                    this.fetchTotalDeposit(),
+                    this.fetchDailyRepayment(),
+                    this.fetchDailyDeposit(),
                     this.fetchSalesManagersCount(),
                     this.fetchSalesAgentsCount(),
                     this.fetchDailyCommission(),
@@ -66,6 +75,7 @@ export class Dashboard extends Component {
                     this.fetchOverdueAccounts(),
                     this.fetchPaymentDistribution(),
                     this.fetchCustomerInstallments(),
+                    this.fetchAgentPerformance(),
                     this.fetchTopAgents(),
                     this.fetchChartData()
                 ]);
@@ -112,19 +122,7 @@ export class Dashboard extends Component {
     // Fetch Daily Commission
     async fetchDailyCommission() {
         try {
-            // Get today's date
-            const today = new Date().toISOString().split('T')[0];
-            
-            // Fetch sales commissions from repayment contracts created today
-            const result = await this.orm.searchRead('repayment', [
-                ['create_date', '>=', today + ' 00:00:00'],
-                ['create_date', '<=', today + ' 23:59:59']
-            ], ['sales_commission']);
-            
-            // Calculate total daily commission
-            const total = result.reduce((sum, record) => sum + (record.sales_commission || 0), 0);
-            
-            // Update state with daily commission
+            const total = await this.orm.call('repayment', 'get_daily_commission_by_role', []);
             this.state.dailyCommission = total;
         } catch (error) {
             console.error('Error fetching daily commission:', error);
@@ -134,21 +132,7 @@ export class Dashboard extends Component {
     // Fetch Monthly Commission
     async fetchMonthlyCommission() {
         try {
-            // Get current month's first and last day
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-            
-            // Fetch sales commissions from repayment contracts created this month
-            const result = await this.orm.searchRead('repayment', [
-                ['create_date', '>=', firstDay + ' 00:00:00'],
-                ['create_date', '<', lastDay + ' 00:00:00']
-            ], ['sales_commission']);
-            
-            // Calculate total monthly commission
-            const total = result.reduce((sum, record) => sum + (record.sales_commission || 0), 0);
-            
-            // Update state with monthly commission
+            const total = await this.orm.call('repayment', 'get_monthly_commission_by_role', []);
             this.state.monthlyCommission = total;
         } catch (error) {
             console.error('Error fetching monthly commission:', error);
@@ -174,22 +158,7 @@ export class Dashboard extends Component {
     // Fetch Monthly Sales
     async fetchMonthlySales() {
         try {
-            // Get current month's first and last day
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-            
-            // Fetch selling prices from fully paid repayment contracts created this month
-            const result = await this.orm.searchRead('repayment', [
-                ['create_date', '>=', firstDay + ' 00:00:00'],
-                ['create_date', '<', lastDay + ' 00:00:00'],
-                ['state', '=', 'paid']
-            ], ['selling_price']);
-            
-            // Calculate total monthly sales from fully paid contracts only
-            const total = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
-            
-            // Update state with monthly sales
+            const total = await this.orm.call('repayment', 'get_monthly_sales_by_role', []);
             this.state.monthlySales = total;
         } catch (error) {
             console.error('Error fetching monthly sales:', error);
@@ -199,15 +168,8 @@ export class Dashboard extends Component {
     // Fetch Overdue Accounts
     async fetchOverdueAccounts() {
         try {
-            // Fetch count of overdue accounts using overdue_status field
-            const result = await this.orm.searchCount('repayment', [
-                ['overdue_status', '=', true]
-            ]);
-            
-            // Update state with overdue accounts count
+            const result = await this.orm.call('repayment', 'get_overdue_accounts_by_role', []);
             this.state.overdueAccounts = result;
-            
-            console.log('Overdue accounts:', result);
         } catch (error) {
             console.error('Error fetching overdue accounts:', error);
         }
@@ -216,19 +178,47 @@ export class Dashboard extends Component {
     // Fetch Total Repayment
     async fetchTotalRepayment() {
         try {
-            // Fetch total repayment amount from Repayment model
-            const result = await this.orm.searchRead('repayment', [], ['repayment']);
-            
-            // Calculate total repayment amount
-            const total = result.reduce((sum, record) => sum + (record.repayment || 0), 0);
-            
-            // Update state with formatted total
+            const total = await this.orm.call('repayment', 'get_total_repayment_by_role', []);
             this.state.totalRepayment = total;
             this.state.loading = false;
-            
-            console.log('Total repayment amount:', total);
         } catch (error) {
             console.error('Error fetching total repayment:', error);
+            this.state.loading = false;
+        }
+    }
+
+    // Fetch Total Deposit
+    async fetchTotalDeposit() {
+        try {
+            const total = await this.orm.call('repayment', 'get_total_deposit_by_role', []);
+            this.state.totalDeposit = total;
+            this.state.loading = false;
+        } catch (error) {
+            console.error('Error fetching total deposit:', error);
+            this.state.loading = false;
+        }
+    }
+
+    // Fetch Daily Repayment
+    async fetchDailyRepayment() {
+        try {
+            const total = await this.orm.call('repayment', 'get_daily_repayment_by_role', []);
+            this.state.dailyRepayment = total;
+            this.state.loading = false;
+        } catch (error) {
+            console.error('Error fetching daily repayment:', error);
+            this.state.loading = false;
+        }
+    }
+
+    // Fetch Daily Deposit
+    async fetchDailyDeposit() {
+        try {
+            const total = await this.orm.call('repayment', 'get_daily_deposit_by_role', []);
+            this.state.dailyDeposit = total;
+            this.state.loading = false;
+        } catch (error) {
+            console.error('Error fetching daily deposit:', error);
             this.state.loading = false;
         }
     }
@@ -259,6 +249,15 @@ export class Dashboard extends Component {
         }
     }
 
+    async fetchAgentPerformance() {
+        try {
+            const result = await this.orm.call('repayment', 'get_agent_payment_performance', []);
+            this.state.agentPerformance = result;
+        } catch (error) {
+            console.error('Error fetching agent performance:', error);
+        }
+    }
+
     // Fetch Top Agents
     async fetchTopAgents() {
         try {
@@ -273,55 +272,85 @@ export class Dashboard extends Component {
     }
 
     // Fetch Chart Data for Monthly Sales Performance
-    async fetchChartData() {
+    async fetchChartData(period) {
         try {
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            const previousYear = currentYear - 1;
-            
-            // Initialize arrays for 6 months (Jan-Jun)
-            const currentYearData = [0, 0, 0, 0, 0, 0];
-            const previousYearData = [0, 0, 0, 0, 0, 0];
-            
-            // Fetch current year data (Jan-Jun)
-            for (let month = 0; month < 6; month++) {
-                const firstDay = new Date(currentYear, month, 1).toISOString().split('T')[0];
-                const lastDay = new Date(currentYear, month + 1, 0).toISOString().split('T')[0];
-                
-                const result = await this.orm.searchRead('repayment', [
-                    ['create_date', '>=', firstDay + ' 00:00:00'],
-                    ['create_date', '<', lastDay + ' 00:00:00'],
-                    ['state', '=', 'paid']
-                ], ['selling_price']);
-                
-                currentYearData[month] = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
-            }
-            
-            // Fetch previous year data (Jan-Jun)
-            for (let month = 0; month < 6; month++) {
-                const firstDay = new Date(previousYear, month, 1).toISOString().split('T')[0];
-                const lastDay = new Date(previousYear, month + 1, 0).toISOString().split('T')[0];
-                
-                const result = await this.orm.searchRead('repayment', [
-                    ['create_date', '>=', firstDay + ' 00:00:00'],
-                    ['create_date', '<', lastDay + ' 00:00:00'],
-                    ['state', '=', 'paid']
-                ], ['selling_price']);
-                
-                previousYearData[month] = result.reduce((sum, record) => sum + (record.selling_price || 0), 0);
-            }
-            
-            // Update state with chart data
+            const p = period || this.state.chartPeriod || 'monthly';
+            const result = await this.orm.call('repayment', 'get_sales_performance_data', [], { period: p });
             this.state.chartData = {
-                currentYear: currentYearData,
-                previousYear: previousYearData,
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+                labels: result.labels,
+                currentYear: result.currentYear,
+                previousYear: result.previousYear,
             };
-            
-            console.log('Chart data fetched:', { currentYear: currentYearData, previousYear: previousYearData });
+            this._renderSalesChart();
         } catch (error) {
             console.error('Error fetching chart data:', error);
         }
+    }
+
+    onPeriodChange(ev) {
+        this.state.chartPeriod = ev.target.value;
+        this.fetchChartData(this.state.chartPeriod);
+    }
+
+    toggleAgent(agentName) {
+        this.state.expandedAgent = this.state.expandedAgent === agentName ? null : agentName;
+    }
+
+    openRecord(model, id) {
+        this.env.services['action'].doAction({
+            type: "ir.actions.act_window",
+            res_model: model,
+            res_id: id,
+            views: [[false, "form"]],
+            view_mode: "form",
+            target: "current",
+        });
+    }
+
+    _renderSalesChart() {
+        if (this._salesChart) {
+            this._salesChart.destroy();
+        }
+        if (!this.salesChartRef.el || !window.Chart) return;
+        this._salesChart = new Chart(this.salesChartRef.el.getContext("2d"), {
+            type: "line",
+            data: {
+                labels: this.state.chartData.labels,
+                datasets: [{
+                    label: "Current Period",
+                    data: this.state.chartData.currentYear,
+                    borderColor: "#3b82f6",
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: "#3b82f6",
+                    pointRadius: 4,
+                }, {
+                    label: "Previous Period",
+                    data: this.state.chartData.previousYear,
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: "#10b981",
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, padding: 20 }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
     }
 
     // Add this method to fetch stock aging data
@@ -382,39 +411,7 @@ export class Dashboard extends Component {
         }
         
         // Sales Bar Chart
-        if (this.salesChartRef.el) {
-            new Chart(this.salesChartRef.el.getContext("2d"), {
-                type: "bar",
-                data: {
-                    labels: this.state.chartData.labels,
-                    datasets: [{
-                        label: "Current Year",
-                        data: this.state.chartData.currentYear,
-                        backgroundColor: "#3b82f6",
-                        borderRadius: 6,
-                    }, {
-                        label: "Previous Year",
-                        data: this.state.chartData.previousYear,
-                        backgroundColor: "#10b981",
-                        borderRadius: 6,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { usePointStyle: true, padding: 20 }
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
+        this._renderSalesChart();
         
         // Payment Distribution Donut
         if (this.donutChartRef.el) {

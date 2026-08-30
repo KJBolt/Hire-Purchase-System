@@ -509,6 +509,7 @@ class Repayment(models.Model):
         store=True,
         help='Indicates if a deposit payment has been made for this repayment'
     )
+
     is_edit_mode = fields.Boolean(
         string='Edit Mode',
         default=False,
@@ -661,6 +662,7 @@ class Repayment(models.Model):
                 record.expected_to_pay = 0.0
 
     @api.depends('product_lines.product_id')
+    @api.depends('product_lines.product_id.product_tmpl_id.sales_commission_value')
     def _compute_sales_commission(self):
         for record in self:
             total_commission = 0.0
@@ -2220,40 +2222,136 @@ class Repayment(models.Model):
                 record.overdue_amount = 0.0
 
     @api.model
-    def get_payment_distribution(self):
-        """
-        Calculate payment distribution percentages for all repayments
-        Returns: dict with paid, pending, and overdue percentages
-        """
+    def _get_agent_partner_ids(self):
+        user = self.env.user
+        if user.role != 'sales_manager':
+            return []
+        agent_users = self.env['res.users'].sudo().search([
+            ('role', '=', 'sales_agent'),
+            ('sales_manager', '=', user.name.strip()),
+        ])
+        return agent_users.mapped('partner_id').ids
+
+    @api.model
+    def _get_role_domain(self):
+        user = self.env.user
+        domain = []
+        if user.role == 'sales_agent':
+            domain.append(('created_by', '=', user.partner_id.id))
+        elif user.role == 'sales_manager':
+            agent_partner_ids = self._get_agent_partner_ids()
+            domain.append(('created_by', 'in', agent_partner_ids))
+        return domain
+
+    @api.model
+    def get_total_repayment_by_role(self):
+        user = self.env.user
+        domain = self._get_role_domain()
+
+        repayments = self.search(domain)
+        payment_lines = repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode != 'deposit'
+        )
+        total = sum(payment_lines.mapped('payment_amount'))
+        return total
+
+    @api.model
+    def get_total_deposit_by_role(self):
+        user = self.env.user
+        domain = self._get_role_domain()
+
+        repayments = self.search(domain)
+        payment_lines = repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode == 'deposit'
+        )
+        total = sum(payment_lines.mapped('payment_amount'))
+        return total
+
+    @api.model
+    def get_daily_repayment_by_role(self):
+        user = self.env.user
         today = fields.Date.today()
-        
-        # Get all repayment records
-        all_repayments = self.search([])
+        domain = [
+            ('payment_lines.payment_date', '=', today),
+            ('payment_lines.payment_mode', '!=', 'deposit'),
+        ]
+        domain += self._get_role_domain()
+
+        repayments = self.search(domain)
+        payment_lines = repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_date == today and l.payment_mode != 'deposit'
+        )
+        total = sum(payment_lines.mapped('payment_amount'))
+        return total
+
+    @api.model
+    def get_daily_deposit_by_role(self):
+        user = self.env.user
+        today = fields.Date.today()
+        domain = [
+            ('payment_lines.payment_date', '=', today),
+            ('payment_lines.payment_mode', '=', 'deposit'),
+        ]
+        domain += self._get_role_domain()
+
+        repayments = self.search(domain)
+        payment_lines = repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_date == today and l.payment_mode == 'deposit'
+        )
+        total = sum(payment_lines.mapped('payment_amount'))
+        return total
+
+    @api.model
+    def get_overdue_accounts_by_role(self):
+        user = self.env.user
+        domain = [('overdue_status', '=', True)]
+        domain += self._get_role_domain()
+        return self.search_count(domain)
+
+    @api.model
+    def get_monthly_sales_by_role(self):
+        user = self.env.user
+        today = fields.Date.today()
+        first_day = today.replace(day=1)
+        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+        domain = [
+            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+            ('state', '=', 'paid'),
+        ]
+        domain += self._get_role_domain()
+
+        repayments = self.search(domain)
+        return sum(repayments.mapped('total_paid'))
+
+    @api.model
+    def get_payment_distribution(self):
+        user = self.env.user
+        domain = self._get_role_domain()
+
+        all_repayments = self.search(domain)
         total_count = len(all_repayments)
-        
+
         if total_count == 0:
             return {'paid': 0.0, 'pending': 0.0, 'overdue': 0.0}
-        
+
         paid_count = 0
         pending_count = 0
         overdue_count = 0
-        
+
         for repayment in all_repayments:
-            # Paid: state is 'paid' or total_paid >= selling_price
             if repayment.state == 'paid' or repayment.total_paid >= repayment.selling_price:
                 paid_count += 1
-            # Overdue: overdue_status is True and not fully paid
             elif repayment.overdue_status and repayment.total_paid < repayment.selling_price:
                 overdue_count += 1
-            # Pending: everything else (progress, draft, etc.)
             else:
                 pending_count += 1
-        
-        # Calculate percentages
+
         paid_percentage = (paid_count / total_count) * 100 if total_count > 0 else 0
         pending_percentage = (pending_count / total_count) * 100 if total_count > 0 else 0
         overdue_percentage = (overdue_count / total_count) * 100 if total_count > 0 else 0
-        
+
         return {
             'paid': round(paid_percentage, 1),
             'pending': round(pending_percentage, 1),
@@ -2261,15 +2359,89 @@ class Repayment(models.Model):
         }
 
     @api.model
+    def get_sales_performance_data(self, period='monthly'):
+        user = self.env.user
+        today = fields.Date.today()
+        current_year = today.year
+        previous_year = current_year - 1
+
+        base_domain = []
+        if user.role == 'sales_agent':
+            base_domain.append(('created_by', '=', user.partner_id.id))
+        elif user.role == 'sales_manager':
+            agent_partner_ids = self._get_agent_partner_ids()
+            base_domain.append(('created_by', 'in', agent_partner_ids))
+
+        all_repayments = self.search(base_domain)
+        all_lines = all_repayments.mapped('payment_lines')
+
+        if period == 'daily':
+            labels = []
+            current_data = []
+            previous_data = []
+            for i in range(6, -1, -1):
+                day = today - timedelta(days=i)
+                labels.append(day.strftime('%a'))
+                day_lines = all_lines.filtered(
+                    lambda l, d=day: l.payment_date == d and l.payment_mode != 'deposit'
+                )
+                current_data.append(sum(day_lines.mapped('payment_amount')))
+                previous_data.append(0)
+
+        elif period == 'weekly':
+            labels = []
+            current_data = []
+            previous_data = []
+            for i in range(5, -1, -1):
+                week_start = today - timedelta(days=today.weekday() + (i * 7))
+                week_end = week_start + timedelta(days=6)
+                labels.append(f'{week_start.strftime("%d %b")}')
+                week_lines = all_lines.filtered(
+                    lambda l, ws=week_start, we=week_end: ws <= l.payment_date <= we and l.payment_mode != 'deposit'
+                )
+                current_data.append(sum(week_lines.mapped('payment_amount')))
+                previous_data.append(0)
+
+        else:
+            labels = []
+            current_data = []
+            previous_data = []
+            for month in range(5, -1, -1):
+                m = today.month - month
+                y = current_year
+                while m <= 0:
+                    m += 12
+                    y -= 1
+                month_start = datetime.date(y, m, 1)
+                if m == 12:
+                    month_end = datetime.date(y + 1, 1, 1) - timedelta(days=1)
+                else:
+                    month_end = datetime.date(y, m + 1, 1) - timedelta(days=1)
+                labels.append(month_start.strftime('%b'))
+                month_lines = all_lines.filtered(
+                    lambda l, ms=month_start, me=month_end: ms <= l.payment_date <= me and l.payment_mode != 'deposit'
+                )
+                current_data.append(sum(month_lines.mapped('payment_amount')))
+                prev_month_start = month_start.replace(year=previous_year)
+                prev_month_end = month_end.replace(year=previous_year)
+                prev_lines = all_lines.filtered(
+                    lambda l, pms=prev_month_start, pme=prev_month_end: pms <= l.payment_date <= pme and l.payment_mode != 'deposit'
+                )
+                previous_data.append(sum(prev_lines.mapped('payment_amount')))
+
+        return {
+            'labels': labels,
+            'currentYear': current_data,
+            'previousYear': previous_data,
+        }
+
+    @api.model
     def get_active_customer_installments(self, limit=10):
-        """
-        Fetch active customer installments for dashboard table
-        Returns: list of dicts with customer installment data
-        """
-        # Get active repayments (not paid, not terminated)
-        active_repayments = self.search([
-            ('state', 'in', ['draft', 'progress', 'termination_warning'])
-        ], order='create_date desc', limit=limit)
+        user = self.env.user
+        domain = [('state', 'in', ['draft', 'progress', 'termination_warning'])]
+        domain += self._get_role_domain()
+
+        active_repayments = self.search(domain, order='create_date desc', limit=limit)
         
         installments = []
         for repayment in active_repayments:
@@ -2309,6 +2481,7 @@ class Repayment(models.Model):
                 status_color = '#6b7280'  # Gray
             
             installments.append({
+                'id': repayment.id,
                 'customer_name': repayment.customer_name.name if repayment.customer_name else 'Unknown',
                 'customer_initials': self._get_customer_initials(repayment.customer_name.name if repayment.customer_name else 'Unknown'),
                 'product': product_name,
@@ -2335,15 +2508,40 @@ class Repayment(models.Model):
         return 'NA'
 
     @api.model
+    def get_daily_commission_by_role(self):
+        user = self.env.user
+        today = fields.Date.today()
+        domain = [
+            ('create_date', '>=', fields.Datetime.to_datetime(today)),
+            ('create_date', '<', fields.Datetime.to_datetime(today + timedelta(days=1))),
+        ]
+        domain += self._get_role_domain()
+        repayments = self.search(domain)
+        return sum(repayments.mapped('sales_commission'))
+
+    @api.model
+    def get_monthly_commission_by_role(self):
+        user = self.env.user
+        today = fields.Date.today()
+        first_day = today.replace(day=1)
+        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        domain = [
+            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+        ]
+        domain += self._get_role_domain()
+        repayments = self.search(domain)
+        return sum(repayments.mapped('sales_commission'))
+
+    @api.model
     def get_top_agents_by_performance(self, limit=10):
         """
         Fetch top sales agents by repayment performance
         Returns: list of dicts with agent names and repayment percentages
         """
-        # Get all repayments with sales agents (created_by field)
-        all_repayments = self.search([
-            ('created_by', '!=', False)
-        ])
+        domain = self._get_role_domain()
+        domain.append(('created_by', '!=', False))
+        all_repayments = self.search(domain)
         
         if not all_repayments:
             return []
@@ -2401,6 +2599,112 @@ class Repayment(models.Model):
         agents_data.sort(key=lambda x: x['repayment_percentage'], reverse=True)
         
         return agents_data[:limit]
+
+    @api.model
+    def get_agent_payment_performance(self):
+        user = self.env.user
+        today = fields.Date.today()
+        week_start = today - timedelta(days=today.weekday())
+        month_start = today.replace(day=1)
+
+        domain = []
+        if user.role == 'sales_manager':
+            agent_partner_ids = self._get_agent_partner_ids()
+            domain.append(('created_by', 'in', agent_partner_ids))
+        elif user.role == 'sales_agent':
+            domain.append(('created_by', '=', user.partner_id.id))
+
+        all_repayments = self.search(domain)
+        agent_partner_map = {}
+        for r in all_repayments:
+            pid = r.created_by.id
+            if pid not in agent_partner_map:
+                agent_partner_map[pid] = {
+                    'partner': r.created_by,
+                    'repayments': self.env['repayment'],
+                }
+            agent_partner_map[pid]['repayments'] |= r
+
+        result = []
+        for pid, data in agent_partner_map.items():
+            agent_partner = data['partner']
+            agent_repayments = data['repayments']
+
+            agent_user = self.env['res.users'].sudo().search([('partner_id', '=', agent_partner.id)], limit=1)
+            sales_manager_name = agent_user.sales_manager if agent_user else ''
+
+            all_lines = agent_repayments.mapped('payment_lines')
+            non_deposit = all_lines.filtered(lambda l: l.payment_mode != 'deposit')
+            total_repayment = sum(non_deposit.mapped('payment_amount'))
+
+            deposit_lines = all_lines.filtered(lambda l: l.payment_mode == 'deposit')
+            total_deposit = sum(deposit_lines.mapped('payment_amount'))
+
+            active_count = len(agent_repayments.filtered(
+                lambda r: r.state in ['draft', 'progress', 'termination_warning']
+            ))
+            paid_count = len(agent_repayments.filtered(
+                lambda r: r.state == 'paid' or r.total_paid >= r.selling_price
+            ))
+
+            daily_lines = non_deposit.filtered(lambda l: l.payment_date == today)
+            weekly_lines = non_deposit.filtered(lambda l: l.payment_date >= week_start)
+            monthly_lines = non_deposit.filtered(lambda l: l.payment_date >= month_start)
+
+            customers = []
+            for r in agent_repayments:
+                r_lines = r.payment_lines
+                r_non_deposit = r_lines.filtered(lambda l: l.payment_mode != 'deposit')
+                r_deposit = r_lines.filtered(lambda l: l.payment_mode == 'deposit')
+                r_repayment_total = sum(r_non_deposit.mapped('payment_amount'))
+                r_deposit_total = sum(r_deposit.mapped('payment_amount'))
+
+                status = 'Active'
+                status_color = '#10b981'
+                if r.state == 'paid' or r.total_paid >= r.selling_price:
+                    status = 'Paid'
+                    status_color = '#10b981'
+                elif r.overdue_status:
+                    status = 'Overdue'
+                    status_color = '#ef4444'
+                elif r.state == 'termination_warning':
+                    status = 'Warning'
+                    status_color = '#f59e0b'
+                elif r.state == 'draft':
+                    status = 'Draft'
+                    status_color = '#6b7280'
+                elif r.state == 'progress':
+                    status = 'In Progress'
+                    status_color = '#3b82f6'
+
+                customers.append({
+                    'id': r.id,
+                    'reference': r.unique_id or '',
+                    'customer_name': r.customer_name.name if r.customer_name else 'Unknown',
+                    'total_repayment': round(r_repayment_total, 2),
+                    'total_deposit': round(r_deposit_total, 2),
+                    'selling_price': round(r.selling_price, 2),
+                    'total_paid': round(r.total_paid, 2),
+                    'paid_percentage': round(r.percentage_paid, 0),
+                    'status': status,
+                    'status_color': status_color,
+                })
+
+            result.append({
+                'sales_manager': sales_manager_name,
+                'agent_name': agent_partner.name,
+                'total_repayment': round(total_repayment, 2),
+                'total_deposit': round(total_deposit, 2),
+                'active_contracts': active_count,
+                'paid_contracts': paid_count,
+                'daily_total': round(sum(daily_lines.mapped('payment_amount')), 2),
+                'weekly_total': round(sum(weekly_lines.mapped('payment_amount')), 2),
+                'monthly_total': round(sum(monthly_lines.mapped('payment_amount')), 2),
+                'customers': customers,
+            })
+
+        result.sort(key=lambda x: x['total_repayment'], reverse=True)
+        return result
 
 
 

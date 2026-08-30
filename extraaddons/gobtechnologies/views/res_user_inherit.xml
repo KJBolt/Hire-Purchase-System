@@ -8,6 +8,11 @@
             <xpath expr="//div[@class='oe_title']/h2" position="after">
                 <group>
                     <field name="role"/>
+                    <field name="general_manager"/>
+                    <field name="supervisor"/>
+                    <field name="sales_administrator"/>
+                    <field name="sales_manager"/>
+                    <field name="sales_agent"/>
                 </group>
             </xpath>
         </field>

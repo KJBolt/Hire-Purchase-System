@@ -1,6 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
-from datetime import date
+from datetime import date, timedelta
 
 class SalesAgentImeiCapture(models.Model):
     _name = 'sales.agent.imei.capture'
@@ -47,7 +47,8 @@ class SalesAgentImeiCapture(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
-        ('approved', 'Approved')
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
     ], string='Status', default='draft', tracking=True)
     notes = fields.Text(string='Notes')
 
@@ -97,3 +98,19 @@ class SalesAgentImeiCapture(models.Model):
         for record in self:
             record.write({'state': 'approved'})
             record.message_post(body='Capture record approved successfully.')
+
+            today = fields.Date.today()
+            for lot in record.imei_ids:
+                lot.write({
+                    'expiration_date': today + timedelta(days=8),
+                    'removal_date': False,
+                    'use_date': today + timedelta(days=8),
+                    'alert_date': today + timedelta(days=7)
+                })
+
+    def action_reject(self):
+        """Reject the capture record."""
+        for record in self:
+            record.write({'state': 'rejected'})
+            record.message_post(body='Capture record rejected successfully.')
+
