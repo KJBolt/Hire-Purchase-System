@@ -301,14 +301,14 @@ class OppoLock(models.Model):
             if not record.repayment_id:
                 raise UserError(_('Repayment ID is required for prepaid edit.'))
             
-            expected_to_pay = record.repayment_id.expected_to_pay
-            if not expected_to_pay:
-                raise UserError(_('Expected to pay amount is not set on the repayment record.'))
-            
             # Lock device immediately if payment_amount is 0 (grace period lock)
             if payment_amount == 0:
                 days = 0
             else:
+                expected_to_pay = record.repayment_id.expected_to_pay
+                if not expected_to_pay:
+                    raise UserError(_('Expected to pay amount is not set on the repayment record.'))
+                    
                 # Check if this is the first payment (only one payment line exists)
                 is_first_payment = len(record.repayment_id.payment_lines) == 1
 
