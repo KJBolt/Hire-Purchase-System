@@ -194,6 +194,12 @@ class RepaymentPaymentLine(models.Model):
             else:
                 record.is_payment_insufficient = record.payment_amount < record.repayment_id.expected_to_pay
 
+    @api.constrains('payment_amount')
+    def _check_payment_amount(self):
+        for record in self:
+            if record.payment_amount < 0:
+                raise ValidationError(_('Payment amount cannot be negative.'))
+
     # Compute payment status
     @api.depends('payment_amount', 'expected_amount')
     def _compute_payment_status(self):
