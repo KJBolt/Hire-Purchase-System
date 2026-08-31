@@ -158,6 +158,7 @@
                                                 title="Refresh Status">
                                                 <i class="fa fa-refresh"/>
                                             </button>
+                                            
                                             <!-- Edit: always visible -->
                                             <button
                                                 class="olod-btn olod-btn-info olod-btn-sm"
@@ -165,6 +166,18 @@
                                                 title="Edit Device">
                                                 <i class="fa fa-pencil"/> Edit
                                             </button>
+
+                                            <!-- Lock: hidden if already Locked -->
+                                            <button
+                                                t-if="device.status === 'Normal'"
+                                                class="olod-btn olod-btn-sm"
+                                                t-on-click="() => this.lockDevice(device.id)"
+                                                title="Lock Device"
+                                                style="background-color: red; color: white;">
+                                                <i class="fa fa-lock"/> Lock
+                                            </button>
+
+                                            
                                             <!-- Complete Button: hidden if already Completed or repayment not paid -->
                                             <button
                                                 t-if="device.status !== 'Completed' and device.repayment_state === 'paid'"

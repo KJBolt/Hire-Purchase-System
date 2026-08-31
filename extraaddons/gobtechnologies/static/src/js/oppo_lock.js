@@ -213,6 +213,7 @@ export class OppoLock extends Component{
     onSearchInput(ev) {
         this.state.searchQuery = ev.target.value;
         this.filterDevices();
+        this.fetchStatusesForCurrentPage();
     }
 
 
@@ -266,6 +267,36 @@ export class OppoLock extends Component{
             target: 'current',
             flags: { mode: 'edit' },
         });
+    }
+
+    async lockDevice(deviceId) {
+        try {
+            const result = await this.orm.call("oppo.lock", "action_edit_prepaid", [[deviceId], 0, 0]);
+            if (result && result.success) {
+                // Update status to Locked
+                const deviceIndex = this.state.devices.findIndex(d => d.id === deviceId);
+                if (deviceIndex !== -1) {
+                    this.state.devices[deviceIndex].status = 'Locked';
+                }
+                const filteredIndex = this.state.filteredDevices.findIndex(d => d.id === deviceId);
+                if (filteredIndex !== -1) {
+                    this.state.filteredDevices[filteredIndex].status = 'Locked';
+                }
+                this.statusCache[deviceId] = {
+                    status: 'Locked',
+                    api_status: 1,
+                    info: '',
+                };
+                this.updateCounts();
+                this.notification.add('Device locked successfully', { type: 'success' });
+            } else {
+                this.notification.add(`Lock failed: ${result?.error || 'Unknown error'}`, { type: 'danger' });
+            }
+        } catch (error) {
+            console.error(`Failed to lock device ${deviceId}:`, error);
+            const msg = error.data?.message || error.message || 'Unknown error';
+            this.notification.add(`Lock failed: ${msg}`, { type: 'danger' });
+        }
     }
 
     async completeDevice(deviceId) {
