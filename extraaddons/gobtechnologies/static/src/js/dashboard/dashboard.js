@@ -252,6 +252,7 @@ export class Dashboard extends Component {
     async fetchAgentPerformance() {
         try {
             const result = await this.orm.call('repayment', 'get_agent_payment_performance', []);
+            console.log('Agent Performance Result:', result); 
             this.state.agentPerformance = result;
         } catch (error) {
             console.error('Error fetching agent performance:', error);
