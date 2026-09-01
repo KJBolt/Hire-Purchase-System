@@ -2389,7 +2389,7 @@ class Repayment(models.Model):
                 day = today - timedelta(days=i)
                 labels.append(day.strftime('%a'))
                 day_lines = all_lines.filtered(
-                    lambda l, d=day: l.payment_date == d and l.payment_mode != 'deposit'
+                    lambda l, d=day: l.payment_date and l.payment_date == d and l.payment_mode != 'deposit'
                 )
                 current_data.append(sum(day_lines.mapped('payment_amount')))
                 previous_data.append(0)
@@ -2403,7 +2403,7 @@ class Repayment(models.Model):
                 week_end = week_start + timedelta(days=6)
                 labels.append(f'{week_start.strftime("%d %b")}')
                 week_lines = all_lines.filtered(
-                    lambda l, ws=week_start, we=week_end: ws <= l.payment_date <= we and l.payment_mode != 'deposit'
+                    lambda l, ws=week_start, we=week_end: l.payment_date and ws <= l.payment_date <= we and l.payment_mode != 'deposit'
                 )
                 current_data.append(sum(week_lines.mapped('payment_amount')))
                 previous_data.append(0)
@@ -2425,13 +2425,13 @@ class Repayment(models.Model):
                     month_end = datetime.date(y, m + 1, 1) - timedelta(days=1)
                 labels.append(month_start.strftime('%b'))
                 month_lines = all_lines.filtered(
-                    lambda l, ms=month_start, me=month_end: ms <= l.payment_date <= me and l.payment_mode != 'deposit'
+                    lambda l, ms=month_start, me=month_end: l.payment_date and ms <= l.payment_date <= me and l.payment_mode != 'deposit'
                 )
                 current_data.append(sum(month_lines.mapped('payment_amount')))
                 prev_month_start = month_start.replace(year=previous_year)
                 prev_month_end = month_end.replace(year=previous_year)
                 prev_lines = all_lines.filtered(
-                    lambda l, pms=prev_month_start, pme=prev_month_end: pms <= l.payment_date <= pme and l.payment_mode != 'deposit'
+                    lambda l, pms=prev_month_start, pme=prev_month_end: l.payment_date and pms <= l.payment_date <= pme and l.payment_mode != 'deposit'
                 )
                 previous_data.append(sum(prev_lines.mapped('payment_amount')))
 
@@ -2653,9 +2653,9 @@ class Repayment(models.Model):
                 lambda r: r.state == 'paid' or r.total_paid >= r.selling_price
             ))
 
-            daily_lines = non_deposit.filtered(lambda l: l.payment_date == today)
-            weekly_lines = non_deposit.filtered(lambda l: l.payment_date >= week_start)
-            monthly_lines = non_deposit.filtered(lambda l: l.payment_date >= month_start)
+            daily_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date == today)
+            weekly_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date >= week_start)
+            monthly_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date >= month_start)
 
             customers = []
             for r in agent_repayments:
