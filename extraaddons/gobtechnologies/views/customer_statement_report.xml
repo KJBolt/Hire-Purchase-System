@@ -412,6 +412,7 @@
                 <field name="phone_no"/>
                 <field name="unique_id"/>
                 <field name="plan_duration"/>
+                <field name="product_lines" string="IMEI" filter_domain="[('product_lines.lot_id.name', 'ilike', self)]"/>
 
                 <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]"/>
                 <filter name="progress" string="In Progress" domain="[('state', '=', 'progress')]"/>
