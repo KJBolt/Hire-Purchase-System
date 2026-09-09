@@ -359,6 +359,19 @@ class OppoLock(models.Model):
                 # -> always start counting from now
                 deadline = now + datetime.timedelta(days=days)
 
+            # Ensure deadline is at least 60 seconds ahead of the previous expired_time
+            # to avoid "Cannot reuse the last configured or effective expiration time" errors.
+            if record.expired_time and deadline > now:
+                try:
+                    prev_expired_ms = int(record.expired_time)
+                    prev_expired_dt = datetime.datetime.fromtimestamp(prev_expired_ms / 1000)
+                    min_deadline = prev_expired_dt + datetime.timedelta(seconds=60)
+                    if deadline <= min_deadline:
+                        deadline = min_deadline
+                        _logger.info(f"Deadline nudged ahead to be 60s after previous expiry: {deadline}")
+                except (ValueError, OSError):
+                    pass
+
             _logger.info(f'Expire time => {str(int(deadline.timestamp() * 1000))}')
 
             if not imei_list:
