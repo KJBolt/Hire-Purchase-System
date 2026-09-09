@@ -6,6 +6,7 @@ import logging
 import time
 import datetime
 import math
+import re
 
 _logger = logging.getLogger(__name__)
 
@@ -454,6 +455,22 @@ class OppoLock(models.Model):
                     _logger.info(f"Prepaid edit successful for repayment {record.repayment_id.unique_id}")
                     return {'success': True, 'deadline': deadline}
                 else:
+                    # If Oppo rejected due to expiry collision, parse the timestamp and retry once
+                    error = response_data.get('error') or {}
+                    error_data = (
+                        response_data.get('data')
+                        or response_data.get('message')
+                        or error.get('message')
+                        or ''
+                    )
+                    expiry_match = re.search(r'expiration time:\s*(\d+)', str(error_data))
+                    if expiry_match:
+                        oppo_expiry_sec = int(expiry_match.group(1))
+                        record.write({'expired_time': str(oppo_expiry_sec * 1000)})
+                        new_deadline = datetime.datetime.fromtimestamp(oppo_expiry_sec) + datetime.timedelta(seconds=60)
+                        _logger.info(f"Oppo rejected expiry — retrying with deadline {new_deadline}")
+                        return record._retry_prepaid_edit(imei_list, carrier_code, new_deadline, days, payment_amount, remaining, now)
+
                     record.write({'status': '-1'})
                     record.repayment_id.message_post(
                         body=f'Prepaid edit failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))} | Full response: {response_data}',
@@ -479,3 +496,84 @@ class OppoLock(models.Model):
                     subtype_xmlid='mail.mt_note'
                 )
                 return {'success': False, 'deadline': None}
+
+    def _retry_prepaid_edit(self, imei_list, carrier_code, new_deadline, days, payment_amount, remaining, now):
+        """Single retry after Oppo rejects due to expiry collision."""
+        self.ensure_one()
+        record = self
+
+        request_body = {
+            "imeiList": imei_list,
+            "deviceUid": record.device_uid or (imei_list[0] if imei_list else ""),
+            "expiredTime": str(int(new_deadline.timestamp() * 1000)),
+            "displayType": int(record.display_type),
+            "oneDayTitle": str(record.one_day_title) or "Payment Required",
+            "oneDayContent": str(record.one_day_content) or "Your plan expires soon. Please pay to continue.",
+            "threeDayTitle": str(record.three_day_title) or "Payment Overdue",
+            "threeDayContent": str(record.three_day_content) or "Your device will lock if payment is not made.",
+            "sevenDayTitle": str(record.seven_day_title) or "Device Locked",
+            "sevenDayContent": str(record.seven_day_content) or "Your device is locked. Please pay to unlock.",
+        }
+
+        try:
+            x_sign = record._generate_x_sign(request_body)
+            headers = {
+                'Content-Type': 'application/json',
+                'x-carrier-code': carrier_code,
+                'x-sign': x_sign,
+            }
+            body_string = json.dumps(request_body, ensure_ascii=False, separators=(',', ':'))
+            _logger.info(f"Retry prepaid edit with deadline {new_deadline}")
+
+            response = requests.post(
+                f"{OPPO_API_URL}/prepaid/edit",
+                headers=headers,
+                data=body_string,
+            )
+            response.raise_for_status()
+
+            response_data = response.json()
+            _logger.info(f"Oppo prepaid/edit retry response: {response_data}")
+            record.api_response = json.dumps(response_data, indent=2)
+
+            if response_data.get('code') == 0:
+                record.write({
+                    'last_prepaid_edit_date': fields.Datetime.now(),
+                    'last_prepaid_edit_days': days,
+                    'prepaid_edit_count': record.prepaid_edit_count + 1,
+                    'expired_time': str(int(new_deadline.timestamp() * 1000)),
+                })
+                record.action_get_device_status()
+
+                total_days = days
+                if remaining and remaining > now:
+                    remaining_days = (remaining - now).days
+                    total_days = remaining_days + days
+                    message = f'Prepaid edit successful: Previous remaining {remaining_days} day(s) + {days} day(s) added. Total days to be unlocked is {total_days} day(s). Payment amount: GHS {payment_amount}'
+                else:
+                    message = f'Prepaid edit successful: Device will remain unlocked for {days} day(s). Payment amount: GHS {payment_amount}'
+
+                record.repayment_id.message_post(
+                    body=message,
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note',
+                )
+                _logger.info(f"Prepaid edit retry successful for repayment {record.repayment_id.unique_id}")
+                return {'success': True, 'deadline': new_deadline}
+            else:
+                record.write({'status': '-1'})
+                record.repayment_id.message_post(
+                    body=f'Prepaid edit failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))} | Full response: {response_data}',
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note',
+                )
+                return {'success': False, 'deadline': None}
+
+        except Exception as e:
+            _logger.error(f"Retry prepaid edit failed: {e}", exc_info=True)
+            record.repayment_id.message_post(
+                body=f'Prepaid edit retry failed: {str(e)}',
+                message_type='comment',
+                subtype_xmlid='mail.mt_note',
+            )
+            return {'success': False, 'deadline': None}
