@@ -443,7 +443,7 @@ class OppoLock(models.Model):
                 else:
                     record.write({'status': '-1'})
                     record.repayment_id.message_post(
-                        body=f'Prepaid edit failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))}',
+                        body=f'Prepaid edit failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))} | Full response: {response_data}',
                         message_type='comment',
                         subtype_xmlid='mail.mt_note'
                     )
