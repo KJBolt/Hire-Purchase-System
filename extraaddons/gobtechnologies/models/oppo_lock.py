@@ -451,7 +451,15 @@ class OppoLock(models.Model):
 
 
             except requests.exceptions.RequestException as e:
-                _logger.error(f"Error calling Oppo prepaid/edit API: {e}")
+                _logger.error(f"Error calling Oppo prepaid/edit API: {e}", exc_info=True)
+                record.repayment_id.message_post(
+                    body=f'Prepaid edit failed: {str(e)}',
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_note'
+                )
+                return {'success': False, 'deadline': None}
+            except Exception as e:
+                _logger.error(f"Unexpected error in prepaid edit: {str(e)}", exc_info=True)
                 record.repayment_id.message_post(
                     body=f'Prepaid edit failed: {str(e)}',
                     message_type='comment',
