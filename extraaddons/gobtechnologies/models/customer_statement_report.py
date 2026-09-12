@@ -2441,24 +2441,28 @@ class Repayment(models.Model):
         }
 
     @api.model
-    def get_active_customer_installments(self, limit=10):
+    def get_active_customer_installments(self, limit=5, offset=0):
         user = self.env.user
         domain = [('state', 'in', ['draft', 'progress', 'termination_warning'])]
         domain += self._get_role_domain()
 
-        active_repayments = self.search(domain, order='create_date desc', limit=limit)
-        
+        # Get total count for pagination
+        total_count = self.search_count(domain)
+
+        # Fetch paginated records
+        active_repayments = self.search(domain, order='create_date desc', limit=limit, offset=offset)
+
         installments = []
         for repayment in active_repayments:
             # Get product information (first product if multiple)
             product_name = "No Product"
             if repayment.product_lines:
                 product_name = repayment.product_lines[0].product_id.name
-            
+
             # Calculate installments progress
             total_installments = 0
             paid_installments = 0
-            
+
             # Estimate installments based on payment frequency and dates
             if repayment.start_date and repayment.end_date and repayment.repayment_frequency:
                 if repayment.repayment_frequency == '0':  # Cash
@@ -2468,10 +2472,10 @@ class Repayment(models.Model):
                     freq_days = int(repayment.repayment_frequency)
                     total_days = (repayment.end_date - repayment.start_date).days
                     total_installments = max(1, total_days // freq_days)
-                    
+
                     # Count actual payments made
                     paid_installments = len(repayment.payment_lines)
-            
+
             # Determine status
             status = 'Active'
             status_color = '#10b981'  # Green
@@ -2484,7 +2488,21 @@ class Repayment(models.Model):
             elif repayment.state == 'draft':
                 status = 'Draft'
                 status_color = '#6b7280'  # Gray
-            
+
+            # Get IMEI from oppo.lock record
+            imei = 'N/A'
+            oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
+            if oppo_lock:
+                try:
+                    imei_list = json.loads(oppo_lock.imei_list) if isinstance(oppo_lock.imei_list, str) else []
+                    if imei_list:
+                        imei = imei_list[0]  # Show first IMEI
+                    elif oppo_lock.device_uid:
+                        imei = oppo_lock.device_uid
+                except json.JSONDecodeError:
+                    if oppo_lock.device_uid:
+                        imei = oppo_lock.device_uid
+
             installments.append({
                 'id': repayment.id,
                 'customer_name': repayment.customer_name.name if repayment.customer_name else 'Unknown',
@@ -2492,13 +2510,17 @@ class Repayment(models.Model):
                 'product': product_name,
                 'installments': f"{paid_installments}/{total_installments}",
                 'total_price': repayment.selling_price,
+                'imei': imei,
                 'paid_percentage': round(repayment.percentage_paid, 0),
                 'status': status,
                 'status_color': status_color,
                 'unique_id': repayment.unique_id
             })
-        
-        return installments
+
+        return {
+            'installments': installments,
+            'total_count': total_count
+        }
     
     def _get_customer_initials(self, name):
         """Get initials from customer name"""
@@ -2606,7 +2628,7 @@ class Repayment(models.Model):
         return agents_data[:limit]
 
     @api.model
-    def get_agent_payment_performance(self):
+    def get_agent_payment_performance(self, limit=10, offset=0):
         user = self.env.user
         today = fields.Date.today()
         week_start = today - timedelta(days=today.weekday())
@@ -2619,7 +2641,12 @@ class Repayment(models.Model):
         elif user.role == 'sales_agent':
             domain.append(('created_by', '=', user.partner_id.id))
 
-        all_repayments = self.search(domain)
+        # Get total count for pagination
+        total_count = self.search_count(domain)
+        
+        # Get paginated repayments
+        all_repayments = self.search(domain, order='create_date desc', limit=limit, offset=offset)
+        
         agent_partner_map = {}
         for r in all_repayments:
             pid = r.created_by.id
@@ -2655,6 +2682,21 @@ class Repayment(models.Model):
             daily_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date == today)
             weekly_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date >= week_start)
             monthly_lines = non_deposit.filtered(lambda l: l.payment_date and l.payment_date >= month_start)
+
+            daily_total = round(sum(daily_lines.mapped('payment_amount')), 2)
+            weekly_total = round(sum(weekly_lines.mapped('payment_amount')), 2)
+            monthly_total = round(sum(monthly_lines.mapped('payment_amount')), 2)
+
+            # Get company-wide totals for percentage calculation (matching KPI cards)
+            company_total_repayment = sum(self.search([]).mapped('payment_lines').filtered(lambda l: l.payment_mode != 'deposit').mapped('payment_amount'))
+            company_total_deposit = sum(self.search([]).mapped('payment_lines').filtered(lambda l: l.payment_mode == 'deposit').mapped('payment_amount'))
+            
+            # Calculate percentages as contribution to company totals (matching KPI cards)
+            total_repayment_percentage = round((total_repayment / company_total_repayment * 100), 1) if company_total_repayment > 0 else 0
+            total_deposit_percentage = round((total_deposit / company_total_deposit * 100), 1) if company_total_deposit > 0 else 0
+            daily_percentage = round((daily_total / company_total_repayment * 100), 1) if company_total_repayment > 0 else 0
+            weekly_percentage = round((weekly_total / company_total_repayment * 100), 1) if company_total_repayment > 0 else 0
+            monthly_percentage = round((monthly_total / company_total_repayment * 100), 1) if company_total_repayment > 0 else 0
 
             customers = []
             for r in agent_repayments:
@@ -2705,11 +2747,224 @@ class Repayment(models.Model):
                 'daily_total': round(sum(daily_lines.mapped('payment_amount')), 2),
                 'weekly_total': round(sum(weekly_lines.mapped('payment_amount')), 2),
                 'monthly_total': round(sum(monthly_lines.mapped('payment_amount')), 2),
+                'total_repayment_percentage': total_repayment_percentage,
+                'total_deposit_percentage': total_deposit_percentage,
+                'daily_percentage': daily_percentage,
+                'weekly_percentage': weekly_percentage,
+                'monthly_percentage': monthly_percentage,
                 'customers': customers,
             })
 
         result.sort(key=lambda x: x['total_repayment'], reverse=True)
-        return result
+        return {
+            'data': result,
+            'total_count': total_count,
+        }
+
+    @api.model
+    def get_total_repayment_percentage_by_role(self):
+        """Calculate user's total repayment as percentage of company-wide total"""
+        # Get user's visible total (with role filtering)
+        user_total = self.get_total_repayment_by_role()
+
+        # Get company-wide total (bypassing role filtering with sudo)
+        all_repayments = self.sudo().search([])
+        payment_lines = all_repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode != 'deposit'
+        )
+        company_total = sum(payment_lines.mapped('payment_amount'))
+
+        if company_total == 0:
+            return 0.0
+        return round((user_total / company_total) * 100, 1)
+
+    @api.model
+    def get_total_deposit_percentage_by_role(self):
+        """Calculate user's total deposit as percentage of company-wide total"""
+        # Get user's visible total (with role filtering)
+        user_total = self.get_total_deposit_by_role()
+
+        # Get company-wide total (bypassing role filtering with sudo)
+        all_repayments = self.sudo().search([])
+        payment_lines = all_repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode == 'deposit'
+        )
+        company_total = sum(payment_lines.mapped('payment_amount'))
+
+        if company_total == 0:
+            return 0.0
+        return round((user_total / company_total) * 100, 1)
+
+    @api.model
+    def get_daily_repayment_percentage_by_role(self):
+        """Calculate daily repayment as percentage of role-based total repayment"""
+        # Get user's visible daily total (with role filtering)
+        user_daily = self.get_daily_repayment_by_role()
+
+        # Get user's visible total repayment (with role filtering)
+        user_total = self.get_total_repayment_by_role()
+
+        if user_total == 0:
+            return 0.0
+        return round((user_daily / user_total) * 100, 1)
+
+    @api.model
+    def get_daily_deposit_percentage_by_role(self):
+        """Calculate daily deposit as percentage of role-based total deposit"""
+        # Get user's visible daily total (with role filtering)
+        user_daily = self.get_daily_deposit_by_role()
+
+        # Get user's visible total deposit (with role filtering)
+        user_total = self.get_total_deposit_by_role()
+
+        if user_total == 0:
+            return 0.0
+        return round((user_daily / user_total) * 100, 1)
+
+    @api.model
+    def get_sales_managers_percentage_by_role(self):
+        """Calculate sales managers count as percentage of total staff"""
+        # Get user's visible count (with role filtering)
+        managers_count = self.get_sales_managers_count_by_role()
+        
+        # Get company-wide total staff count (using sudo for denominator)
+        agents_count = self.env['res.partner'].sudo().search_count([
+            ['role', '=', 'sales_agent']
+        ])
+        company_managers_count = self.env['res.partner'].sudo().search_count([
+            ['role', '=', 'sales_manager']
+        ])
+        total_staff = company_managers_count + agents_count
+        
+        if total_staff == 0:
+            return 0.0
+        return round((managers_count / total_staff) * 100, 1)
+
+    @api.model
+    def get_sales_agents_percentage_by_role(self):
+        """Calculate sales agents count as percentage of total staff"""
+        # Get user's visible count (with role filtering)
+        agents_count = self.get_sales_agents_count_by_role()
+        
+        # Get company-wide total staff count (using sudo for denominator)
+        managers_count = self.env['res.partner'].sudo().search_count([
+            ['role', '=', 'sales_manager']
+        ])
+        company_agents_count = self.env['res.partner'].sudo().search_count([
+            ['role', '=', 'sales_agent']
+        ])
+        total_staff = managers_count + company_agents_count
+        
+        if total_staff == 0:
+            return 0.0
+        return round((agents_count / total_staff) * 100, 1)
+
+    @api.model
+    def get_sales_agents_count_by_role(self):
+        """Get sales agents count with role-based filtering"""
+        user = self.env.user
+        
+        # Sales agents see only themselves
+        if user.role == 'sales_agent':
+            return self.env['res.partner'].search_count([
+                ['role', '=', 'sales_agent'],
+                ['id', '=', user.partner_id.id]
+            ])
+        
+        # Sales managers see their assigned agents (using sales_manager field)
+        elif user.role == 'sales_manager':
+            return self.env['res.partner'].search_count([
+                ['role', '=', 'sales_agent'],
+                ['sales_manager', '=', user.name.strip()]
+            ])
+        
+        # Supervisors and above see all agents
+        else:
+            return self.env['res.partner'].search_count([
+                ['role', '=', 'sales_agent']
+            ])
+
+    @api.model
+    def get_sales_managers_count_by_role(self):
+        """Get sales managers count with role-based filtering"""
+        user = self.env.user
+        
+        # Sales agents see their assigned manager
+        if user.role == 'sales_agent':
+            return self.env['res.partner'].search_count([
+                ['role', '=', 'sales_manager'],
+                ['name', '=', user.sales_manager.strip()] if user.sales_manager else [('id', '!=', False)]
+            ])
+        
+        # Sales managers see themselves
+        elif user.role == 'sales_manager':
+            return 1  # They see themselves as their manager
+        
+        # Supervisors and above see all managers
+        else:
+            return self.env['res.partner'].search_count([
+                ['role', '=', 'sales_manager']
+            ])
+
+    @api.model
+    def get_daily_commission_percentage_by_role(self):
+        """Calculate daily commission as percentage of monthly commission"""
+        # Get user's visible daily commission (with role filtering)
+        user_daily = self.get_daily_commission_by_role()
+
+        # Get user's visible monthly commission (with role filtering)
+        user_monthly = self.get_monthly_commission_by_role()
+
+        if user_monthly == 0:
+            return 0.0
+        return round((user_daily / user_monthly) * 100, 1)
+
+    @api.model
+    def get_monthly_commission_percentage_by_role(self):
+        """Calculate monthly commission as percentage of company-wide monthly total"""
+        # Get user's visible monthly commission (with role filtering)
+        user_monthly = self.get_monthly_commission_by_role()
+
+        # Get company-wide monthly commission (bypassing role filtering with sudo)
+        today = fields.Date.today()
+        first_day = today.replace(day=1)
+        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+        company_monthly = sum(self.sudo().search([
+            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+        ]).mapped('sales_commission'))
+
+        if company_monthly == 0:
+            return 0.0
+        return round((user_monthly / company_monthly) * 100, 1)
+
+    @api.model
+    def get_monthly_sales_percentage_by_role(self):
+        """Calculate monthly sales as percentage of company-wide monthly total"""
+        # Get user's visible monthly sales (with role filtering)
+        user_monthly = self.get_monthly_sales_by_role()
+
+        # Get company-wide monthly sales (bypassing role filtering with sudo)
+        today = fields.Date.today()
+        first_day = today.replace(day=1)
+        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+        company_monthly = sum(self.sudo().search([
+            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+            ('state', '=', 'paid'),
+        ]).mapped('total_paid'))
+
+        if company_monthly == 0:
+            return 0.0
+        return round((user_monthly / company_monthly) * 100, 1)
+
+    @api.model
+    def get_overdue_accounts_percentage_by_role(self):
+        """Overdue accounts percentage - shows 100% as it represents the count for that role"""
+        user_overdue = self.get_overdue_accounts_by_role()
+        return 100.0 if user_overdue > 0 else 0.0
 
 
 
