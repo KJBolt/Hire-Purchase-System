@@ -1367,8 +1367,12 @@ class Repayment(models.Model):
             try:
                 oppo_lock = self.env['oppo.lock'].search([('repayment_id', '=', repayment.id)], limit=1)
                 if oppo_lock and oppo_lock.status != '1':
-                    oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
+                    result = oppo_lock.action_edit_prepaid(0, repayment.repayment_frequency)
                     _logger.info(f"Grace period lock triggered for repayment {repayment.unique_id} (lock_deadline {repayment.lock_deadline} expired)")
+                    # Update lock_deadline to the new deadline from Oppo API (now + 0 days = now)
+                    if result and result.get('success') and result.get('deadline'):
+                        repayment.sudo().write({'lock_deadline': result['deadline']})
+                        _logger.info(f"lock_deadline updated after grace period lock for repayment {repayment.unique_id}")
                     repayment.message_post(
                         body=f'Grace period expired (lock deadline was {repayment.lock_deadline}). Device locked via prepaid edit.',
                         message_type='comment',

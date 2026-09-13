@@ -91,6 +91,7 @@
                                 <th class="olod-th">Customer</th>
                                 <th class="olod-th">Phone Number</th>
                                 <th class="olod-th">Device UID</th>
+                                <th class="olod-th">Expiry Countdown</th>
                                 <th class="olod-th">Status</th>
                                 <th class="olod-th">Last Action</th>
                                 <th class="olod-th olod-th-right">Actions</th>
@@ -101,7 +102,7 @@
 
                                 <!-- Confirm Delete Row -->
                                 <tr t-if="state.confirmDeleteId === device.id" class="olod-confirm-row">
-                                    <td colspan="7" class="olod-confirm-cell">
+                                    <td colspan="8" class="olod-confirm-cell">
                                         <div class="olod-confirm-inner">
                                             <i class="fa fa-exclamation-triangle olod-warn-icon"/>
                                             <span>Delete <strong t-esc="device.device_name"/>? This action cannot be undone.</span>
@@ -138,6 +139,22 @@
                                         <code class="olod-uid" t-esc="device.device_uid"/>
                                     </td>
                                     <td class="olod-td">
+                                        <t t-set="countdown" t-value="this.getCountdown(device.expired_time)"/>
+                                        <t t-if="device.expired_time">
+                                            <t t-if="countdown.isExpired">
+                                                <span class="olod-countdown-badge olod-countdown-expired">
+                                                    <i class="fa fa-clock-o"/> <t t-esc="countdown.text"/>
+                                                </span>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-attf-class="olod-countdown-text #{countdown.isUrgent ? 'timer-urgent' : ''} #{countdown.isWarning ? 'timer-warning' : ''}">
+                                                    <i class="fa fa-clock-o"/> <t t-esc="countdown.text"/>
+                                                </span>
+                                            </t>
+                                        </t>
+                                        <span t-else="" class="olod-na">—</span>
+                                    </td>
+                                    <td class="olod-td">
                                         <span t-attf-class="olod-status-badge olod-status-#{device.status}">
                                             <i t-attf-class="fa #{device.status === 'locked' ? 'fa-lock' : device.status === 'unlocked' ? 'fa-unlock-alt' : device.status === 'pending' ? 'fa-clock-o' : 'fa-exclamation-circle'}"/>
                                             <t t-esc="device.status"/>
@@ -165,6 +182,13 @@
                                                 t-on-click="() => this.editDevice(device.id)"
                                                 title="Edit Device">
                                                 <i class="fa fa-pencil"/> Edit
+                                            </button>
+                                            
+                                            <button
+                                                class="olod-btn olod-btn-warning olod-btn-sm"
+                                                t-on-click="() => this.openDecreaseDaysModal(device)"
+                                                title="Decrease Days">
+                                                <i class="fa fa-arrow-down"/> Days
                                             </button>
 
                                             <!-- Lock: hidden if already Locked -->
@@ -197,7 +221,7 @@
 
                             <!-- Empty State -->
                             <tr t-if="state.filteredDevices.length === 0">
-                                <td colspan="7" class="olod-empty">
+                                <td colspan="8" class="olod-empty">
                                     <i class="fa fa-search olod-empty-icon"/>
                                     <p class="olod-empty-text">No devices match your search.</p>
                                 </td>
@@ -222,6 +246,78 @@
                         </t>
                         <button class="olod-btn olod-btn-ghost olod-btn-sm" t-on-click="() => this.nextPage()" t-att-disabled="state.currentPage === totalPages">
                             Next <i class="fa fa-chevron-right"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decrease Days Modal -->
+            <div class="olod-modal-overlay" t-if="state.decreaseDaysModal" t-on-click="closeDecreaseDaysModal">
+                <div class="olod-modal" t-on-click.stop="">
+                    <div class="olod-modal-header">
+                        <h3 class="olod-modal-title">Decrease Expiry Time</h3>
+                        <button class="olod-modal-close" t-on-click="closeDecreaseDaysModal">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div class="olod-modal-body">
+                        <div class="olod-form-group">
+                            <label class="olod-form-label">Current Countdown</label>
+                            <div class="olod-form-value" t-if="state.selectedDevice">
+                                <t t-set="countdown" t-value="this.getCountdown(state.selectedDevice.expired_time)"/>
+                                <t t-esc="countdown.text"/>
+                            </div>
+                        </div>
+                        <div class="olod-form-group">
+                            <label class="olod-form-label">Decrease By</label>
+                            <div style="display: flex; gap: 12px;">
+                                <div style="flex: 1;">
+                                    <label class="olod-form-label" style="font-size: 0.75rem; font-weight: normal;">Hours</label>
+                                    <input
+                                        type="number"
+                                        class="olod-form-input"
+                                        t-model="state.decreaseHours"
+                                        min="0"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div style="flex: 1;">
+                                    <label class="olod-form-label" style="font-size: 0.75rem; font-weight: normal;">Minutes</label>
+                                    <input
+                                        type="number"
+                                        class="olod-form-input"
+                                        t-model="state.decreaseMinutes"
+                                        min="0"
+                                        max="59"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div style="flex: 1;">
+                                    <label class="olod-form-label" style="font-size: 0.75rem; font-weight: normal;">Seconds</label>
+                                    <input
+                                        type="number"
+                                        class="olod-form-input"
+                                        t-model="state.decreaseSeconds"
+                                        min="0"
+                                        max="59"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="olod-form-hint">
+                            <i class="fa fa-info-circle"/>
+                            This will reduce the device expiry time by the specified duration.
+                        </div>
+                    </div>
+                    <div class="olod-modal-footer">
+                        <button class="olod-btn olod-btn-ghost" t-on-click="closeDecreaseDaysModal">
+                            Cancel
+                        </button>
+                        <button class="olod-btn olod-btn-danger" t-on-click="confirmDecreaseDays" t-att-disabled="state.decreasingDays">
+                            <i t-if="state.decreasingDays" class="fa fa-spinner fa-spin"/>
+                            <t t-if="!state.decreasingDays">Decrease Days</t>
+                            <t t-else="">Processing...</t>
                         </button>
                     </div>
                 </div>
@@ -277,6 +373,8 @@
             .olod-btn-success:hover { background: #1b5e20; }
             .olod-btn-info { background: #1565c0; color: #fff; border-color: #1565c0; }
             .olod-btn-info:hover { background: #0d47a1; }
+            .olod-btn-warning { background: #f57f17; color: #fff; border-color: #f57f17; }
+            .olod-btn-warning:hover { background: #e65100; }
             .olod-btn-ghost { background: #fff; color: #3d4451; border-color: #e0e3e8; }
             .olod-btn-ghost:hover { background: #f5f6f8; }
             .olod-btn-icon-warn { color: #b71c1c; }
@@ -455,6 +553,31 @@
                 background: #f1f3f4; color: #5f6368;
             }
 
+            /* ── Countdown Badges ── */
+            .olod-countdown-badge {
+                display: inline-flex; align-items: center; gap: 5px;
+                padding: 4px 11px; border-radius: 20px;
+                font-size: 12px; font-weight: 600;
+            }
+            .olod-countdown-expired { background: #c62828; color: #fff; }
+            .olod-countdown-text {
+                display: inline-flex; align-items: center; gap: 5px;
+                font-size: 13px; font-weight: 600;
+                color: #5f6368;
+                transition: color 0.2s;
+            }
+            .olod-countdown-text.timer-urgent { 
+                color: #c62828; 
+                animation: timer-pulse-text 2s ease-in-out infinite;
+            }
+            .olod-countdown-text.timer-warning { color: #f57f17; }
+            .olod-countdown-text.timer-expired { color: #c62828; }
+
+            @keyframes timer-pulse-text {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+
             /* ── Action Group ── */
             .olod-action-group { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 
@@ -494,6 +617,118 @@
             .olod-pagination-controls .olod-btn:disabled {
                 opacity: 0.4;
                 cursor: not-allowed;
+            }
+
+            /* ── Modal ── */
+            .olod-modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                backdrop-filter: blur(4px);
+            }
+
+            .olod-modal {
+                background: #fff;
+                border-radius: 14px;
+                width: 100%;
+                max-width: 420px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+                overflow: hidden;
+            }
+
+            .olod-modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 18px 20px;
+                border-bottom: 1px solid #f0f2f5;
+            }
+
+            .olod-modal-title {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 700;
+                color: #1a1f2e;
+            }
+
+            .olod-modal-close {
+                background: none;
+                border: none;
+                color: #8f9aab;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 6px;
+                transition: all 0.15s;
+            }
+
+            .olod-modal-close:hover {
+                background: #f5f6f8;
+                color: #3d4451;
+            }
+
+            .olod-modal-body {
+                padding: 20px;
+            }
+
+            .olod-form-group {
+                margin-bottom: 16px;
+            }
+
+            .olod-form-label {
+                display: block;
+                font-size: 13px;
+                font-weight: 600;
+                color: #3d4451;
+                margin-bottom: 6px;
+            }
+
+            .olod-form-value {
+                font-size: 14px;
+                font-weight: 600;
+                color: #1a1f2e;
+                padding: 8px 12px;
+                background: #f5f6f8;
+                border-radius: 8px;
+            }
+
+            .olod-form-input {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1.5px solid #e0e3e8;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #1a1f2e;
+                transition: border-color 0.15s;
+            }
+
+            .olod-form-input:focus {
+                outline: none;
+                border-color: #2e7d32;
+            }
+
+            .olod-form-hint {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+                color: #8f9aab;
+                margin-top: 12px;
+            }
+
+            .olod-modal-footer {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 10px;
+                padding: 16px 20px;
+                border-top: 1px solid #f0f2f5;
+                background: #fafbfe;
             }
         </style>
     </t>

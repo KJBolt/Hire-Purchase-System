@@ -1,6 +1,6 @@
 /** @odoo-module **/
 import {registry} from "@web/core/registry";
-import {Component, useState, onWillStart, useMemo} from "@odoo/owl";
+import {Component, useState, onWillStart, useMemo, onMounted, onWillUnmount} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
 
 
@@ -13,6 +13,9 @@ export class OppoLock extends Component{
 
         // Status cache: keyed by device.id, stores { status, api_status, info }
         this.statusCache = {};
+        
+        // Countdown timer reference
+        this.countdownInterval = null;
 
         this.state = useState({
             devices: [],
@@ -27,10 +30,26 @@ export class OppoLock extends Component{
             pageSize: 5,
             loadingStatuses: false,
             completingIds: [],
+            countdownTick: 0, // Triggers re-render every second
+            decreaseDaysModal: false,
+            selectedDevice: null,
+            decreaseHours: 0,
+            decreaseMinutes: 0,
+            decreaseSeconds: 0,
+            decreasingDays: false,
         });
 
         onWillStart(async() => {
             await this.fetchDevices();
+        })
+
+        onMounted(() => {
+            // Start countdown timer
+            this.startCountdownTimer();
+        })
+
+        onWillUnmount(() => {
+            this.stopCountdownTimer();
         })
     }
 
@@ -82,7 +101,7 @@ export class OppoLock extends Component{
 
     async fetchDevices() {
         const devices = await this.orm.searchRead("oppo.lock", [], [
-            "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response", "repayment_state", "phone_no"
+            "device_name", "customer_name", "repayment_id", "device_uid", "status", "lock_date", "x_sign", "api_response", "repayment_state", "phone_no", "expired_time"
         ]);
         this.state.devices = devices;
         this.state.currentPage = 1;
@@ -358,6 +377,153 @@ export class OppoLock extends Component{
         } catch (error) {
             this.notification.add('Failed to delete device', { type: 'danger' });
             console.error(error);
+        }
+    }
+
+    getCountdown(expiredTime) {
+        if (!expiredTime) return { text: '—', isExpired: false, isUrgent: false, isWarning: false };
+        
+        const expiryTimestamp = parseInt(expiredTime);
+        if (isNaN(expiryTimestamp)) return { text: '—', isExpired: false, isUrgent: false, isWarning: false };
+        
+        const deadline = new Date(expiryTimestamp);
+        const diff = deadline.getTime() - Date.now();
+        
+        if (diff <= 0) {
+            return { text: 'Expired', isExpired: true, isUrgent: false, isWarning: false };
+        }
+        
+        const totalSeconds = Math.floor(diff / 1000);
+        const d = Math.floor(totalSeconds / 86400);
+        const h = Math.floor((totalSeconds % 86400) / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        
+        const text = `${String(d).padStart(2, '0')}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        
+        // Add urgency classes like home.xml
+        let isUrgent = false;
+        let isWarning = false;
+        
+        if (d < 1) {
+            isUrgent = true;
+        } else if (d < 3) {
+            isWarning = true;
+        }
+        
+        return { text, isExpired: false, isUrgent, isWarning };
+    }
+
+    startCountdownTimer() {
+        // Update countdown every second
+        this.countdownInterval = setInterval(() => {
+            this.state.countdownTick = this.state.countdownTick + 1;
+        }, 1000);
+    }
+
+    stopCountdownTimer() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+    }
+
+    openDecreaseDaysModal(device) {
+        this.state.selectedDevice = device;
+        this.state.decreaseHours = 0;
+        this.state.decreaseMinutes = 0;
+        this.state.decreaseSeconds = 0;
+        this.state.decreaseDaysModal = true;
+    }
+
+    closeDecreaseDaysModal() {
+        this.state.decreaseDaysModal = false;
+        this.state.selectedDevice = null;
+        this.state.decreaseHours = 0;
+        this.state.decreaseMinutes = 0;
+        this.state.decreaseSeconds = 0;
+    }
+
+    getDecreaseDurationText() {
+        const parts = [];
+        const h = parseInt(this.state.decreaseHours) || 0;
+        const m = parseInt(this.state.decreaseMinutes) || 0;
+        const s = parseInt(this.state.decreaseSeconds) || 0;
+        if (h > 0) parts.push(`${h} hour${h !== 1 ? 's' : ''}`);
+        if (m > 0) parts.push(`${m} min${m !== 1 ? 's' : ''}`);
+        if (s > 0) parts.push(`${s} sec${s !== 1 ? 's' : ''}`);
+        return parts.length > 0 ? parts.join(', ') : '0';
+    }
+
+    async confirmDecreaseDays() {
+        const h = parseInt(this.state.decreaseHours) || 0;
+        const m = parseInt(this.state.decreaseMinutes) || 0;
+        const s = parseInt(this.state.decreaseSeconds) || 0;
+
+        if (!this.state.selectedDevice) {
+            this.notification.add('No device selected', { type: 'danger' });
+            return;
+        }
+        if (h <= 0 && m <= 0 && s <= 0) {
+            this.notification.add('Please enter a value greater than zero for at least one field', { type: 'danger' });
+            return;
+        }
+
+        // Frontend validation: check if decrease would push expiry into the past
+        const device = this.state.selectedDevice;
+        if (device.expired_time) {
+            const expiryMs = parseInt(device.expired_time);
+            if (!isNaN(expiryMs)) {
+                const totalMs = ((h * 3600) + (m * 60) + s) * 1000;
+                const newExpiryMs = expiryMs - totalMs;
+                if (newExpiryMs <= Date.now()) {
+                    const remainingMs = expiryMs - Date.now();
+                    const remH = Math.floor(remainingMs / (1000 * 60 * 60));
+                    const remM = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    this.notification.add(
+                        `Cannot decrease by ${this.getDecreaseDurationText()}: only ${remH}h ${remM}m remaining. The expiry would fall in the past.`,
+                        { type: 'danger' }
+                    );
+                    return;
+                }
+            }
+        }
+
+        this.state.decreasingDays = true;
+
+        try {
+            const result = await this.orm.call("oppo.lock", "action_decrease_days", [
+                [this.state.selectedDevice.id],
+                h, m, s
+            ]);
+
+            if (result.success) {
+                this.notification.add(`Expiry time decreased by ${this.getDecreaseDurationText()}`, { type: 'success' });
+                this.closeDecreaseDaysModal();
+                await this.fetchDevices();
+            } else {
+                const errorMsg = result.error || 'Failed to decrease expiry time';
+                this.notification.add(errorMsg, { type: 'danger' });
+            }
+        } catch (error) {
+            // Extract the actual error message from the Odoo error
+            let errorMessage = 'Failed to decrease expiry time';
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (error.data && error.data.message) {
+                errorMessage = error.data.message;
+            } else if (error.data && error.data.debug) {
+                // Parse the debug message to get the actual error
+                const debugLines = error.data.debug.split('\n');
+                const errorLine = debugLines.find(line => line.includes('Error:') || line.includes('UserError'));
+                if (errorLine) {
+                    errorMessage = errorLine.split(':').slice(1).join(':').trim();
+                }
+            }
+            this.notification.add(errorMessage, { type: 'danger' });
+            console.error('Decrease days error:', error);
+        } finally {
+            this.state.decreasingDays = false;
         }
     }
 }

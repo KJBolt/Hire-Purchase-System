@@ -486,22 +486,177 @@ class OppoLock(models.Model):
                         subtype_xmlid='mail.mt_note'
                     )
                     return {'success': False, 'deadline': None}
-
-
+                    
             except requests.exceptions.RequestException as e:
-                _logger.error(f"Error calling Oppo prepaid/edit API: {e}", exc_info=True)
-                record.repayment_id.message_post(
-                    body=f'Prepaid edit failed: {str(e)}',
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_note'
+                _logger.error(f"Error calling Oppo prepaid/edit API: {e}")
+                record.write({'status': '-1'})
+                raise UserError(_('Failed to complete prepaid edit from Oppo API: %s') % str(e))
+
+    def action_decrease_days(self, hours=0, minutes=0, seconds=0):
+        """Decrease the expired time by the specified hours, minutes, and seconds using Oppo API"""
+        # Convert to integers in case they're passed as strings
+        hours = int(hours or 0)
+        minutes = int(minutes or 0)
+        seconds = int(seconds or 0)
+
+        total_seconds = hours * 3600 + minutes * 60 + seconds
+        if total_seconds <= 0:
+            raise UserError(_('Please specify at least one value greater than zero.'))
+
+        for record in self:
+            if not record.expired_time:
+                raise UserError(_('Device has no expiry time set.'))
+            
+            try:
+                current_expired_ms = int(record.expired_time)
+            except (ValueError, TypeError):
+                raise UserError(_('Invalid expiry time format.'))
+            
+            # Calculate new expiry time
+            current_expired_dt = datetime.datetime.fromtimestamp(current_expired_ms / 1000)
+            new_expired_dt = current_expired_dt - datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
+
+            # Validate: new expiry must be in the future (Oppo API requirement)
+            now = datetime.datetime.now()
+            if new_expired_dt <= now:
+                remaining = current_expired_dt - now
+                remaining_hours = remaining.total_seconds() / 3600
+                max_hours = remaining_hours - 0.01  # small buffer
+                if max_hours <= 0:
+                    raise UserError(_('Device expiry is already in the past. Cannot decrease further.'))
+                max_h = int(max_hours)
+                max_m = int((max_hours - max_h) * 60)
+                raise UserError(_(
+                    'Cannot decrease by %s: only %s remaining (until %s). '
+                    'The expiry would fall in the past. '
+                    'Maximum decrease allowed: %d hour(s) %d minute(s).'
+                ) % (
+                    self._format_duration(hours, minutes, seconds),
+                    self._format_duration(0, remaining_hours),
+                    current_expired_dt.strftime('%Y-%m-%d %H:%M:%S'),
+                    max_h, max_m,
+                ))
+            new_expired_ms = str(int(new_expired_dt.timestamp() * 1000))
+            
+            # Get oppo credentials
+            oppo_credentials = self.env['res.config.settings'].get_oppo_credentials()
+            carrier_code = oppo_credentials.get('carrier_code')
+            
+            if not carrier_code:
+                raise UserError(_('Oppo carrier code is not configured. Please configure it in the settings.'))
+            
+            # Parse IMEI list
+            try:
+                imei_list = json.loads(record.imei_list) if isinstance(record.imei_list, str) else []
+            except json.JSONDecodeError:
+                imei_list = []
+            
+            if not imei_list:
+                raise UserError(_('IMEI list is required for prepaid edit.'))
+            
+            # Build request body (same structure as action_edit_prepaid)
+            request_body = {
+                "imeiList": imei_list,
+                "deviceUid": record.device_uid or (imei_list[0] if imei_list else ""),
+                "expiredTime": new_expired_ms,
+                "displayType": int(record.display_type),
+                "oneDayTitle": str(record.one_day_title) or "Payment Required",
+                "oneDayContent": str(record.one_day_content) or "Your plan expires soon. Please pay to continue.",
+                "threeDayTitle": str(record.three_day_title) or "Payment Overdue",
+                "threeDayContent": str(record.three_day_content) or "Your device will lock if payment is not made.",
+                "sevenDayTitle": str(record.seven_day_title) or "Device Locked",
+                "sevenDayContent": str(record.seven_day_content) or "Your device is locked. Please pay to unlock.",
+            }
+            
+            # Generate X-Sign
+            try:
+                x_sign = record._generate_x_sign(request_body)
+                record.x_sign = x_sign
+                
+                _logger.info(f"Decrease days - X-Sign: {x_sign}")
+                _logger.info(f"Decrease days - Carrier Code: {carrier_code}")
+                _logger.info(f"Decrease days - Decrease: {hours}h {minutes}m {seconds}s")
+                _logger.info(f"Decrease days - New expiry time: {new_expired_ms}")
+                
+                # Call Oppo API
+                headers = {
+                    'Content-Type': 'application/json',
+                    'x-carrier-code': carrier_code,
+                    'x-sign': x_sign
+                }
+                
+                # Serialize compactly so sent body exactly matches what was signed
+                body_string = json.dumps(request_body, ensure_ascii=False, separators=(',', ':'))
+                
+                _logger.info(f"Body string: {body_string}")
+                
+                response = requests.post(
+                    f"{OPPO_API_URL}/prepaid/edit",
+                    headers=headers,
+                    data=body_string
                 )
-                return {'success': False, 'deadline': None}
-            except Exception as e:
-                _logger.error(f"Unexpected error in prepaid edit: {str(e)}", exc_info=True)
-                record.repayment_id.message_post(
-                    body=f'Prepaid edit failed: {str(e)}',
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_note'
-                )
-                return {'success': False, 'deadline': None}
+                response.raise_for_status()
+                
+                response_data = response.json()
+                _logger.info(f"Oppo prepaid/edit API response (decrease days): {response_data}")
+                
+                record.api_response = json.dumps(response_data, indent=2)
+                
+                if response_data.get('code') == 0:
+                    record.write({
+                        'last_prepaid_edit_date': fields.Datetime.now(),
+                        'last_prepaid_edit_days': -total_seconds,  # Negative to indicate decrease
+                        'prepaid_edit_count': record.prepaid_edit_count + 1,
+                        'expired_time': new_expired_ms,
+                    })
+                    # Also update the repayment's lock_deadline to keep customer dashboard in sync
+                    if record.repayment_id:
+                        record.repayment_id.write({
+                            'lock_deadline': new_expired_dt
+                        })
+                    # Refresh device status from Oppo
+                    record.action_get_device_status()
+                    
+                    decrease_label = self._format_duration(hours, minutes, seconds)
+                    message = f'Decreased expiry time by {decrease_label}. New expiry: {new_expired_dt.strftime("%Y-%m-%d %H:%M:%S")}'
+                    record.repayment_id.message_post(
+                        body=message,
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                    _logger.info(f"Decrease days successful for device {record.id}")
+                    
+                    return {
+                        'success': True,
+                        'new_expired_time': new_expired_ms,
+                        'days_decreased': total_seconds,
+                    }
+                else:
+                    record.write({'status': '-1'})
+                    record.repayment_id.message_post(
+                        body=f'Decrease days failed: {response_data.get("errorInfo", response_data.get("message", "Unknown error"))} | Full response: {response_data}',
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note'
+                    )
+                    return {
+                        'success': False,
+                        'error': response_data.get('errorInfo', response_data.get('message', 'Unknown error'))
+                    }
+                    
+            except requests.exceptions.RequestException as e:
+                _logger.error(f"Error calling Oppo prepaid/edit API (decrease days): {e}")
+                record.write({'status': '-1'})
+                raise UserError(_('Failed to decrease expiry time from Oppo API: %s') % str(e))
+
+    @staticmethod
+    def _format_duration(hours=0, minutes=0, seconds=0):
+        """Return a human-readable string like '2 hours, 30 minutes, 15 seconds'"""
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if seconds > 0:
+            parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+        return ', '.join(parts) if parts else '0'
 
