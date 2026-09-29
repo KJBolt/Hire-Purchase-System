@@ -7,6 +7,7 @@ import {useService} from '@web/core/utils/hooks';
 export class Dashboard extends Component {
     setup() {
         this.orm = useService('orm');
+        this.user = useService('user');
         this.salesChartRef = useRef('salesChartCanvas');
         this.donutChartRef = useRef('donutChartCanvas');
         this.agentsChartRef = useRef('agentsChartCanvas');
@@ -20,8 +21,141 @@ export class Dashboard extends Component {
             });
         };
 
+        // Helper function to get color class based on percentage
+        this.getPercentageColor = (percentage) => {
+            if (percentage >= 100) return '#10b981'; // Green for 100% or more
+            if (percentage >= 70) return '#10b981'; // Green
+            if (percentage >= 40) return '#f59e0b'; // Yellow
+            if (percentage > 0) return '#6366f1'; // Blue for low but positive
+            return '#9ca3af'; // Gray for zero
+        };
+
+        // Helper function to get percentage label
+        this.getPercentageLabel = (percentage) => {
+            if (percentage >= 70) return 'Excellent';
+            if (percentage >= 40) return 'Good';
+            return 'Needs Attention';
+        };
+
+        // Helper function to check if user should see IMEI
+        this.shouldShowIMEI = () => {
+            const userRole = this.state.userRole;
+            return userRole === 'sales_manager' || userRole === 'sales_agent';
+        };
+
+        // Helper function to calculate customer percentage (contribution to agent's total)
+        this.calculateCustomerPercentage = (customerTotal, agentTotal) => {
+            if (!agentTotal || agentTotal === 0) return 0;
+            return Math.round((customerTotal / agentTotal) * 100 * 10) / 10;
+        };
+
+        // Date range picker handlers
+        this.onDateFromChange = (ev) => {
+            this.state.dateFrom = ev.target.value;
+        };
+
+        this.onDateToChange = (ev) => {
+            this.state.dateTo = ev.target.value;
+        };
+
+        this.onApplyDateFilter = async () => {
+            await this.refreshDashboard();
+        };
+
+        this.onResetDateFilter = async () => {
+            this.state.dateFrom = '';
+            this.state.dateTo = '';
+            await this.refreshDashboard();
+        };
+
+        this.refreshDashboard = async () => {
+            await Promise.all([
+                this.fetchTotalRepayment(),
+                this.fetchTotalDeposit(),
+                this.fetchDailyRepayment(),
+                this.fetchDailyDeposit(),
+                this.fetchSalesManagersCount(),
+                this.fetchSalesAgentsCount(),
+                this.fetchDailyCommission(),
+                this.fetchMonthlyCommission(),
+                this.fetchTotalStockValue(),
+                this.fetchMonthlySales(),
+                this.fetchOverdueAccounts(),
+                this.fetchPaymentDistribution(),
+                this.fetchCustomerInstallments(),
+                this.fetchAgentPerformance(),
+                this.fetchTopAgents(),
+                this.fetchChartData(),
+                this.fetchTotalRepaymentPercentage(),
+                this.fetchTotalDepositPercentage(),
+                this.fetchDailyRepaymentPercentage(),
+                this.fetchDailyDepositPercentage(),
+                this.fetchSalesManagersPercentage(),
+                this.fetchSalesAgentsPercentage(),
+                this.fetchDailyCommissionPercentage(),
+                this.fetchMonthlyCommissionPercentage(),
+                this.fetchMonthlySalesPercentage(),
+                this.fetchOverdueAccountsPercentage()
+            ]);
+        };
+
+        // Pagination helper functions
+        this.getPaginatedInstallments = () => {
+            return this.state.customerInstallments;
+        };
+
+        this.getInstallmentsTotalPages = () => {
+            return Math.ceil(this.state.installmentsTotalCount / this.state.installmentsItemsPerPage);
+        };
+
+        this.installmentsGoToPage = async (page) => {
+            this.state.installmentsCurrentPage = page;
+            await this.fetchCustomerInstallments();
+        };
+
+        this.installmentsGoToPreviousPage = async () => {
+            if (this.state.installmentsCurrentPage > 1) {
+                this.state.installmentsCurrentPage--;
+                await this.fetchCustomerInstallments();
+            }
+        };
+
+        this.installmentsGoToNextPage = async () => {
+            const totalPages = this.getInstallmentsTotalPages();
+            if (this.state.installmentsCurrentPage < totalPages) {
+                this.state.installmentsCurrentPage++;
+                await this.fetchCustomerInstallments();
+            }
+        };
+
+        // Agent Performance pagination helper functions
+        this.getAgentPerformanceTotalPages = () => {
+            return Math.ceil(this.state.agentPerformanceTotalCount / this.state.agentPerformanceItemsPerPage);
+        };
+
+        this.agentPerformanceGoToPage = async (page) => {
+            this.state.agentPerformanceCurrentPage = page;
+            await this.fetchAgentPerformance();
+        };
+
+        this.agentPerformanceGoToPreviousPage = async () => {
+            if (this.state.agentPerformanceCurrentPage > 1) {
+                this.state.agentPerformanceCurrentPage--;
+                await this.fetchAgentPerformance();
+            }
+        };
+
+        this.agentPerformanceGoToNextPage = async () => {
+            const totalPages = this.getAgentPerformanceTotalPages();
+            if (this.state.agentPerformanceCurrentPage < totalPages) {
+                this.state.agentPerformanceCurrentPage++;
+                await this.fetchAgentPerformance();
+            }
+        };
+
         // States for dashboard data
         this.state = useState({
+            userRole: '',
             totalRepayment: 0,
             totalDeposit: 0,
             dailyRepayment: 0,
@@ -33,13 +167,33 @@ export class Dashboard extends Component {
             totalStockValue: 0,
             monthlySales: 0,
             overdueAccounts: 0,
+            // Percentage states
+            totalRepaymentPercentage: 0,
+            totalDepositPercentage: 0,
+            dailyRepaymentPercentage: 0,
+            dailyDepositPercentage: 0,
+            salesManagersPercentage: 0,
+            salesAgentsPercentage: 0,
+            dailyCommissionPercentage: 0,
+            monthlyCommissionPercentage: 0,
+            monthlySalesPercentage: 0,
+            overdueAccountsPercentage: 0,
             paymentDistribution: {
                 paid: 0,
                 pending: 0,
                 overdue: 0
             },
+            // Date range filter
+            dateFrom: '',
+            dateTo: '',
             customerInstallments: [],
+            installmentsTotalCount: 0,
+            installmentsCurrentPage: 1,
+            installmentsItemsPerPage: 5,
             agentPerformance: [],
+            agentPerformanceTotalCount: 0,
+            agentPerformanceCurrentPage: 1,
+            agentPerformanceItemsPerPage: 10,
             topAgents: [],
             chartData: {
                 currentYear: [],
@@ -60,6 +214,9 @@ export class Dashboard extends Component {
         onWillStart(async () => {
             try {
                 await loadJS("https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js");
+                // Fetch user role from backend
+                const userRole = await this.orm.call('res.users', 'get_user_role', []);
+                this.state.userRole = userRole || '';
                 // Fetch data on component start
                 await Promise.all([
                     this.fetchTotalRepayment(),
@@ -77,7 +234,17 @@ export class Dashboard extends Component {
                     this.fetchCustomerInstallments(),
                     this.fetchAgentPerformance(),
                     this.fetchTopAgents(),
-                    this.fetchChartData()
+                    this.fetchChartData(),
+                    this.fetchTotalRepaymentPercentage(),
+                    this.fetchTotalDepositPercentage(),
+                    this.fetchDailyRepaymentPercentage(),
+                    this.fetchDailyDepositPercentage(),
+                    this.fetchSalesManagersPercentage(),
+                    this.fetchSalesAgentsPercentage(),
+                    this.fetchDailyCommissionPercentage(),
+                    this.fetchMonthlyCommissionPercentage(),
+                    this.fetchMonthlySalesPercentage(),
+                    this.fetchOverdueAccountsPercentage()
                 ]);
             } catch (error) {
                 console.error("Error loading Chart.js:", error);
@@ -92,10 +259,8 @@ export class Dashboard extends Component {
     // Fetch Sales Managers Count  
     async fetchSalesManagersCount() {
     try {
-            // Fetch sales managers count from res.partner model
-            const result = await this.orm.searchCount('res.partner', [
-                ['role', '=', 'sales_manager']
-            ]);
+            // Fetch sales managers count from backend method with role filtering
+            const result = await this.orm.call('repayment', 'get_sales_managers_count_by_role', []);
             
             // Update state with sales managers count
             this.state.salesManagersCount = result;
@@ -107,10 +272,8 @@ export class Dashboard extends Component {
     // Fetch Sales Agents Count
     async fetchSalesAgentsCount() {
         try {
-            // Fetch sales agents count from res.partner model
-            const result = await this.orm.searchCount('res.partner', [
-                ['role', '=', 'sales_agent']
-            ]);
+            // Fetch sales agents count from backend method with role filtering
+            const result = await this.orm.call('repayment', 'get_sales_agents_count_by_role', []);
             
             // Update state with sales agents count
             this.state.salesAgentsCount = result;
@@ -122,7 +285,7 @@ export class Dashboard extends Component {
     // Fetch Daily Commission
     async fetchDailyCommission() {
         try {
-            const total = await this.orm.call('repayment', 'get_daily_commission_by_role', []);
+            const total = await this.orm.call('repayment', 'get_daily_commission_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.dailyCommission = total;
         } catch (error) {
             console.error('Error fetching daily commission:', error);
@@ -132,7 +295,7 @@ export class Dashboard extends Component {
     // Fetch Monthly Commission
     async fetchMonthlyCommission() {
         try {
-            const total = await this.orm.call('repayment', 'get_monthly_commission_by_role', []);
+            const total = await this.orm.call('repayment', 'get_monthly_commission_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.monthlyCommission = total;
         } catch (error) {
             console.error('Error fetching monthly commission:', error);
@@ -158,7 +321,7 @@ export class Dashboard extends Component {
     // Fetch Monthly Sales
     async fetchMonthlySales() {
         try {
-            const total = await this.orm.call('repayment', 'get_monthly_sales_by_role', []);
+            const total = await this.orm.call('repayment', 'get_monthly_sales_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.monthlySales = total;
         } catch (error) {
             console.error('Error fetching monthly sales:', error);
@@ -175,10 +338,110 @@ export class Dashboard extends Component {
         }
     }
 
+    // Fetch Total Repayment Percentage
+    async fetchTotalRepaymentPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_total_repayment_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.totalRepaymentPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching total repayment percentage:', error);
+        }
+    }
+
+    // Fetch Total Deposit Percentage
+    async fetchTotalDepositPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_total_deposit_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.totalDepositPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching total deposit percentage:', error);
+        }
+    }
+
+    // Fetch Daily Repayment Percentage
+    async fetchDailyRepaymentPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_daily_repayment_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.dailyRepaymentPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching daily repayment percentage:', error);
+        }
+    }
+
+    // Fetch Daily Deposit Percentage
+    async fetchDailyDepositPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_daily_deposit_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.dailyDepositPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching daily deposit percentage:', error);
+        }
+    }
+
+    // Fetch Sales Managers Percentage
+    async fetchSalesManagersPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_sales_managers_percentage_by_role', []);
+            this.state.salesManagersPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching sales managers percentage:', error);
+        }
+    }
+
+    // Fetch Sales Agents Percentage
+    async fetchSalesAgentsPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_sales_agents_percentage_by_role', []);
+            this.state.salesAgentsPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching sales agents percentage:', error);
+        }
+    }
+
+    // Fetch Daily Commission Percentage
+    async fetchDailyCommissionPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_daily_commission_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.dailyCommissionPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching daily commission percentage:', error);
+        }
+    }
+
+    // Fetch Monthly Commission Percentage
+    async fetchMonthlyCommissionPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_monthly_commission_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.monthlyCommissionPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching monthly commission percentage:', error);
+        }
+    }
+
+    // Fetch Monthly Sales Percentage
+    async fetchMonthlySalesPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_monthly_sales_percentage_by_role', [this.state.dateFrom, this.state.dateTo]);
+            this.state.monthlySalesPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching monthly sales percentage:', error);
+        }
+    }
+
+    // Fetch Overdue Accounts Percentage
+    async fetchOverdueAccountsPercentage() {
+        try {
+            const percentage = await this.orm.call('repayment', 'get_overdue_accounts_percentage_by_role', []);
+            this.state.overdueAccountsPercentage = percentage;
+        } catch (error) {
+            console.error('Error fetching overdue accounts percentage:', error);
+        }
+    }
+
     // Fetch Total Repayment
     async fetchTotalRepayment() {
         try {
-            const total = await this.orm.call('repayment', 'get_total_repayment_by_role', []);
+            const total = await this.orm.call('repayment', 'get_total_repayment_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.totalRepayment = total;
             this.state.loading = false;
         } catch (error) {
@@ -190,7 +453,7 @@ export class Dashboard extends Component {
     // Fetch Total Deposit
     async fetchTotalDeposit() {
         try {
-            const total = await this.orm.call('repayment', 'get_total_deposit_by_role', []);
+            const total = await this.orm.call('repayment', 'get_total_deposit_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.totalDeposit = total;
             this.state.loading = false;
         } catch (error) {
@@ -202,7 +465,7 @@ export class Dashboard extends Component {
     // Fetch Daily Repayment
     async fetchDailyRepayment() {
         try {
-            const total = await this.orm.call('repayment', 'get_daily_repayment_by_role', []);
+            const total = await this.orm.call('repayment', 'get_daily_repayment_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.dailyRepayment = total;
             this.state.loading = false;
         } catch (error) {
@@ -214,7 +477,7 @@ export class Dashboard extends Component {
     // Fetch Daily Deposit
     async fetchDailyDeposit() {
         try {
-            const total = await this.orm.call('repayment', 'get_daily_deposit_by_role', []);
+            const total = await this.orm.call('repayment', 'get_daily_deposit_by_role', [this.state.dateFrom, this.state.dateTo]);
             this.state.dailyDeposit = total;
             this.state.loading = false;
         } catch (error) {
@@ -227,7 +490,7 @@ export class Dashboard extends Component {
     async fetchPaymentDistribution() {
         try {
             // Call the get_payment_distribution method from the repayment model
-            const result = await this.orm.call('repayment', 'get_payment_distribution', []);
+            const result = await this.orm.call('repayment', 'get_payment_distribution', [this.state.dateFrom, this.state.dateTo]);
             
             // Update state with payment distribution data
             this.state.paymentDistribution = result;
@@ -239,11 +502,20 @@ export class Dashboard extends Component {
     // Fetch Customer Installments
     async fetchCustomerInstallments() {
         try {
-            // Call the get_active_customer_installments method from the repayment model
-            const result = await this.orm.call('repayment', 'get_active_customer_installments', [10]);
-            
-            // Update state with customer installments data
-            this.state.customerInstallments = result;
+            // Calculate offset based on current page
+            const offset = (this.state.installmentsCurrentPage - 1) * this.state.installmentsItemsPerPage;
+
+            // Call the get_active_customer_installments method with server-side pagination
+            const result = await this.orm.call('repayment', 'get_active_customer_installments', [
+                this.state.installmentsItemsPerPage,
+                offset,
+                this.state.dateFrom,
+                this.state.dateTo
+            ]);
+
+            // Update state with customer installments data and total count
+            this.state.customerInstallments = result.installments;
+            this.state.installmentsTotalCount = result.total_count;
         } catch (error) {
             console.error('Error fetching customer installments:', error);
         }
@@ -251,9 +523,16 @@ export class Dashboard extends Component {
 
     async fetchAgentPerformance() {
         try {
-            const result = await this.orm.call('repayment', 'get_agent_payment_performance', []);
-            console.log('Agent Performance Result:', result); 
-            this.state.agentPerformance = result;
+            const offset = (this.state.agentPerformanceCurrentPage - 1) * this.state.agentPerformanceItemsPerPage;
+            const result = await this.orm.call('repayment', 'get_agent_payment_performance', [
+                this.state.agentPerformanceItemsPerPage,
+                offset,
+                this.state.dateFrom,
+                this.state.dateTo
+            ]);
+            console.log('Agent Performance Result:', result);
+            this.state.agentPerformance = result.data || [];
+            this.state.agentPerformanceTotalCount = result.total_count || 0;
         } catch (error) {
             console.error('Error fetching agent performance:', error);
         }
@@ -263,7 +542,7 @@ export class Dashboard extends Component {
     async fetchTopAgents() {
         try {
             // Call the get_top_agents_by_performance method from the repayment model
-            const result = await this.orm.call('repayment', 'get_top_agents_by_performance', [5]);
+            const result = await this.orm.call('repayment', 'get_top_agents_by_performance', [5, this.state.dateFrom, this.state.dateTo]);
             
             // Update state with top agents data
             this.state.topAgents = result;
@@ -276,7 +555,7 @@ export class Dashboard extends Component {
     async fetchChartData(period) {
         try {
             const p = period || this.state.chartPeriod || 'monthly';
-            const result = await this.orm.call('repayment', 'get_sales_performance_data', [], { period: p });
+            const result = await this.orm.call('repayment', 'get_sales_performance_data', [], { period: p, date_from: this.state.dateFrom, date_to: this.state.dateTo });
             this.state.chartData = {
                 labels: result.labels,
                 currentYear: result.currentYear,

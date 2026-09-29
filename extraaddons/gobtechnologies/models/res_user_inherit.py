@@ -121,3 +121,8 @@ class ResUserInherit(models.Model):
                 if partner_vals:
                     user.partner_id.write(partner_vals)
         return res
+
+    @api.model
+    def get_user_role(self):
+        """Get the current user's role"""
+        return self.env.user.role or ''
