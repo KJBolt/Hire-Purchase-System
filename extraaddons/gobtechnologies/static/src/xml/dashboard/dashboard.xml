@@ -8,12 +8,27 @@
                     <h2 style="font-size: 24px; font-weight: 600; color: #1a1a2e; margin: 0;">Welcome back, <t t-esc="env.services.user.name || 'User'"/></h2>
                     <p style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px;">Here's what's happening with your business today</p>
                 </div>
-                <div></div>
+
+                <!-- Date picker -->
+                <div class="d-flex align-items-center" style="gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                        <i class="fa fa-calendar" style="color: #6366f1; font-size: 14px;"/>
+                        <input type="date" t-att-value="state.dateFrom" t-on-change="onDateFromChange" style="border: none; outline: none; font-size: 13px; color: #1a1a2e; font-family: inherit; cursor: pointer; background: transparent;"/>
+                    </div>
+                    <span style="color: #9ca3af; font-size: 13px; font-weight: 500;">to</span>
+                    <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                        <input type="date" t-att-value="state.dateTo" t-on-change="onDateToChange" style="border: none; outline: none; font-size: 13px; color: #1a1a2e; font-family: inherit; cursor: pointer; background: transparent;"/>
+                        <i class="fa fa-calendar" style="color: #6366f1; font-size: 14px;"/>
+                    </div>
+                    <button class="btn btn-sm" t-on-click="onApplyDateFilter" style="background-color: #6366f1; color: white; border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 1px 3px rgba(99,102,241,0.3);">Apply</button>
+                    <button class="btn btn-sm" t-on-click="onResetDateFilter" style="background-color: #f3f4f6; color: #6c757d; border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 500; cursor: pointer;">Reset</button>
+                </div>
             </div>
 
-            <!-- KPI Cards Row 1 -->
-            <div class="row mb-2">
-                <div class="col-md-3 mb-3">
+            <!-- KPI Cards - All in one flex-wrap container -->
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                <!-- Total Repayment -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -43,7 +58,8 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 mb-3">
+                <!-- Total Deposit -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -73,7 +89,8 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 mb-3">
+                <!-- Daily Repayment (hidden when date filter is active) -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;" t-if="!state.dateFrom and !state.dateTo">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -103,7 +120,8 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 mb-3">
+                <!-- Daily Deposit (hidden when date filter is active) -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;" t-if="!state.dateFrom and !state.dateTo">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -132,11 +150,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- KPI Cards Row - Total Deposit -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-2">
+                <!-- Sales Managers -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -163,36 +179,36 @@
                     </div>
                 </div>
 
-                 <!-- Sales Agent -->
-                 <div class="col-md-3 mb-2">
-                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
-                         <div class="card-body">
-                             <div class="d-flex justify-content-between align-items-start">
-                                 <div>
-                                     <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES AGENTS</p>
-                                     <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
-                                         <t t-if="state.loading">Loading...</t>
-                                         <t t-else=""><t t-esc="state.salesAgentsCount"/></t>
-                                     </h3>
-                                     <div style="margin-top: 8px;">
-                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                             <div style="flex: 1; height: 6px; background-color: #e5e7eb; border-radius: 3px; overflow: hidden;">
-                                                 <div t-att-style="'width: ' + state.salesAgentsPercentage + '%; background-color: ' + getPercentageColor(state.salesAgentsPercentage) + '; height: 100%; transition: width 0.3s;'"/>
-                                             </div>
-                                             <span t-att-style="'color: ' + getPercentageColor(state.salesAgentsPercentage) + '; font-size: 11px; font-weight: 600; white-space: nowrap;'" t-esc="state.salesAgentsPercentage.toFixed(1) + '%'"/>
-                                         </div>
-                                     </div>
-                                 </div>
-                                 <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
-                                     <i class="fa fa-users" style="color: #10b981; font-size: 20px;"/>
-                                 </div>
-                             </div>
-                         </div>
-                     </div>
-                 </div>
+                <!-- Sales Agents -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;">
+                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">SALES AGENTS</p>
+                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                                        <t t-if="state.loading">Loading...</t>
+                                        <t t-else=""><t t-esc="state.salesAgentsCount"/></t>
+                                    </h3>
+                                    <div style="margin-top: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="flex: 1; height: 6px; background-color: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                                                <div t-att-style="'width: ' + state.salesAgentsPercentage + '%; background-color: ' + getPercentageColor(state.salesAgentsPercentage) + '; height: 100%; transition: width 0.3s;'"/>
+                                            </div>
+                                            <span t-att-style="'color: ' + getPercentageColor(state.salesAgentsPercentage) + '; font-size: 11px; font-weight: 600; white-space: nowrap;'" t-esc="state.salesAgentsPercentage.toFixed(1) + '%'"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="background-color: #d1fae5; padding: 12px; border-radius: 10px;">
+                                    <i class="fa fa-users" style="color: #10b981; font-size: 20px;"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Daily Commission -->
-                <div class="col-md-3 mb-2">
+                <!-- Daily Commission (hidden when date filter is active) -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;" t-if="!state.dateFrom and !state.dateTo">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -222,8 +238,8 @@
                     </div>
                 </div>
 
-                <!-- Monthly Commission -->
-                <div class="col-md-3 mb-2">
+                <!-- Monthly Commission (hidden when date filter is active) -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;" t-if="!state.dateFrom and !state.dateTo">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -252,30 +268,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- KPI Cards Row 2 -->
-            <div class="row mb-4">
-                <!-- <div class="col-md-3 mb-3">
-                    <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <p style="color: #6c757d; font-size: 12px; margin-bottom: 8px;">TOTAL STOCK VALUE</p>
-                                    <h3 style="font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0;">
-                                        <t t-if="state.loading">Loading...</t>
-                                        <t t-else="">₵<t t-esc="formatNumberWithCommas(state.totalStockValue)"/></t>
-                                    </h3>
-                                </div>
-                                <div style="background-color: #dbeafe; padding: 12px; border-radius: 10px;">
-                                    <i class="fa fa-user-plus" style="color: #3b82f6; font-size: 20px;"/>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
-                
-                <div class="col-md-3 mb-3">
+                <!-- Monthly Sales (hidden when date filter is active) -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;" t-if="!state.dateFrom and !state.dateTo">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -304,8 +299,9 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-3 mb-3">
+
+                <!-- Overdue Accounts -->
+                <div style="flex: 1 1 calc(25% - 16px); min-width: 240px;">
                     <div class="card h-auto shadow-sm" style="border: none; border-radius: 10px; overflow: hidden;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -334,8 +330,6 @@
                         </div>
                     </div>
                 </div>
-
-                
             </div>
 
             <!-- Charts Section -->
@@ -416,9 +410,7 @@
                                         <t t-if="!shouldShowIMEI()">
                                             <th style="padding: 15px 20px; font-size: 12px; color: #6c757d; font-weight: 600; border: none;">Total Price</th>
                                         </t>
-                                        <t t-if="shouldShowIMEI()">
-                                            <th style="padding: 15px 20px; font-size: 12px; color: #6c757d; font-weight: 600; border: none;">IMEI</th>
-                                        </t>
+                                        <th style="padding: 15px 20px; font-size: 12px; color: #6c757d; font-weight: 600; border: none;">IMEI</th>
                                         <th style="padding: 15px 20px; font-size: 12px; color: #6c757d; font-weight: 600; border: none;">Paid</th>
                                         <th style="padding: 15px 20px; font-size: 12px; color: #6c757d; font-weight: 600; border: none;">Status</th>
                                     </tr>
@@ -439,9 +431,7 @@
                                             <t t-if="!shouldShowIMEI()">
                                                 <td style="padding: 15px 20px; border: none; font-weight: 600;">₵<t t-esc="formatNumberWithCommas(installment.total_price)"/></td>
                                             </t>
-                                            <t t-if="shouldShowIMEI()">
-                                                <td style="padding: 15px 20px; border: none; color: #6c757d; font-weight: 500;" t-esc="installment.imei"/>
-                                            </t>
+                                            <td style="padding: 15px 20px; border: none; color: #6c757d; font-weight: 500;" t-esc="installment.imei"/>
                                             <td style="padding: 15px 20px; border: none;">
                                                 <div class="d-flex align-items-center">
                                                     <div style="width: 80px; height: 6px; background-color: #e5e7eb; border-radius: 3px; margin-right: 10px; overflow: hidden;">

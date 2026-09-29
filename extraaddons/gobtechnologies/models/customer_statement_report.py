@@ -2249,60 +2249,106 @@ class Repayment(models.Model):
         return domain
 
     @api.model
-    def get_total_repayment_by_role(self):
+    def get_total_repayment_by_role(self, date_from=None, date_to=None):
         user = self.env.user
         domain = self._get_role_domain()
+        domain.append(('state', '!=', 'paid'))
 
         repayments = self.search(domain)
         payment_lines = repayments.mapped('payment_lines').filtered(
             lambda l: l.payment_mode != 'deposit'
         )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            payment_lines = payment_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
         total = sum(payment_lines.mapped('payment_amount'))
         return total
 
     @api.model
-    def get_total_deposit_by_role(self):
+    def get_total_deposit_by_role(self, date_from=None, date_to=None):
         user = self.env.user
         domain = self._get_role_domain()
+        domain.append(('state', '!=', 'paid'))
 
         repayments = self.search(domain)
         payment_lines = repayments.mapped('payment_lines').filtered(
             lambda l: l.payment_mode == 'deposit'
         )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            payment_lines = payment_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
         total = sum(payment_lines.mapped('payment_amount'))
         return total
 
     @api.model
-    def get_daily_repayment_by_role(self):
+    def get_daily_repayment_by_role(self, date_from=None, date_to=None):
         user = self.env.user
         today = fields.Date.today()
-        domain = [
-            ('payment_lines.payment_date', '=', today),
-            ('payment_lines.payment_mode', '!=', 'deposit'),
-        ]
-        domain += self._get_role_domain()
 
-        repayments = self.search(domain)
-        payment_lines = repayments.mapped('payment_lines').filtered(
-            lambda l: l.payment_date == today and l.payment_mode != 'deposit'
-        )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain = [
+                ('payment_lines.payment_date', '>=', df),
+                ('payment_lines.payment_date', '<=', dt),
+                ('payment_lines.payment_mode', '!=', 'deposit'),
+            ]
+            domain += self._get_role_domain()
+            domain.append(('state', '!=', 'paid'))
+            repayments = self.search(domain)
+            payment_lines = repayments.mapped('payment_lines').filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt and l.payment_mode != 'deposit'
+            )
+        else:
+            domain = [
+                ('payment_lines.payment_date', '=', today),
+                ('payment_lines.payment_mode', '!=', 'deposit'),
+            ]
+            domain += self._get_role_domain()
+            domain.append(('state', '!=', 'paid'))
+            repayments = self.search(domain)
+            payment_lines = repayments.mapped('payment_lines').filtered(
+                lambda l: l.payment_date == today and l.payment_mode != 'deposit'
+            )
         total = sum(payment_lines.mapped('payment_amount'))
         return total
 
     @api.model
-    def get_daily_deposit_by_role(self):
+    def get_daily_deposit_by_role(self, date_from=None, date_to=None):
         user = self.env.user
         today = fields.Date.today()
-        domain = [
-            ('payment_lines.payment_date', '=', today),
-            ('payment_lines.payment_mode', '=', 'deposit'),
-        ]
-        domain += self._get_role_domain()
 
-        repayments = self.search(domain)
-        payment_lines = repayments.mapped('payment_lines').filtered(
-            lambda l: l.payment_date == today and l.payment_mode == 'deposit'
-        )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain = [
+                ('payment_lines.payment_date', '>=', df),
+                ('payment_lines.payment_date', '<=', dt),
+                ('payment_lines.payment_mode', '=', 'deposit'),
+            ]
+            domain += self._get_role_domain()
+            domain.append(('state', '!=', 'paid'))
+            repayments = self.search(domain)
+            payment_lines = repayments.mapped('payment_lines').filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt and l.payment_mode == 'deposit'
+            )
+        else:
+            domain = [
+                ('payment_lines.payment_date', '=', today),
+                ('payment_lines.payment_mode', '=', 'deposit'),
+            ]
+            domain += self._get_role_domain()
+            domain.append(('state', '!=', 'paid'))
+            repayments = self.search(domain)
+            payment_lines = repayments.mapped('payment_lines').filtered(
+                lambda l: l.payment_date == today and l.payment_mode == 'deposit'
+            )
         total = sum(payment_lines.mapped('payment_amount'))
         return total
 
@@ -2314,26 +2360,43 @@ class Repayment(models.Model):
         return self.search_count(domain)
 
     @api.model
-    def get_monthly_sales_by_role(self):
+    def get_monthly_sales_by_role(self, date_from=None, date_to=None):
         user = self.env.user
-        today = fields.Date.today()
-        first_day = today.replace(day=1)
-        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
-        domain = [
-            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
-            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
-            ('state', '=', 'paid'),
-        ]
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(df)),
+                ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
+                ('state', '=', 'paid'),
+            ]
+        else:
+            today = fields.Date.today()
+            first_day = today.replace(day=1)
+            last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+                ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+                ('state', '=', 'paid'),
+            ]
         domain += self._get_role_domain()
 
         repayments = self.search(domain)
         return sum(repayments.mapped('total_paid'))
 
     @api.model
-    def get_payment_distribution(self):
+    def get_payment_distribution(self, date_from=None, date_to=None):
         user = self.env.user
         domain = self._get_role_domain()
+
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain += [
+                ('create_date', '>=', fields.Datetime.to_datetime(df)),
+                ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
+            ]
 
         all_repayments = self.search(domain)
         total_count = len(all_repayments)
@@ -2363,8 +2426,9 @@ class Repayment(models.Model):
             'overdue': round(overdue_percentage, 1)
         }
 
+    # Sales Performance Chart
     @api.model
-    def get_sales_performance_data(self, period='monthly'):
+    def get_sales_performance_data(self, period='monthly', date_from=None, date_to=None):
         user = self.env.user
         today = fields.Date.today()
         current_year = today.year
@@ -2377,21 +2441,49 @@ class Repayment(models.Model):
             agent_partner_ids = self._get_agent_partner_ids()
             base_domain.append(('created_by', 'in', agent_partner_ids))
 
+        base_domain.append(('state', '!=', 'paid'))
         all_repayments = self.search(base_domain)
         all_lines = all_repayments.mapped('payment_lines')
 
+        # When date range is provided, filter lines to only that range
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            all_lines = all_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
+            # Override the range endpoints for chart generation
+            today = dt
+
         if period == 'daily':
-            labels = []
-            current_data = []
-            previous_data = []
-            for i in range(6, -1, -1):
-                day = today - timedelta(days=i)
-                labels.append(day.strftime('%a'))
-                day_lines = all_lines.filtered(
-                    lambda l, d=day: l.payment_date and l.payment_date == d and l.payment_mode != 'deposit'
-                )
-                current_data.append(sum(day_lines.mapped('payment_amount')))
-                previous_data.append(0)
+            # When custom date range, show each day in the range
+            if date_from and date_to:
+                df = fields.Date.from_string(date_from)
+                dt = fields.Date.from_string(date_to)
+                num_days = (dt - df).days + 1
+                labels = []
+                current_data = []
+                previous_data = []
+                for i in range(min(num_days, 31) - 1, -1, -1):
+                    day = dt - timedelta(days=i)
+                    labels.append(day.strftime('%d %b'))
+                    day_lines = all_lines.filtered(
+                        lambda l, d=day: l.payment_date and l.payment_date == d and l.payment_mode != 'deposit'
+                    )
+                    current_data.append(sum(day_lines.mapped('payment_amount')))
+                    previous_data.append(0)
+            else:
+                labels = []
+                current_data = []
+                previous_data = []
+                for i in range(6, -1, -1):
+                    day = today - timedelta(days=i)
+                    labels.append(day.strftime('%a'))
+                    day_lines = all_lines.filtered(
+                        lambda l, d=day: l.payment_date and l.payment_date == d and l.payment_mode != 'deposit'
+                    )
+                    current_data.append(sum(day_lines.mapped('payment_amount')))
+                    previous_data.append(0)
 
         elif period == 'weekly':
             labels = []
@@ -2441,10 +2533,18 @@ class Repayment(models.Model):
         }
 
     @api.model
-    def get_active_customer_installments(self, limit=5, offset=0):
+    def get_active_customer_installments(self, limit=5, offset=0, date_from=None, date_to=None):
         user = self.env.user
         domain = [('state', 'in', ['draft', 'progress', 'termination_warning'])]
         domain += self._get_role_domain()
+
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain += [
+                ('create_date', '>=', fields.Datetime.to_datetime(df)),
+                ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
+            ]
 
         # Get total count for pagination
         total_count = self.search_count(domain)
@@ -2535,33 +2635,52 @@ class Repayment(models.Model):
         return 'NA'
 
     @api.model
-    def get_daily_commission_by_role(self):
+    def get_daily_commission_by_role(self, date_from=None, date_to=None):
         user = self.env.user
-        today = fields.Date.today()
-        domain = [
-            ('create_date', '>=', fields.Datetime.to_datetime(today)),
-            ('create_date', '<', fields.Datetime.to_datetime(today + timedelta(days=1))),
-        ]
+
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(df)),
+                ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
+            ]
+        else:
+            today = fields.Date.today()
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(today)),
+                ('create_date', '<', fields.Datetime.to_datetime(today + timedelta(days=1))),
+            ]
         domain += self._get_role_domain()
         repayments = self.search(domain)
         return sum(repayments.mapped('sales_commission'))
 
     @api.model
-    def get_monthly_commission_by_role(self):
+    def get_monthly_commission_by_role(self, date_from=None, date_to=None):
         user = self.env.user
-        today = fields.Date.today()
-        first_day = today.replace(day=1)
-        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-        domain = [
-            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
-            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
-        ]
+
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(df)),
+                ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
+            ]
+        else:
+            today = fields.Date.today()
+            first_day = today.replace(day=1)
+            last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            domain = [
+                ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
+                ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+            ]
         domain += self._get_role_domain()
         repayments = self.search(domain)
         return sum(repayments.mapped('sales_commission'))
 
+    # Top Agent by repayment
     @api.model
-    def get_top_agents_by_performance(self, limit=10):
+    def get_top_agents_by_performance(self, limit=10, date_from=None, date_to=None):
         """
         Fetch top sales agents by repayment performance
         Returns: list of dicts with agent names and repayment percentages
@@ -2569,6 +2688,14 @@ class Repayment(models.Model):
         domain = self._get_role_domain()
         domain.append(('created_by', '!=', False))
         all_repayments = self.search(domain)
+        
+        # Filter payment lines by date range if provided
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+        else:
+            df = None
+            dt = None
         
         if not all_repayments:
             return []
@@ -2592,8 +2719,17 @@ class Repayment(models.Model):
             agent_stats[agent_id.id]['total_repayments'] += 1
             agent_stats[agent_id.id]['total_value'] += repayment.selling_price
             
+            # Calculate paid value, filtered by date if provided
+            if df and dt:
+                repay_lines = repayment.payment_lines.filtered(
+                    lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+                )
+                paid_value = sum(repay_lines.mapped('payment_amount'))
+            else:
+                paid_value = repayment.total_paid
+            
             # Count as paid if fully paid
-            if repayment.state == 'paid' or repayment.total_paid >= repayment.selling_price:
+            if repayment.state == 'paid' or paid_value >= repayment.selling_price:
                 agent_stats[agent_id.id]['paid_repayments'] += 1
                 agent_stats[agent_id.id]['paid_value'] += repayment.selling_price
         
@@ -2627,8 +2763,9 @@ class Repayment(models.Model):
         
         return agents_data[:limit]
 
+    # Agent Payment Performance
     @api.model
-    def get_agent_payment_performance(self, limit=10, offset=0):
+    def get_agent_payment_performance(self, limit=10, offset=0, date_from=None, date_to=None):
         user = self.env.user
         today = fields.Date.today()
         week_start = today - timedelta(days=today.weekday())
@@ -2641,12 +2778,35 @@ class Repayment(models.Model):
         elif user.role == 'sales_agent':
             domain.append(('created_by', '=', user.partner_id.id))
 
-        # Get total count for pagination
-        total_count = self.search_count(domain)
-        
-        # Get paginated repayments
-        all_repayments = self.search(domain, order='create_date desc', limit=limit, offset=offset)
-        
+        df = dt = None
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+
+        domain.append(('state', '!=', 'paid'))
+
+        # Aggregate over every matching contract so rows are complete,
+        # then paginate the agent rows below
+        all_repayments = self.search(domain, order='create_date desc')
+
+        # Company-wide totals for percentage calculation (matching KPI cards)
+        company_repayments = self.search([('state', '!=', 'paid')])
+        company_repay_lines = company_repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode != 'deposit'
+        )
+        company_deposit_lines = company_repayments.mapped('payment_lines').filtered(
+            lambda l: l.payment_mode == 'deposit'
+        )
+        if df and dt:
+            company_repay_lines = company_repay_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
+            company_deposit_lines = company_deposit_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
+        company_total_repayment = sum(company_repay_lines.mapped('payment_amount'))
+        company_total_deposit = sum(company_deposit_lines.mapped('payment_amount'))
+
         agent_partner_map = {}
         for r in all_repayments:
             pid = r.created_by.id
@@ -2667,9 +2827,15 @@ class Repayment(models.Model):
 
             all_lines = agent_repayments.mapped('payment_lines')
             non_deposit = all_lines.filtered(lambda l: l.payment_mode != 'deposit')
-            total_repayment = sum(non_deposit.mapped('payment_amount'))
-
             deposit_lines = all_lines.filtered(lambda l: l.payment_mode == 'deposit')
+            if df and dt:
+                non_deposit = non_deposit.filtered(
+                    lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+                )
+                deposit_lines = deposit_lines.filtered(
+                    lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+                )
+            total_repayment = sum(non_deposit.mapped('payment_amount'))
             total_deposit = sum(deposit_lines.mapped('payment_amount'))
 
             active_count = len(agent_repayments.filtered(
@@ -2687,10 +2853,6 @@ class Repayment(models.Model):
             weekly_total = round(sum(weekly_lines.mapped('payment_amount')), 2)
             monthly_total = round(sum(monthly_lines.mapped('payment_amount')), 2)
 
-            # Get company-wide totals for percentage calculation (matching KPI cards)
-            company_total_repayment = sum(self.search([]).mapped('payment_lines').filtered(lambda l: l.payment_mode != 'deposit').mapped('payment_amount'))
-            company_total_deposit = sum(self.search([]).mapped('payment_lines').filtered(lambda l: l.payment_mode == 'deposit').mapped('payment_amount'))
-            
             # Calculate percentages as contribution to company totals (matching KPI cards)
             total_repayment_percentage = round((total_repayment / company_total_repayment * 100), 1) if company_total_repayment > 0 else 0
             total_deposit_percentage = round((total_deposit / company_total_deposit * 100), 1) if company_total_deposit > 0 else 0
@@ -2703,6 +2865,13 @@ class Repayment(models.Model):
                 r_lines = r.payment_lines
                 r_non_deposit = r_lines.filtered(lambda l: l.payment_mode != 'deposit')
                 r_deposit = r_lines.filtered(lambda l: l.payment_mode == 'deposit')
+                if df and dt:
+                    r_non_deposit = r_non_deposit.filtered(
+                        lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+                    )
+                    r_deposit = r_deposit.filtered(
+                        lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+                    )
                 r_repayment_total = sum(r_non_deposit.mapped('payment_amount'))
                 r_deposit_total = sum(r_deposit.mapped('payment_amount'))
 
@@ -2756,22 +2925,29 @@ class Repayment(models.Model):
             })
 
         result.sort(key=lambda x: x['total_repayment'], reverse=True)
+        total_count = len(result)
         return {
-            'data': result,
+            'data': result[offset:offset + limit],
             'total_count': total_count,
         }
 
     @api.model
-    def get_total_repayment_percentage_by_role(self):
+    def get_total_repayment_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate user's total repayment as percentage of company-wide total"""
         # Get user's visible total (with role filtering)
-        user_total = self.get_total_repayment_by_role()
+        user_total = self.get_total_repayment_by_role(date_from=date_from, date_to=date_to)
 
         # Get company-wide total (bypassing role filtering with sudo)
-        all_repayments = self.sudo().search([])
+        all_repayments = self.sudo().search([('state', '!=', 'paid')])
         payment_lines = all_repayments.mapped('payment_lines').filtered(
             lambda l: l.payment_mode != 'deposit'
         )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            payment_lines = payment_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
         company_total = sum(payment_lines.mapped('payment_amount'))
 
         if company_total == 0:
@@ -2779,16 +2955,22 @@ class Repayment(models.Model):
         return round((user_total / company_total) * 100, 1)
 
     @api.model
-    def get_total_deposit_percentage_by_role(self):
+    def get_total_deposit_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate user's total deposit as percentage of company-wide total"""
         # Get user's visible total (with role filtering)
-        user_total = self.get_total_deposit_by_role()
+        user_total = self.get_total_deposit_by_role(date_from=date_from, date_to=date_to)
 
         # Get company-wide total (bypassing role filtering with sudo)
-        all_repayments = self.sudo().search([])
+        all_repayments = self.sudo().search([('state', '!=', 'paid')])
         payment_lines = all_repayments.mapped('payment_lines').filtered(
             lambda l: l.payment_mode == 'deposit'
         )
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+            payment_lines = payment_lines.filtered(
+                lambda l: l.payment_date and l.payment_date >= df and l.payment_date <= dt
+            )
         company_total = sum(payment_lines.mapped('payment_amount'))
 
         if company_total == 0:
@@ -2796,26 +2978,26 @@ class Repayment(models.Model):
         return round((user_total / company_total) * 100, 1)
 
     @api.model
-    def get_daily_repayment_percentage_by_role(self):
+    def get_daily_repayment_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate daily repayment as percentage of role-based total repayment"""
         # Get user's visible daily total (with role filtering)
-        user_daily = self.get_daily_repayment_by_role()
+        user_daily = self.get_daily_repayment_by_role(date_from=date_from, date_to=date_to)
 
         # Get user's visible total repayment (with role filtering)
-        user_total = self.get_total_repayment_by_role()
+        user_total = self.get_total_repayment_by_role(date_from=date_from, date_to=date_to)
 
         if user_total == 0:
             return 0.0
         return round((user_daily / user_total) * 100, 1)
 
     @api.model
-    def get_daily_deposit_percentage_by_role(self):
+    def get_daily_deposit_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate daily deposit as percentage of role-based total deposit"""
         # Get user's visible daily total (with role filtering)
-        user_daily = self.get_daily_deposit_by_role()
+        user_daily = self.get_daily_deposit_by_role(date_from=date_from, date_to=date_to)
 
         # Get user's visible total deposit (with role filtering)
-        user_total = self.get_total_deposit_by_role()
+        user_total = self.get_total_deposit_by_role(date_from=date_from, date_to=date_to)
 
         if user_total == 0:
             return 0.0
@@ -2907,32 +3089,36 @@ class Repayment(models.Model):
             ])
 
     @api.model
-    def get_daily_commission_percentage_by_role(self):
+    def get_daily_commission_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate daily commission as percentage of monthly commission"""
         # Get user's visible daily commission (with role filtering)
-        user_daily = self.get_daily_commission_by_role()
+        user_daily = self.get_daily_commission_by_role(date_from=date_from, date_to=date_to)
 
         # Get user's visible monthly commission (with role filtering)
-        user_monthly = self.get_monthly_commission_by_role()
+        user_monthly = self.get_monthly_commission_by_role(date_from=date_from, date_to=date_to)
 
         if user_monthly == 0:
             return 0.0
         return round((user_daily / user_monthly) * 100, 1)
 
     @api.model
-    def get_monthly_commission_percentage_by_role(self):
+    def get_monthly_commission_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate monthly commission as percentage of company-wide monthly total"""
         # Get user's visible monthly commission (with role filtering)
-        user_monthly = self.get_monthly_commission_by_role()
+        user_monthly = self.get_monthly_commission_by_role(date_from=date_from, date_to=date_to)
 
         # Get company-wide monthly commission (bypassing role filtering with sudo)
-        today = fields.Date.today()
-        first_day = today.replace(day=1)
-        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+        else:
+            today = fields.Date.today()
+            df = today.replace(day=1)
+            dt = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
         company_monthly = sum(self.sudo().search([
-            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
-            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+            ('create_date', '>=', fields.Datetime.to_datetime(df)),
+            ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
         ]).mapped('sales_commission'))
 
         if company_monthly == 0:
@@ -2940,19 +3126,23 @@ class Repayment(models.Model):
         return round((user_monthly / company_monthly) * 100, 1)
 
     @api.model
-    def get_monthly_sales_percentage_by_role(self):
+    def get_monthly_sales_percentage_by_role(self, date_from=None, date_to=None):
         """Calculate monthly sales as percentage of company-wide monthly total"""
         # Get user's visible monthly sales (with role filtering)
-        user_monthly = self.get_monthly_sales_by_role()
+        user_monthly = self.get_monthly_sales_by_role(date_from=date_from, date_to=date_to)
 
         # Get company-wide monthly sales (bypassing role filtering with sudo)
-        today = fields.Date.today()
-        first_day = today.replace(day=1)
-        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        if date_from and date_to:
+            df = fields.Date.from_string(date_from)
+            dt = fields.Date.from_string(date_to)
+        else:
+            today = fields.Date.today()
+            df = today.replace(day=1)
+            dt = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
         company_monthly = sum(self.sudo().search([
-            ('create_date', '>=', fields.Datetime.to_datetime(first_day)),
-            ('create_date', '<', fields.Datetime.to_datetime(last_day + timedelta(days=1))),
+            ('create_date', '>=', fields.Datetime.to_datetime(df)),
+            ('create_date', '<', fields.Datetime.to_datetime(dt + timedelta(days=1))),
             ('state', '=', 'paid'),
         ]).mapped('total_paid'))
 
