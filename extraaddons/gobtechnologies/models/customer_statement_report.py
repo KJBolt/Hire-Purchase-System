@@ -1576,6 +1576,8 @@ class Repayment(models.Model):
         if self.invoice_id:
             sale_order = self.env['sale.order'].browse(int(self.invoice_id))
             if sale_order.exists():
+                # Make sure the selected IMEIs/Serial Numbers are applied to the delivery
+                self._assign_lots_to_delivery(sale_order)
                 return {
                     'type': 'ir.actions.act_window',
                     'name': 'Sales Order',
@@ -1602,11 +1604,14 @@ class Repayment(models.Model):
                 'product_id': line.product_id.id,
                 'name': line.product_id.name,
                 'product_uom_qty': line.quantity,
-                'price_unit': line.price / line.quantity if line.quantity else line.price,
+                'price_unit': self.selling_price,
             })
         
         # Confirm the sales order
         sale_order.action_confirm()
+        
+        # Apply the selected IMEIs/Serial Numbers to the delivery
+        self._assign_lots_to_delivery(sale_order)
         
         # Link the sales order to the repayment
         self.write({
@@ -1621,6 +1626,32 @@ class Repayment(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+
+    def _assign_lots_to_delivery(self, sale_order):
+        """Copy the Serial Numbers/IMEIs selected on the repayment lines to the
+        related delivery order, so the correct IMEI is shown on the transfer."""
+        # Group the selected lots by product
+        lots_by_product = {}
+        for line in self.product_lines:
+            if not line.lot_id:
+                continue
+            product_lots = lots_by_product.setdefault(line.product_id.id, [])
+            for lot in line.lot_id:
+                if lot.id not in product_lots:
+                    product_lots.append(lot.id)
+
+        if not lots_by_product:
+            return
+
+        # Only touch deliveries that are still open (not yet done/cancelled)
+        deliveries = sale_order.picking_ids.filtered(
+            lambda p: p.picking_type_id.code == 'outgoing' and p.state not in ('done', 'cancel')
+        )
+        for picking in deliveries:
+            for move in picking.move_ids:
+                lot_ids = lots_by_product.get(move.product_id.id)
+                if lot_ids and move.product_id.tracking == 'serial':
+                    move.lot_ids = [(6, 0, lot_ids)]
 
     def action_view_sales_order(self):
         if self.invoice_id:

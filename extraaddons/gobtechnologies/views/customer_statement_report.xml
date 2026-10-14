@@ -416,6 +416,9 @@
 
                 <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]"/>
                 <filter name="progress" string="In Progress" domain="[('state', '=', 'progress')]"/>
+                <separator string="IMEI Delivery"/>
+                <filter name="imei_delivered" string="Delivered IMEI" domain="[('product_lines.lot_id.delivery_status', '=', 'delivered')]"/>
+                <filter name="imei_not_delivered" string="Not Delivered IMEI" domain="[('product_lines.lot_id.delivery_status', '=', 'not_delivered')]"/>
                 <separator string="Created Date"/>
                 <filter name="filter_today" string="Today" domain="[('create_date', '>=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
                 <filter name="filter_yesterday" string="Yesterday" domain="[( 'create_date', '>=', (context_today() + relativedelta(days=-1)).strftime('%Y-%m-%d 00:00:00') ), ('create_date', '&lt;', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
