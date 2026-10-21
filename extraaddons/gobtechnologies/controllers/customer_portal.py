@@ -13,6 +13,11 @@ import requests
 _logger = logging.getLogger(__name__)
 
 
+def _to_pascal(values):
+    """The status API replies in camelCase; the webhook payload uses PascalCase."""
+    return {key[:1].upper() + key[1:]: value for key, value in values.items()}
+
+
 class CustomerPortalController(http.Controller):
 
     SESSION_TIMEOUT_MINUTES = 30
@@ -259,6 +264,7 @@ class CustomerPortalController(http.Controller):
                 return channel
         return 'mtn-gh'
 
+    # Initiates the Building of the payload once the webhook gets called
     def _initiate_hubtel_payment(self, portal, repayment, amount):
         settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
         collection_account = settings.get('collection_account')
@@ -354,6 +360,7 @@ class CustomerPortalController(http.Controller):
             error_msg = f"Error {response.status_code}: {response.text}"
         return {'success': False, 'message': error_msg}
 
+    # Used after transaction status suceeds
     def _create_payment_line_from_status(self, status_data, repayment, portal):
         """Create payment line from successful status check data."""
         data = status_data.get('Data', {}) or status_data
@@ -384,7 +391,7 @@ class CustomerPortalController(http.Controller):
         
         _logger.info("Created payment line for transaction %s with amount %s", transaction_id, amount)
 
-    # Method to check transaction status api
+    # Method to check hubtel transaction status api
     def _check_hubtel_transaction_status(self, client_reference, collection_account):
         """Check transaction status using Hubtel Transaction Status Check API."""
         settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
@@ -408,13 +415,23 @@ class CustomerPortalController(http.Controller):
             _logger.info("Hubtel status check response: %s - %s", response.status_code, response.text)
             
             if response.status_code in (200, 201):
-                data = response.json()
-                response_code = data.get('ResponseCode')
-                status = data.get('Status', '').lower()
+                body = _to_pascal(response.json())
+                data = body.get('Data')
+                if isinstance(data, dict):
+                    data = _to_pascal(data)
+                    if not data.get('PaymentDate') and data.get('Date'):
+                        data['PaymentDate'] = data['Date']
+                    body['Data'] = data
+                else:
+                    data = {}
+
+                # responseCode "0000" only means the API call succeeded.
+                # The transaction state is Data.Status ("Paid" / "Unpaid").
+                txn_status = str(data.get('Status') or body.get('Status') or '').lower()
                 
-                if response_code in ('0000', '0001') or status in ('Success', 'Paid'):
+                if txn_status in ('paid', 'success', 'successful', 'completed'):
                     _logger.info("Transaction status check successful for client reference: %s", client_reference)
-                    return data
+                    return body
             return None
         except Exception as e:
             _logger.error("Error checking Hubtel transaction status: %s", str(e))

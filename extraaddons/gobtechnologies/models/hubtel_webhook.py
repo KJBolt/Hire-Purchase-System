@@ -36,27 +36,17 @@ class HubtelWebhook(models.Model):
             return False
 
     def _extract_phone_and_repayment(self, client_reference):
-        phone_no = ''
-        repayment_id = False
+        # Hubtel sends the repayment unique_id (e.g. RPY01569) as ClientReference
+        repayment = self.env['repayment'].search(
+            [('unique_id', '=', client_reference)], limit=1)
+        if not repayment:
+            return '', False
 
-        if client_reference.startswith('customer_portal_'):
-            remainder = client_reference[len('customer_portal_'):]
-            if '_' in remainder:
-                phone_part, repayment_part = remainder.rsplit('_', 1)
-                phone_no = phone_part
-                if repayment_part.isdigit():
-                    repayment_id = int(repayment_part)
-            else:
-                phone_no = remainder
-        else:
-            parts = client_reference.split('_')
-            if len(parts) >= 2:
-                phone_no = parts[1]
-
+        phone_no = repayment.phone_no or ''
         if phone_no.startswith('233'):
             phone_no = '0' + phone_no[3:]
 
-        return phone_no, repayment_id
+        return phone_no, repayment.id
 
     @api.depends('transaction_id', 'client_reference')
     def _compute_phone_no(self):

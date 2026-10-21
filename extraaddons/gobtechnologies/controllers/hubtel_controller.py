@@ -1,5 +1,6 @@
 from odoo import http, fields
 from odoo.http import request
+from odoo.addons.gobtechnologies.controllers.customer_portal import CustomerPortalController
 import json
 from werkzeug.wrappers import Response
 import logging
@@ -7,7 +8,7 @@ import datetime
 
 _logger = logging.getLogger(__name__)
 
-
+# Not doing anything useful at the moment
 class HubtelPaymentController(http.Controller):
     @http.route('/shop/hubtel_payment', type='http', auth='public', methods=['POST'], website=True, csrf=False)
     def hubtel_payment(self, **kwargs):
@@ -40,7 +41,7 @@ class HubtelPaymentController(http.Controller):
                 or ''
             )
 
-            if client_reference.startswith('customer_portal_'):
+            if client_reference.startswith('RPY'):
                 return self._process_customer_portal_payment(payload, data, client_reference)
 
             today = datetime.date.today()
@@ -75,15 +76,27 @@ class HubtelPaymentController(http.Controller):
             }, status=500)
 
     def _process_customer_portal_payment(self, payload, data, client_reference):
-        status = payload.get('Status', '')
+        status = payload.get('Message', '')
         response_code = payload.get('ResponseCode', '')
 
         if status.lower() not in ('success', 'paid') and response_code not in ('0000', '0001'):
-            _logger.warning("Customer portal payment not successful: %s / %s", status, response_code)
-            return request.make_json_response({
-                "status": "ignored",
-                "message": "Payment not successful",
-            })
+            # Hubtel may report a failure for money that was actually taken.
+            # Confirm with the Transaction Status API before dropping it.
+            settings = request.env['res.config.settings'].sudo().get_hubtel_credentials()
+            status_data = CustomerPortalController()._check_hubtel_transaction_status(
+                client_reference, settings.get('collection_account'))
+
+            if not status_data:
+                _logger.warning("Customer portal payment not successful: %s / %s (ref %s)",
+                                status, response_code, client_reference)
+                return request.make_json_response({
+                    "status": "ignored",
+                    "message": "Payment not successful",
+                })
+
+            _logger.info("Status API confirmed success for %s", client_reference)
+            data = status_data.get('Data', {}) or status_data
+            payload['Message'] = 'success'
 
         webhook_vals = {
             'message': payload.get('Message', status),
